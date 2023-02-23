@@ -3,7 +3,7 @@ from KilnZones import KilnZones
 
 
 class Controller:
-    def __init__(self, file):
+    def __init__(self, file: str):
         self.profile = Profile(file)
         # self.temp_sensors = KilnZones()
         pass
