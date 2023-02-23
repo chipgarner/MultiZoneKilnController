@@ -56,7 +56,7 @@ class SimZone:
         time.sleep(1 / self.sim_speedup) # Real sensors take time to read
 
     def __update_sim(self):
-        self.kiln_sim.update_sim()
+        self.kiln_sim.update_sim(self.heat)
 
     def __get_temperature(self) -> float:
         return self.kiln_sim.get_latest_temperature()
