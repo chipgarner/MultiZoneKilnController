@@ -1,5 +1,8 @@
 import json
 import os
+import logging
+
+log = logging.getLogger(__name__)
 
 
 class Profile:
@@ -12,7 +15,7 @@ class Profile:
     @staticmethod
     def get_profile(file: str) -> str:
         profile_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '.', 'Profiles', file))
-        print(profile_path)
+        log.info(profile_path)
         with open(profile_path) as infile:
             profile_json = json.dumps(json.load(infile))
 

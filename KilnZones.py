@@ -1,9 +1,13 @@
 import threading
 import time
+import logging
 from KilnSimulator import KilnSimulator
 
 # Supports multiple sensors for multiple zone kilns.
 # Sensors are on one thread. You can't call sensors from separate threads if they share the SPI/
+
+
+log = logging.getLogger(__name__)
 
 
 class KilnZones:
@@ -11,8 +15,9 @@ class KilnZones:
         self.zones = zones
         thread = threading.Thread(target=self.__sensors_loop, name='KilnZones', daemon=True)
         thread.start()
+        log.info('KilnZones running using ' + str(len(zones)) + ' zones.')
 
-    def get_times_temps_for_zones(self) -> list:
+    def get_times_temps_heat_for_zones(self) -> list:
         tts_for_zones = []
         for zone in self.zones:
             tts_for_zones.append(zone.get_times_temps_heat())
@@ -26,7 +31,6 @@ class KilnZones:
         while True:
             for zone in self.zones:
                 zone.update_time_temperature()
-            time.sleep(0.1)
 
 
 class SimZone:
@@ -34,6 +38,7 @@ class SimZone:
         self.heat = None
         self.times_temps = []
         self.kiln_sim = KilnSimulator()
+        self.sim_speedup = self.kiln_sim.sim_speedup
         self.start = time.time()
 
     def get_times_temps_heat(self) -> tuple:
@@ -47,6 +52,8 @@ class SimZone:
         temp = self.__get_temperature()
         ttime = time.time() - self.start
         self.times_temps.append((ttime, temp))
+
+        time.sleep(1 / self.sim_speedup) # Real sensors take time to read
 
     def __update_sim(self):
         self.kiln_sim.update_sim()

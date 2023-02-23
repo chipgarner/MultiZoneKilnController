@@ -10,7 +10,7 @@ def test_loads_profile():
     assert len(controller.profile.data) == 6
 
 
-def test_init_temp_sensors():
+def test_init_zones():
     controller = Controller("test-fast.json")
 
-    # assert type(controller.temp_sensors) == KilnZones.KilnZones()
+    assert type(controller.kiln_zones) == KilnZones.KilnZones
