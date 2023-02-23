@@ -20,7 +20,7 @@ class KilnSimulator:
 
     def update_sim(self, heat_factor):
         now = time.time()
-        delta_time = now - self.latest_time
+        delta_time = (now - self.latest_time) * self.sim_speedup
         self.latest_temperature = self.find_temperature(delta_time, heat_factor)
         self.latest_time = now
 
@@ -32,3 +32,15 @@ class KilnSimulator:
         rate = power * self.kiln_thermal_mass
         temperature = self.latest_temperature + rate * delta_time
         return temperature
+
+
+#  This is for testing
+if __name__ == '__main__':
+    sim = KilnSimulator()
+    sim.sim_speedup = 1000
+
+    while True:
+        sim.update_sim(0.5)
+        temp = sim.get_latest_temperature()
+        print(temp)
+        time.sleep(1)
