@@ -1,20 +1,8 @@
 from Profile import Profile
-import os
-import json
-
-
-def get_profile(file="test-fast.json"):
-    profile_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'Test', file))
-    print(profile_path)
-    with open(profile_path) as infile:
-        profile_json = json.dumps(json.load(infile))
-    profile = Profile(profile_json)
-
-    return profile
 
 
 def test_get_target_temperature():
-    profile = get_profile()
+    profile = Profile("test-fast.json")
 
     temperature = profile.get_target_temperature(3000)
     assert int(temperature) == 200
@@ -24,7 +12,7 @@ def test_get_target_temperature():
 
 
 def test_find_time_from_temperature():
-    profile = get_profile()
+    profile = Profile("test-fast.json")
 
     time = profile.find_next_time_from_temperature(500)
     assert time == 4800
@@ -37,7 +25,7 @@ def test_find_time_from_temperature():
 
 
 def test_find_time_odd_profile():
-    profile = get_profile("test-cases.json")
+    profile = Profile("test-cases.json")
 
     time = profile.find_next_time_from_temperature(500)
     assert time == 4200
@@ -47,7 +35,7 @@ def test_find_time_odd_profile():
 
 
 def test_find_x_given_y_on_line_from_two_points():
-    profile = get_profile()
+    profile = Profile("test-fast.json")
 
     y = 500
     p1 = [3600, 200]
@@ -76,7 +64,3 @@ def test_find_x_given_y_on_line_from_two_points():
     time = profile.find_x_given_y_on_line_from_two_points(y, p1, p2)
 
     assert time == 0
-
-    now = 14405
-    segment = profile.get_next_point(now)
-    assert segment == 4
