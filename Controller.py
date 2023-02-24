@@ -48,7 +48,7 @@ class Controller:
         return heats
 
     def __update_ui(self, t_t_h: list):
-        log.debug('t_t_h temp time length ' + str(len(t_t_h[0][0])))
+        log.debug('t_t_h temp time length ' + str(len(t_t_h[0])))
         log.debug(str(t_t_h))
 
 

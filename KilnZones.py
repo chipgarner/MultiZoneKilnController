@@ -35,28 +35,34 @@ class KilnZones:
 
 class SimZone:
     def __init__(self):
-        self.heat = None
-        self.times_temps = []
+        self.heat_factor = 0
+        self.times_temps_heat = []
+        self.tth_length = 20 # How many times_temps_heat are saved
         self.kiln_sim = KilnSimulator()
         self.sim_speedup = self.kiln_sim.sim_speedup
         self.start = time.time()
 
-    def get_times_temps_heat(self) -> tuple:
-        return self.times_temps, self.heat
+    def get_times_temps_heat(self) -> list:
+        return self.times_temps_heat
 
-    def set_heat(self, heat: float):
-        self.heat = heat
+    def set_heat(self, heat_factor: float):
+        if heat_factor > 1.0 or heat_factor < 0:
+            log.error('Heat factor must be from zero through one. heat_factor: ' + str(heat_factor))
+            raise ValueError
+        self.heat_factor = heat_factor
 
     def update_time_temperature(self):
         self.__update_sim()
         temp = self.__get_temperature()
-        ttime = time.time() - self.start
-        self.times_temps.append((ttime, temp))
+        ttime = (time.time() - self.start) * self.sim_speedup
+        self.times_temps_heat.append((ttime, temp, self.heat_factor))
+        if len(self.times_temps_heat) > self.tth_length:
+            self.times_temps_heat.pop(0)
 
         time.sleep(1 / self.sim_speedup) # Real sensors take time to read
 
     def __update_sim(self):
-        self.kiln_sim.update_sim(self.heat)
+        self.kiln_sim.update_sim(self.heat_factor)
 
     def __get_temperature(self) -> float:
         return self.kiln_sim.get_latest_temperature()

@@ -10,7 +10,7 @@ class KilnSimulator:
     def __init__(self):
         self.latest_temperature = 27 # Temperatures are in degrees Centigrade
         self.latest_time = time.time()
-        self.sim_speedup = 1
+        self.sim_speedup = 20
         log.warning('Running simulator. In case you thought otherwise.')
 
         self.t_environment = 27 # Degrees C
@@ -18,7 +18,7 @@ class KilnSimulator:
         self.heat_loss = 4.3 # Conductive plus heat lost to the environment, watts/degrees C
         self.kiln_thermal_mass = 3.9e-5 # c/ws, compute heating rate from power
 
-    def update_sim(self, heat_factor):
+    def update_sim(self, heat_factor: float):
         now = time.time()
         delta_time = (now - self.latest_time) * self.sim_speedup
         self.latest_temperature = self.find_temperature(delta_time, heat_factor)
