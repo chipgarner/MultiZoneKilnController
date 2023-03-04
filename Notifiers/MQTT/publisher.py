@@ -1,12 +1,14 @@
 import logging
 import time
+import json
+from Notifiers import Notifier
 
 import paho.mqtt.client as mqtt
 
-from MQTT import check_internet
+from Notifiers.MQTT import check_internet
 
 
-class Publisher:
+class Publisher(Notifier.Notifier):
     def __init__(self, access):
         self.logger = logging.getLogger(__name__)
 
@@ -50,8 +52,7 @@ class Publisher:
 
         return cpu_serial
 
-    def send_message(self, a_message):
-
+    def send_time_stamped_message(self, a_message: str) -> bool:
         return self.publish(a_message)
 
     def check_connection(self, rc):

@@ -1,5 +1,6 @@
 import logging
 import time
+import random
 
 log = logging.getLogger(__name__)
 
@@ -31,6 +32,7 @@ class KilnSimulator:
         power = self.power * heat_factor - self.heat_loss * (self.latest_temperature - self.t_environment)
         rate = power * self.kiln_thermal_mass
         temperature = self.latest_temperature + rate * delta_time
+        temperature += random.gauss(mu=0, sigma=0.65)
         return temperature
 
 

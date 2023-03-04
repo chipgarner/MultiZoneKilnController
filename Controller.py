@@ -12,8 +12,8 @@ log = logging.getLogger("Controller")
 
 
 class Controller:
-    def __init__(self, file: str, send_message):
-        self.send_message = send_message
+    def __init__(self, file: str, send_time_stamped_message):
+        self.send_time_stamped_message = send_time_stamped_message
         self.profile = Profile(file)
         zone = SimZone()
         self.loop_delay = 10
@@ -33,7 +33,7 @@ class Controller:
             t_t_h = self.kiln_zones.get_times_temps_heat_for_zones()
             heats = self.__update_zones_heat(t_t_h)
             self.kiln_zones.set_heat_for_zones(heats)
-            self.__update_ui(t_t_h)
+            self.__notify(t_t_h)
             time.sleep(self.loop_delay)
 
     def __zero_heat_zones(self):
@@ -43,24 +43,32 @@ class Controller:
         self.kiln_zones.set_heat_for_zones(heats)
 
     def __update_zones_heat(self, t_t_h: list) -> list:
+        latest_t_t_h = t_t_h[-1]
+        temp = latest_t_t_h[0][1]
+        heat = 0.5
+        if temp > 500:
+            heat = 1.0
         heats = []
         for i in range(len(self.zones)):
-            heats.append(0.5)
+            heats.append(heat)
 
         return heats
 
-    def __update_ui(self, t_t_h: list):
+    def __notify(self, t_t_h: list):
         log.debug('t_t_h temp time length ' + str(len(t_t_h[0])))
         log.debug(str(t_t_h))
 
-        last_t_t_h = t_t_h[-1]
+        latest_t_t_h = t_t_h[-1]
 
-        time_in_seconds = last_t_t_h[0][0]
+        time_in_seconds = latest_t_t_h[0][0]
         time_in_seconds = round(time.time() * 1000) # Thingsboard requires timestamps
-        temp = last_t_t_h[0][1]
+        temp = latest_t_t_h[0][1]
         message = {'T1 56': temp}
         time_stamped_message = {"ts": time_in_seconds, "values": message}
-        self.send_message(str(time_stamped_message))
+
+        if not self.send_time_stamped_message(str(time_stamped_message)):
+            # TODO handle this
+            log.error('Sending failed.')
 
 
 def send_message(message):
