@@ -9,4 +9,8 @@ __pycache__/
 thumbs.db
 .idea/*
 venv/*
+sqlite/.idea/*
+sqlite/venv/*
+*.sqlite
+*.db
 Notifiers/MQTT/Secrets.py
