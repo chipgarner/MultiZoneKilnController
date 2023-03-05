@@ -5,9 +5,9 @@ class DbInsert:
     def __init__(self):
         self.db = sqlite3.connect('Database/firing.db')
 
-    def send_time_stamped_message(self, times_temps_heats_for_zones: list):
+    def send_time_stamped_message(self, times_temps_heats_for_zones: dict):
 
-        for time_temp_heat in times_temps_heats_for_zones[0]: # Only one zone for now [0]
+        for time_temp_heat in times_temps_heats_for_zones['Zone 1']: # Only one zone for now
             time_ms = time_temp_heat['time_ms']
             temperature = time_temp_heat['temperature']
             heat_factor = time_temp_heat['heat_factor']

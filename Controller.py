@@ -42,8 +42,8 @@ class Controller:
             heats.append(0)
         self.kiln_zones.set_heat_for_zones(heats)
 
-    def __update_zones_heat(self, t_t_h: list) -> list:
-        latest_t_t_h = t_t_h[-1]
+    def __update_zones_heat(self, t_t_h: dict) -> list:
+        latest_t_t_h = t_t_h['Zone 1']
         temp = latest_t_t_h[0]['temperature']
         heat = 0.5
         if temp > 500:
@@ -54,27 +54,14 @@ class Controller:
 
         return heats
 
-    def __notify(self, t_t_h: list):
+    def __notify(self, t_t_h: dict):
         self.notifier.update(t_t_h)
-        # log.debug('t_t_h temp time length ' + str(len(t_t_h[0])))
-        # log.debug(str(t_t_h))
-        #
-        # latest_t_t_h = t_t_h[-1]
-        #
-        # time_in_milliseconds = latest_t_t_h[0]['time_ms']
-        #
-        # temp = latest_t_t_h[0]['temperature']
-        # message = {'T1 56': temp}
-        # time_stamped_message = {"ts": time_in_milliseconds, "values": message}
-        #
-        # if not self.send_time_stamped_message(str(time_stamped_message)):
-        #     # TODO handle this
-        #     log.error('Sending failed.')
 
 
-def send_message(message):
-    log.info(message)
+class notifier:
+    def update(self, message):
+        log.info(message)
 #  This is for testing
 if __name__ == '__main__':
-    controller = Controller("test-fast.json", send_message)
+    controller = Controller("test-fast.json", notifier())
     controller.control_loop()

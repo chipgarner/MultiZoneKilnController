@@ -1,3 +1,5 @@
+import time
+
 import Controller
 from Notifiers import Notifier
 import logging
@@ -23,5 +25,6 @@ log = logging.getLogger("Controller")
 # {'ts': 50.09812355041504, 'values': {'T1 56': 32.8371357381851}}
 
 controller = Controller.Controller("test-fast.json", Notifier.Notifier())
+time.sleep(0.1)
 controller.control_loop()
 

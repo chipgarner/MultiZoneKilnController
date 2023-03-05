@@ -10,7 +10,7 @@ class KilnSimulator:
     def __init__(self):
         self.latest_temperature = 27 # Temperatures are in degrees Centigrade
         self.latest_time = time.time()
-        self.sim_speedup = 1
+        self.sim_speedup = 10
         log.warning('Running simulator. In case you thought otherwise.')
 
         self.t_environment = 27 # Degrees C
@@ -37,7 +37,7 @@ class KilnSimulator:
 #  This is for testing
 if __name__ == '__main__':
     sim = KilnSimulator()
-    sim.sim_speedup = 1000
+    sim.sim_speedup = 100
 
     while True:
         sim.update_sim(0.5)

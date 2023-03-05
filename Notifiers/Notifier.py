@@ -2,6 +2,7 @@ import logging
 from Notifiers.MQTT import publisher
 from Notifiers.MQTT.Secrets import TEST_SECRET
 from Database import DbInsert
+from UI import Pygal
 
 
 log = logging.getLogger(__name__)
@@ -11,10 +12,13 @@ class Notifier():
     def __init__(self):
         self.publisher = publisher.Publisher(TEST_SECRET)
         self.db_inserter = DbInsert.DbInsert()
+        self.pygal = Pygal.Pygal()
 
-    def update(self, times_temps_heats_for_zones: list):
-        # self.update_thingsboard(times_temps_heats_for_zones)
+    def update(self, times_temps_heats_for_zones: dict):
+        # self.update_thingsboard(times_temps_heats_for_zones) SIMULATOR SPEEDUP to 1 !!!
+        log.debug('Updating: ' + str(times_temps_heats_for_zones))
         self.db_inserter.send_time_stamped_message(times_temps_heats_for_zones)
+        self.pygal.plot(times_temps_heats_for_zones)
 
     def update_thingsboard(self, times_temps_heats_for_zones: list):
         listed = []
