@@ -1,6 +1,5 @@
 import logging
 import time
-import json
 from Notifiers import Notifier
 
 import paho.mqtt.client as mqtt
@@ -35,6 +34,7 @@ class Publisher(Notifier.Notifier):
             self.logger.error('Publisher could not connect. ' + str(ex))
 
         self.mqtt_client.loop_start()
+        self.logger.debug('Client loop started')
 
     def getserial(self):
         # Extract Raspberry Pi serial number from "cpuinfo" file

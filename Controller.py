@@ -16,7 +16,7 @@ class Controller:
         self.send_time_stamped_message = send_time_stamped_message
         self.profile = Profile(file)
         zone = SimZone()
-        self.loop_delay = 10
+        self.loop_delay = 1
 
         if zone.sim_speedup is not None:
             self.loop_delay = self.loop_delay / zone.sim_speedup
@@ -60,11 +60,11 @@ class Controller:
 
         latest_t_t_h = t_t_h[-1]
 
-        time_in_seconds = latest_t_t_h[0][0]
-        time_in_seconds = round(time.time() * 1000) # Thingsboard requires timestamps
+        time_in_milliseconds = latest_t_t_h[0][0]
+
         temp = latest_t_t_h[0][1]
         message = {'T1 56': temp}
-        time_stamped_message = {"ts": time_in_seconds, "values": message}
+        time_stamped_message = {"ts": time_in_milliseconds, "values": message}
 
         if not self.send_time_stamped_message(str(time_stamped_message)):
             # TODO handle this

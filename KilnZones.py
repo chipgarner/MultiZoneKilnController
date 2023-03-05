@@ -2,6 +2,7 @@ import threading
 import time
 import logging
 from KilnSimulator import KilnSimulator
+import random
 
 # Supports multiple sensors for multiple zone kilns.
 # Sensors are on one thread. You can't call sensors from separate threads if they share the SPI/
@@ -54,8 +55,9 @@ class SimZone:
     def update_time_temperature(self):
         self.__update_sim()
         temp = self.__get_temperature()
-        ttime = (time.time() - self.start) * self.sim_speedup
-        self.times_temps_heat.append((ttime, temp, self.heat_factor))
+        time_sim = (time.time() - self.start) * self.sim_speedup + self.start
+        time_ms = round(time_sim * 1000)  # Thingsboard and SQLite require timestamps in milliseconds
+        self.times_temps_heat.append((time_ms, temp, self.heat_factor))
         if len(self.times_temps_heat) > self.tth_length:
             self.times_temps_heat.pop(0)
 
@@ -64,5 +66,7 @@ class SimZone:
     def __update_sim(self):
         self.kiln_sim.update_sim(self.heat_factor)
 
-    def __get_temperature(self) -> float:
-        return self.kiln_sim.get_latest_temperature()
+    def __get_temperature(self) -> float: # From the thermocouple board
+        temperature = self.kiln_sim.get_latest_temperature()
+        temperature += random.gauss(mu=0, sigma=0.65)
+        return temperature
