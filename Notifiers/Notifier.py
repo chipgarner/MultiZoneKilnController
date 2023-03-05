@@ -1,6 +1,8 @@
 import logging
 from Notifiers.MQTT import publisher
 from Notifiers.MQTT.Secrets import TEST_SECRET
+from Database import DbInsert
+
 
 log = logging.getLogger(__name__)
 # Notifiers can be API, MQTT, database ...
@@ -8,11 +10,14 @@ log = logging.getLogger(__name__)
 class Notifier():
     def __init__(self):
         self.publisher = publisher.Publisher(TEST_SECRET)
+        self.db_inserter = DbInsert.DbInsert()
 
     def update(self, times_temps_heats_for_zones: list):
-        self.update_thingsboard(times_temps_heats_for_zones)
+        # self.update_thingsboard(times_temps_heats_for_zones)
+        self.db_inserter.send_time_stamped_message(times_temps_heats_for_zones)
 
     def update_thingsboard(self, times_temps_heats_for_zones: list):
+        listed = []
         for latest_t_t_h in times_temps_heats_for_zones[0]:
         # latest_t_t_h = times_temps_heats_for_zones[-1]
 
@@ -21,7 +26,8 @@ class Notifier():
             temp = latest_t_t_h['temperature']
             message = {'T1 56': temp}
             time_stamped_message = {"ts": time_in_milliseconds, "values": message}
+            listed.append(time_stamped_message)
 
-            if not self.publisher.send_time_stamped_message(str(time_stamped_message)):
+        if not self.publisher.send_time_stamped_message(str(listed)):
                 # TODO handle this
-                log.error('Sending failed.')
+            log.error('Sending failed.')
