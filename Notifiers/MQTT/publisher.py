@@ -7,7 +7,7 @@ import paho.mqtt.client as mqtt
 from Notifiers.MQTT import check_internet
 
 
-class Publisher(Notifier.Notifier):
+class Publisher():
     def __init__(self, access):
         self.logger = logging.getLogger(__name__)
 

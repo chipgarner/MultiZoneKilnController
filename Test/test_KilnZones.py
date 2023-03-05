@@ -1,3 +1,5 @@
+import time
+
 import pytest
 
 import KilnZones
@@ -36,11 +38,14 @@ def test_updates_times_temperatures():
 
     t_t_h = zone1.get_times_temps_heat()
 
-    assert t_t_h[0][2] == 0.7
-    assert type(t_t_h[0]) == tuple
-    assert t_t_h[0][1] > 0  # Temperature
-    assert t_t_h[0][0] > 0  # Time
-    assert t_t_h[0][0] < 0.2
+    assert t_t_h[0]['heat_factor'] == 0.7
+    assert type(t_t_h[0]) == dict
+    assert t_t_h[0]['temperature'] > 0
+
+    now = time.time() * 1000
+    delta_t = now - t_t_h[0]['time_ms'] # delta_t should be small
+    assert delta_t > -1
+    assert delta_t < 200 # millisconds
 
 
 def test_bad_heat_factor_throws():

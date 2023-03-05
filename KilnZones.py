@@ -44,7 +44,9 @@ class SimZone:
         self.start = time.time()
 
     def get_times_temps_heat(self) -> list:
-        return self.times_temps_heat
+        t_t_h = self.times_temps_heat
+        self.times_temps_heat = []
+        return t_t_h
 
     def set_heat(self, heat_factor: float):
         if heat_factor > 1.0 or heat_factor < 0:
@@ -57,9 +59,7 @@ class SimZone:
         temp = self.__get_temperature()
         time_sim = (time.time() - self.start) * self.sim_speedup + self.start
         time_ms = round(time_sim * 1000)  # Thingsboard and SQLite require timestamps in milliseconds
-        self.times_temps_heat.append((time_ms, temp, self.heat_factor))
-        if len(self.times_temps_heat) > self.tth_length:
-            self.times_temps_heat.pop(0)
+        self.times_temps_heat.append({'time_ms': time_ms, 'temperature': temp, 'heat_factor': self.heat_factor})
 
         time.sleep(1 / self.sim_speedup) # Real sensors take time to read
 
