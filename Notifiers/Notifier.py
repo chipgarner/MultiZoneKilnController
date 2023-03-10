@@ -2,8 +2,8 @@ import logging
 from Notifiers.MQTT import publisher
 from Notifiers.MQTT.Secrets import TEST_SECRET
 from Database import DbInsert
-from UI import Pygal
-
+from Experiments import Pygal
+import websockets, asyncio
 
 log = logging.getLogger(__name__)
 # Notifiers can be API, MQTT, database ...
@@ -19,6 +19,7 @@ class Notifier():
         log.debug('Updating: ' + str(times_temps_heats_for_zones))
         self.db_inserter.send_time_stamped_message(times_temps_heats_for_zones)
         self.pygal.plot(times_temps_heats_for_zones)
+        self.xmit_Loop(str(times_temps_heats_for_zones))
 
     def update_thingsboard(self, times_temps_heats_for_zones: list):
         listed = []
@@ -35,3 +36,14 @@ class Notifier():
         if not self.publisher.send_time_stamped_message(str(listed)):
                 # TODO handle this
             log.error('Sending failed.')
+
+    async def Forward(self, message):
+        url = 'ws://localhost:8081/controller'
+        async with websockets.connect(url) as websocket:
+            await websocket.send(message)
+
+    def xmit_Loop(self, message):
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        loop.run_until_complete(self.Forward(message))
+
