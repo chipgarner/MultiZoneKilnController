@@ -1,5 +1,6 @@
 import logging
 import json
+from Database import DbInsert
 
 log = logging.getLogger(__name__)
 
@@ -8,6 +9,7 @@ class MessageBroker:
     def __init__(self):
         self.last_profile = None
         self.observers = []
+        self.db_inserter = DbInsert.DbInsert()
 
     def add_observer(self, observer):
         if self.last_profile:
@@ -34,3 +36,10 @@ class MessageBroker:
             log.error("Could not send backlog to new observer")
 
         self.observers.append(observer)
+
+    def update(self, times_temps_heats_for_zones: str):
+        # self.update_thingsboard(times_temps_heats_for_zones) SIMULATOR SPEEDUP to 1 !!!=
+        tthz = json.loads(times_temps_heats_for_zones)
+        log.debug('Updating: ' + str(tthz))
+        self.db_inserter.send_time_stamped_message(tthz)
+

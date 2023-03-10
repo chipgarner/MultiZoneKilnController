@@ -7,8 +7,7 @@ from KilnZones import KilnZones, SimZone
 log_level = logging.DEBUG
 log_format = '%(asctime)s %(levelname)s %(name)s: %(message)s'
 
-logging.basicConfig(level=log_level, format=log_format)
-log = logging.getLogger("Controller")
+log = logging.getLogger(__name__)
 
 
 class Controller:
@@ -61,6 +60,8 @@ class Controller:
 class notifier:
     def update(self, message):
         log.info(message)
+
+
 #  This is for testing
 if __name__ == '__main__':
     controller = Controller("test-fast.json", notifier())
