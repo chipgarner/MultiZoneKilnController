@@ -2,6 +2,7 @@ import time
 import logging
 from Profile import Profile
 from KilnZones import KilnZones, SimZone
+import DataFilter
 
 
 log_level = logging.DEBUG
@@ -17,6 +18,9 @@ class Controller:
         zone = SimZone()
         self.loop_delay = 10
 
+        self.long_t_t_h = []
+        self.data_filter = DataFilter.DataFilter()
+
         if zone.sim_speedup is not None:
             self.loop_delay = self.loop_delay / zone.sim_speedup
             log.info('Sim speed up factor is ' + str(zone.sim_speedup))
@@ -30,6 +34,12 @@ class Controller:
         self.__zero_heat_zones()
         while True:
             t_t_h = self.kiln_zones.get_times_temps_heat_for_zones()
+
+            self.long_t_t_h.append(t_t_h['Zone 1'][0])
+            filter_result = self.data_filter.linear(self.long_t_t_h)
+            log.debug(filter_result)
+            log.info(str(filter_result['slope'] * 3.6e6) + ' Degrees per hour.')
+
             heats = self.__update_zones_heat(t_t_h)
             self.kiln_zones.set_heat_for_zones(heats)
             self.__notify(t_t_h)

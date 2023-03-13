@@ -21,7 +21,7 @@ class Notifier:
         log.debug('Updating: ' + str(times_temps_heats_for_zones))
         # self.db_inserter.send_time_stamped_message(times_temps_heats_for_zones)
         # self.pygal.plot(times_temps_heats_for_zones)
-        self.xmit_loop(json.dumps(times_temps_heats_for_zones))
+        self.xmit_loop(json.dumps(times_temps_heats_for_zones))  # TODO use the same tech on server and here. don't close every timme?
 
     def update_thingsboard(self, times_temps_heats_for_zones: list):
         listed = []
@@ -45,7 +45,11 @@ class Notifier:
         async with websockets.connect(url) as websocket:
             await websocket.send(message)
 
+
     def xmit_loop(self, message):
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
-        loop.run_until_complete(self.forward(message))
+        try:
+            loop.run_until_complete(self.forward(message))
+        except ConnectionRefusedError as ex:
+            log.error(ex)

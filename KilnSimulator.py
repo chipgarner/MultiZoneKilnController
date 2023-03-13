@@ -40,7 +40,7 @@ if __name__ == '__main__':
     sim.sim_speedup = 100
 
     while True:
-        sim.update_sim(0.5)
+        sim.update_sim(0.6)
         temp = sim.get_latest_temperature()
         print(temp)
         time.sleep(1)
