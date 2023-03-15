@@ -3,7 +3,7 @@ import json
 
 from geventwebsocket import WebSocketError
 
-from Database import DbInsert
+from Database import DbInsertSelect
 
 log = logging.getLogger(__name__)
 
@@ -12,7 +12,7 @@ class MessageBroker:
     def __init__(self):
         self.last_profile = None
         self.observers = []
-        self.db_inserter = DbInsert.DbInsert()
+        self.db = DbInsertSelect.DbInsertSelect()
 
     def add_observer(self, observer):
         if self.last_profile:
@@ -54,6 +54,3 @@ class MessageBroker:
             except WebSocketError:
                 self.observers.remove(observer)
                 log.info('Observer deleted, socket error.')
-
-
-

@@ -1,4 +1,5 @@
 import statistics
+import sys
 
 
 def median(t_t_h: list) -> dict:
@@ -15,7 +16,7 @@ def median(t_t_h: list) -> dict:
 
 
 def linear(t_t_h: list) -> dict:
-    if len(t_t_h) > 1:
+    if len(t_t_h) > 1 & sys.version_info<(3,10,0):
         x_list = []
         y_list = []
         for time_temp in t_t_h:
