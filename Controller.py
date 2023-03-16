@@ -35,9 +35,9 @@ class Controller:
         self.start_time_ms = time.time() * 1000
         self.__zero_heat_zones()
         while True:
-            t_t_h = self.kiln_zones.get_times_temps_heat_for_zones()
+            t_t_h_z = self.kiln_zones.get_times_temps_heat_for_zones()
 
-            self.long_t_t_h = self.long_t_t_h + t_t_h['Zone 1']
+            self.long_t_t_h = self.long_t_t_h + t_t_h_z['Zone 1']
             if len(self.long_t_t_h) > 100:
                 self.long_t_t_h.pop(0)
             log.debug('Long_data: ' + str(len(self.long_t_t_h)))
@@ -46,17 +46,18 @@ class Controller:
             if filter_result is not None:
                 log.info(str(filter_result['slope'] * 3.6e6) + ' Degrees per hour.')
 
-            median_result = self.data_filter.median(t_t_h['Zone 1'])
+            median_result = self.data_filter.median(t_t_h_z['Zone 1'])
             log.debug(median_result)
             best_temp = median_result['median']
-            best_time = (t_t_h['Zone 1'][-1]['time_ms'] + t_t_h['Zone 1'][-1]['time_ms']) / 2
+            best_time = (t_t_h_z['Zone 1'][-1]['time_ms'] + t_t_h_z['Zone 1'][-1]['time_ms']) / 2
             target = self.profile.get_target_temperature((best_time - self.start_time_ms) / 1000)
 
             temp_error = best_temp - target
-
-            heats = self.__update_zones_heat(t_t_h, temp_error)
+            heats = self.__update_zones_heat(t_t_h_z, temp_error)
             self.kiln_zones.set_heat_for_zones(heats)
-            self.__notify(t_t_h)
+
+            best_t_t_h_z = {'Zone 1': [{'time_ms': best_time, 'temperature': best_temp, 'heat_factor': t_t_h_z['Zone 1'][0]['heat_factor']}]}
+            self.__notify(best_t_t_h_z)
             time.sleep(self.loop_delay)
 
     def __zero_heat_zones(self):
@@ -66,11 +67,14 @@ class Controller:
         self.kiln_zones.set_heat_for_zones(heats)
 
     def __update_zones_heat(self, t_t_h: dict, temp_error: float) -> list:
-        latest_t_t_h = t_t_h['Zone 1']
-        temp = latest_t_t_h[0]['temperature']
+
         heat = 1
         if temp_error > 0:
             heat = 0
+        else:
+            heat = - temp_error * 3
+        if heat > 1:
+            heat = 1
         heats = []
         for i in range(len(self.zones)):
             heats.append(heat)

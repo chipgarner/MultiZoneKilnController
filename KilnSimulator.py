@@ -15,7 +15,7 @@ class KilnSimulator:
 
         self.t_environment = 27 # Degrees C
         self.power = 6000 # Kiln power watts
-        self.heat_loss = 10 # Conductive plus heat lost to the environment, watts/degrees C
+        self.heat_loss = 15 # Conductive plus heat lost to the environment, watts/degrees C
         self.kiln_thermal_mass_inverted = 3.9e-5 # c/ws, compute heating rate from power
         self.radiation = 1.03e-8 # w/K^4 radiation from elements to kiln
         self.t_elements = 27

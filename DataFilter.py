@@ -16,7 +16,12 @@ def median(t_t_h: list) -> dict:
 
 
 def linear(t_t_h: list) -> dict:
-    if len(t_t_h) > 1 & sys.version_info<(3,10,0):
+    # Linear regression added in 3.10.x
+    vers = sys.version_info
+    major = vers[0]
+    minor = vers[1]
+    vers = major + minor / 100
+    if len(t_t_h) > 1 and vers >= 3.1:
         x_list = []
         y_list = []
         for time_temp in t_t_h:

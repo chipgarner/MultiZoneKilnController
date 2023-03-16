@@ -14,13 +14,18 @@ class MessageBroker:
         self.observers = []
         self.db = DbInsertSelect.DbInsertSelect()
 
+        # TODO
+        profile_data = self.db.get_profile_by_name('fast')
+        self.last_profile = {'name': 'fast', 'data': profile_data}
+
+
     def add_observer(self, observer):
         if self.last_profile:
-            p = {
-                "name": self.last_profile.name,
-                "data": self.last_profile.data,
-                "type": "profile"
-            }
+            p = json.dumps(self.last_profile)
+            #     {
+            #     "name": self.last_profile.name,
+            #     "data": self.last_profile.data,
+            # }
         else:
             p = None
 
@@ -45,7 +50,7 @@ class MessageBroker:
         tthz = json.loads(times_temps_heats_for_zones)
         log.debug('Updating: ' + str(tthz))
 
-        # self.db_inserter.send_time_stamped_message(tthz)
+        # self.db.send_time_stamped_message(tthz)
 
         message = json.dumps(tthz['Zone 1'])
         for observer in self.observers:
