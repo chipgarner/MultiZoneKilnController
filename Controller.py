@@ -56,8 +56,8 @@ class Controller:
             heats = self.__update_zones_heat(t_t_h_z, temp_error)
             self.kiln_zones.set_heat_for_zones(heats)
 
-            best_t_t_h_z = {'Zone 1': [{'time_ms': best_time, 'temperature': best_temp, 'heat_factor': t_t_h_z['Zone 1'][0]['heat_factor']}]}
-            self.__notify(best_t_t_h_z)
+            best_t_t_h = {'Zone 1': [{'time_ms': best_time, 'temperature': best_temp}]}
+            self.__notify(t_t_h_z)
             time.sleep(self.loop_delay)
 
     def __zero_heat_zones(self):
@@ -72,7 +72,7 @@ class Controller:
         if temp_error > 0:
             heat = 0
         else:
-            heat = - temp_error * 3
+            heat = - temp_error * 0.5
         if heat > 1:
             heat = 1
         heats = []
