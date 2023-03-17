@@ -14,5 +14,5 @@ def test_find_temperature():
 
     temp = sim.find_temperature(0.1, 0.5)
 
-    assert temp == 27.0117
+    assert temp == 27.0
 

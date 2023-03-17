@@ -4,18 +4,25 @@ import logging
 
 log = logging.getLogger(__name__)
 
+def convert_old_profile(old_profile: dict) ->  dict:
+    new_segments = []
+    for i, t_t in enumerate(old_profile['data']):
+        new_segments.append({'time': t_t[0], 'temperature': t_t[1]})
+    new_profile = {'name': old_profile['name'], 'segments': new_segments}
+
+    return new_profile
 
 class Profile:
     def __init__(self, file: str):
         json_data = self.get_profile(file)
-        obj = json.loads(json_data)
-        self.name = obj["name"]
-        self.data = sorted(obj["data"])
+        prf = json.loads(json_data)
+        self.name = prf["name"]
+        self.data = sorted(prf["data"])
 
     @staticmethod
     def get_profile(file: str) -> str:
         profile_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '.', 'Profiles', file))
-        log.info(profile_path)
+        log.debug(profile_path)
         with open(profile_path) as infile:
             profile_json = json.dumps(json.load(infile))
 

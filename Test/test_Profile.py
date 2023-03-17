@@ -1,8 +1,9 @@
-from Profile import Profile
+import Profile
 
+test_profile = {"data": [[0, 100], [3600, 100], [10800, 1000], [14400, 1150], [16400, 1150], [19400, 700]], "type": "profile", "name": "fast"}
 
 def test_get_target_temperature():
-    profile = Profile("test-fast.json")
+    profile = Profile.Profile("test-fast.json")
 
     temperature = profile.get_target_temperature(3000)
     assert int(temperature) == 200
@@ -12,7 +13,7 @@ def test_get_target_temperature():
 
 
 def test_find_time_from_temperature():
-    profile = Profile("test-fast.json")
+    profile = Profile.Profile("test-fast.json")
 
     time = profile.find_next_time_from_temperature(500)
     assert time == 4800
@@ -25,7 +26,7 @@ def test_find_time_from_temperature():
 
 
 def test_find_time_odd_profile():
-    profile = Profile("test-cases.json")
+    profile = Profile.Profile("test-cases.json")
 
     time = profile.find_next_time_from_temperature(500)
     assert time == 4200
@@ -35,7 +36,7 @@ def test_find_time_odd_profile():
 
 
 def test_find_x_given_y_on_line_from_two_points():
-    profile = Profile("test-fast.json")
+    profile = Profile.Profile("test-fast.json")
 
     y = 500
     p1 = [3600, 200]
@@ -64,3 +65,12 @@ def test_find_x_given_y_on_line_from_two_points():
     time = profile.find_x_given_y_on_line_from_two_points(y, p1, p2)
 
     assert time == 0
+
+def test_convert_old_profile():
+    old_profile = test_profile
+    new_profile = Profile.convert_old_profile(old_profile)
+
+    assert 'fast' == new_profile['name']
+    assert type(new_profile['segments']) is list
+    assert new_profile['segments'][0] == {'time': 0, 'temperature': 100}
+    assert new_profile['segments'][5] == {'time': 19400, 'temperature': 700}
