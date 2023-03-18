@@ -7,8 +7,8 @@ log = logging.getLogger(__name__)
 def convert_old_profile(old_profile: dict) ->  dict:
     new_segments = []
     for i, t_t in enumerate(old_profile['data']):
-        new_segments.append({'time': t_t[0], 'temperature': t_t[1]})
-    new_profile = {'name': old_profile['name'], 'segments': new_segments}
+        new_segments.append({"time": t_t[0], "temperature": t_t[1]})
+    new_profile = {"name": old_profile['name'], "segments": new_segments}
 
     return new_profile
 

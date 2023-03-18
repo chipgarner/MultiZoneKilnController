@@ -35,9 +35,9 @@ class DbInsertSelect:
         cur.execute("SELECT segments FROM profiles WHERE name = ?;", [name])
         profile = cur.fetchall()
 
-        profile = json.loads(profile[0][0])
+        # profile = json.loads(profile[0][0])
 
-        return profile
+        return profile[0][0]
 
 
 import Profile
@@ -53,6 +53,12 @@ if __name__ == '__main__':
     profiles = DbInsertSelect().get_profiles()
     print(profiles)
 
-    profile = DbInsertSelect().get_profile_by_name('fast')
+    profile = DbInsertSelect().get_profile_by_name("new_fast")
     assert type(profile) is list
     print(profile)
+
+    profile = Profile.Profile("fast.json")
+    profile = json.loads(profile.get_profile("fast.json"))
+    new_fast = Profile.convert_old_profile(profile)
+    new_fast['name'] = 'new_fast'
+    DbInsertSelect().add_profile(new_fast['name'], str(new_fast['segments']))

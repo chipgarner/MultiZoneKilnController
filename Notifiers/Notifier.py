@@ -2,7 +2,7 @@ import logging
 import json
 from Notifiers.MQTT import publisher
 from Notifiers.MQTT.Secrets import TEST_SECRET
-
+#TODO connect this to messagebroker and allow sending to mqtt, no web sockets here.
 from Experiments import Pygal
 import websockets, asyncio
 

@@ -1,5 +1,6 @@
 import logging
 import json
+import time
 
 from geventwebsocket import WebSocketError
 
@@ -15,13 +16,21 @@ class MessageBroker:
         self.db = DbInsertSelect.DbInsertSelect()
 
         # TODO
-        profile_data = self.db.get_profile_by_name('fast')
-        self.last_profile = {'name': 'fast', 'data': profile_data}
+        self.last_profile = {'name': 'fast',
+                             'segments': [{'time': 0, 'temperature': 100}, {'time': 3600, 'temperature': 100},
+                                          {'time': 10800, 'temperature': 1000}, {'time': 14400, 'temperature': 1150},
+                                          {'time': 16400, 'temperature': 1150}, {'time': 19400, 'temperature': 700}]}
+        self.last_profile = self.profile_to_ms(self.last_profile)
 
+    def profile_to_ms(self, profile):
+        now = time.time()
+        for segment in profile['segments']:
+            segment['time_ms'] = round((segment['time'] + now) * 1000)
+        return profile
 
     def add_observer(self, observer):
         if self.last_profile:
-            p = json.dumps(self.last_profile)
+            p = self.last_profile
             #     {
             #     "name": self.last_profile.name,
             #     "data": self.last_profile.data,
