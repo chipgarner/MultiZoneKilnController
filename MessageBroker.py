@@ -21,6 +21,8 @@ class MessageBroker:
                                           {'time': 10800, 'temperature': 1000}, {'time': 14400, 'temperature': 1150},
                                           {'time': 16400, 'temperature': 1150}, {'time': 19400, 'temperature': 700}]}
         self.last_profile = self.profile_to_ms(self.last_profile)
+        self.prof_sent = False
+        self.count = 0
 
     def profile_to_ms(self, profile):
         now = time.time()
@@ -29,30 +31,18 @@ class MessageBroker:
         return profile
 
     def add_observer(self, observer):
-        if self.last_profile:
-            p = self.last_profile
-            #     {
-            #     "name": self.last_profile.name,
-            #     "data": self.last_profile.data,
-            # }
-        else:
-            p = None
-
-        backlog = {
-            'type': "backlog",
-            'profile': p,
-            # 'log': self.lastlog_subset(),
-            # 'started': self.started
-        }
-        print(backlog)
-        backlog_json = json.dumps(backlog)
-        try:
-            print(backlog_json)
-            observer.send(backlog_json)
-        except:
-            log.error("Could not send backlog to new observer")
-
+        self.update_profile(observer, self.last_profile)
         self.observers.append(observer)
+
+    def update_profile(self, observer, profile):
+        prof = {
+            'profile': profile,
+        }
+        prof_json = json.dumps(prof)
+        try:
+            observer.send(prof_json)
+        except:
+            log.error("Could not send profile to front end")
 
     def update(self, times_temps_heats_for_zones: str):
         # self.update_thingsboard(times_temps_heats_for_zones) SIMULATOR SPEEDUP to 1 !!!= TODO fix mqtt

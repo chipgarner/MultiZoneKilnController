@@ -49,7 +49,7 @@ class Controller:
             median_result = self.data_filter.median(t_t_h_z['Zone 1'])
             log.debug(median_result)
             best_temp = median_result['median']
-            best_time = (t_t_h_z['Zone 1'][-1]['time_ms'] + t_t_h_z['Zone 1'][-1]['time_ms']) / 2
+            best_time = round((t_t_h_z['Zone 1'][-1]['time_ms'] + t_t_h_z['Zone 1'][-1]['time_ms']) / 2)
             target = self.profile.get_target_temperature((best_time - self.start_time_ms) / 1000)
 
             temp_error = best_temp - target
