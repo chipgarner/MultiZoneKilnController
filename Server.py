@@ -4,6 +4,7 @@ from geventwebsocket.handler import WebSocketHandler
 from geventwebsocket import WebSocketError
 import logging
 import MessageBroker
+import os
 
 
 log_level = logging.DEBUG
@@ -21,6 +22,16 @@ def server():
         wsock = env.get('wsgi.websocket')
         return wsock
 
+    @bottle_app.route('/')
+    def index():
+        log.debug('Redirect to index page')
+        root = os.path.join(os.path.dirname(__file__), 'UI/build')
+        return bottle.static_file('index.html', root=root)
+    # @bottle.route('/stats')
+    # @bottle.route('/stats/<filename>')
+    # def server_static(filename='index.html'):
+    #     root = os.path.join(os.path.dirname(__file__), 'stats', 'UI/build')
+    #     return bottle.static_file(filename, root=root)
 
     # Open a persistent websocket to UI
     @bottle_app.route('/controller')
@@ -54,6 +65,31 @@ def server():
     def error404(error):
         return 'You have fallen completely off the edge of the internet. Sorry' + str(error)
 
+    # Static Routes
+
+    base_path = os.path.abspath(os.path.dirname(__file__))
+    build_path = os.path.join(base_path, 'UI', 'build')
+
+    @bottle_app.get("/static/css/<filepath:re:.*\.css>")
+    def css(filepath):
+        return bottle.static_file(filepath, root=os.path.join(build_path, "static/css"))
+
+    @bottle_app.get("/static/font/<filepath:re:.*\.(eot|otf|svg|ttf|woff|woff2?)>")
+    def font(filepath):
+        return bottle.static_file(filepath, root=os.path.join(build_path, "static/font"))
+
+    @bottle_app.get("/<filepath:re:.*\.(jpg|png|gif|ico|svg)>")
+    def img(filepath):
+        return bottle.static_file(filepath, root=os.path.join(build_path))
+
+    # @bottle_app.get("/favicon.ico")
+    # def img():
+    #     return bottle.static_file("favicon.ico", root=os.path.join(build_path))
+
+    @bottle_app.get("/static/js/<filepath:re:.*\.js>")
+    def js(filepath):
+        return bottle.static_file(filepath, root=os.path.join(build_path, "static/js"))
+
 
 
     ip = "0.0.0.0"
@@ -63,6 +99,7 @@ def server():
     server = WSGIServer((ip, port), bottle_app,
                     handler_class=WebSocketHandler)
     server.serve_forever()
+
 
 if __name__ == '__main__':
     server()
