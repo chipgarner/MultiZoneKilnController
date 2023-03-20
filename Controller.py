@@ -12,8 +12,9 @@ log = logging.getLogger(__name__)
 
 
 class Controller:
-    def __init__(self, file: str, notifier):
-        self.notifier = notifier
+    def __init__(self, file: str, broker):
+        self.broker = broker
+        self.broker.set_controller_functions(self.start_firing)
         self.profile = Profile(file)
         zone = SimZone()
         self.loop_delay = 10
@@ -30,6 +31,12 @@ class Controller:
         self.kiln_zones = KilnZones(self.zones)
 
         log.info('Controller initialized.')
+
+        self.state = "IDLE" #  IDLE or FIRING for now
+
+    def start_firing(self):
+        self.state = 'FIRING'
+        log.debug('Controller start firing.')
 
     def control_loop(self):
         self.start_time_ms = time.time() * 1000
@@ -53,8 +60,10 @@ class Controller:
             target = self.profile.get_target_temperature((best_time - self.start_time_ms) / 1000)
 
             temp_error = best_temp - target
-            heats = self.__update_zones_heat(t_t_h_z, temp_error)
-            self.kiln_zones.set_heat_for_zones(heats)
+
+            if self.state == 'FIRING':
+                heats = self.__update_zones_heat(t_t_h_z, temp_error)
+                self.kiln_zones.set_heat_for_zones(heats)
 
             best_t_t_h = {'Zone 1': [{'time_ms': best_time, 'temperature': best_temp, 'heat_factor': t_t_h_z['Zone 1'][0]['heat_factor']}]}
             self.__notify(best_t_t_h)
@@ -82,8 +91,8 @@ class Controller:
         return heats
 
     def __notify(self, t_t_h: dict):
-        self.notifier.update(t_t_h)
-
+        self.broker.update(t_t_h)
+        # self.notifier.update(t_t_h)
 
 class notifier:
     def update(self, message):

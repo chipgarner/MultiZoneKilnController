@@ -34,15 +34,15 @@ def server():
     #     return bottle.static_file(filename, root=root)
 
     # Open a persistent websocket to UI
-    @bottle_app.route('/controller')
-    def controller():
-        log.debug(str(bottle.request.environ))
-        wsock = get_websocket_from_request()
-        if not wsock:
-            return 'Expecting a websocket request'
-        message = wsock.receive()
-        broker.update(message)
-        log.debug(message)
+    # @bottle_app.route('/controller')
+    # def controller():
+    #     log.debug(str(bottle.request.environ))
+    #     wsock = get_websocket_from_request()
+    #     if not wsock:
+    #         return 'Expecting a websocket request'
+    #     message = wsock.receive()
+    #     broker.update(message)
+    #     log.debug(message)
 
     # Open a persistent websocket to UI
     @bottle_app.route('/status')
@@ -60,13 +60,15 @@ def server():
                 break
         log.info("websocket (status) closed")
 
+    @bottle_app.post('/start')
+    def handle_firing_start():
+        broker.controller_start_firing()
 
     @bottle_app.error(404)
     def error404(error):
         return 'You have fallen completely off the edge of the internet. Sorry' + str(error)
 
-    # Static Routes
-
+    ### Static Routes, so front end can find the files
     base_path = os.path.abspath(os.path.dirname(__file__))
     build_path = os.path.join(base_path, 'UI', 'build')
 
@@ -82,15 +84,10 @@ def server():
     def img(filepath):
         return bottle.static_file(filepath, root=os.path.join(build_path))
 
-    # @bottle_app.get("/favicon.ico")
-    # def img():
-    #     return bottle.static_file("favicon.ico", root=os.path.join(build_path))
-
     @bottle_app.get("/static/js/<filepath:re:.*\.js>")
     def js(filepath):
         return bottle.static_file(filepath, root=os.path.join(build_path, "static/js"))
-
-
+    ### Static route
 
     ip = "0.0.0.0"
     port = 8081

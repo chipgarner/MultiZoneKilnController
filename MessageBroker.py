@@ -15,6 +15,8 @@ class MessageBroker:
         self.observers = []
         self.db = DbInsertSelect.DbInsertSelect()
 
+        self.controller_start_firing = None
+
         # TODO
         self.last_profile = {'name': 'fast',
                              'segments': [{'time': 0, 'temperature': 100}, {'time': 3600, 'temperature': 100},
@@ -23,6 +25,13 @@ class MessageBroker:
         self.last_profile = self.profile_to_ms(self.last_profile)
         self.prof_sent = False
         self.count = 0
+
+    # Callback functions for access to Controller.p
+    def set_controller_functions(self, start_firing):
+        self.controller_start_firing = start_firing
+
+    def start_firing(self):
+        self.controller_start_firing()
 
     def profile_to_ms(self, profile):
         now = time.time()
@@ -44,9 +53,9 @@ class MessageBroker:
         except:
             log.error("Could not send profile to front end")
 
-    def update(self, times_temps_heats_for_zones: str):
+    def update(self, times_temps_heats_for_zones: dict):
         # self.update_thingsboard(times_temps_heats_for_zones) SIMULATOR SPEEDUP to 1 !!!= TODO fix mqtt
-        tthz = json.loads(times_temps_heats_for_zones)
+        tthz = times_temps_heats_for_zones
         log.debug('Updating: ' + str(tthz))
 
         # self.db.send_time_stamped_message(tthz)
