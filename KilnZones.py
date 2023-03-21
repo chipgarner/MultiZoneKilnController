@@ -26,6 +26,10 @@ class KilnZones:
             next_zone += 1
         return tts_for_zones
 
+    def all_heat_off(self):
+        for zone in self.zones:
+            zone.set_heat(0)
+
     def set_heat_for_zones(self, heat_for_zones: list):
         for i, zone in enumerate(self.zones):
             zone.set_heat(heat_for_zones[i])

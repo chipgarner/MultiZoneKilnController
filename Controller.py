@@ -14,7 +14,7 @@ log = logging.getLogger(__name__)
 class Controller:
     def __init__(self, file: str, broker):
         self.broker = broker
-        self.broker.set_controller_functions(self.start_firing)
+        self.broker.set_controller_functions(self.start_firing, self.stop_firing)
         self.profile = Profile(file)
         zone = SimZone()
         self.loop_delay = 10
@@ -36,7 +36,10 @@ class Controller:
 
     def start_firing(self):
         self.state = 'FIRING'
-        log.debug('Controller start firing.')
+        log.debug('Start firing.')
+    def stop_firing(self):
+        self.state = 'IDLE'
+        log.debug('Stop firing.')
 
     def control_loop(self):
         self.start_time_ms = time.time() * 1000
@@ -64,9 +67,11 @@ class Controller:
             if self.state == 'FIRING':
                 heats = self.__update_zones_heat(t_t_h_z, temp_error)
                 self.kiln_zones.set_heat_for_zones(heats)
+            else:
+                self.kiln_zones.all_heat_off()
 
             best_t_t_h = {'Zone 1': [{'time_ms': best_time, 'temperature': best_temp, 'heat_factor': t_t_h_z['Zone 1'][0]['heat_factor']}]}
-            self.__notify(best_t_t_h)
+            self.__notify(t_t_h_z)
             time.sleep(self.loop_delay)
 
     def __zero_heat_zones(self):
