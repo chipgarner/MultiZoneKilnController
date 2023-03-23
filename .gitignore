@@ -15,4 +15,4 @@ Database/sqlite/venv/*
 *.db
 Notifiers/MQTT/Secrets.py
 *.svg
-*UI/*
+
