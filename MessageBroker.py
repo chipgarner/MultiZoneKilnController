@@ -59,14 +59,26 @@ class MessageBroker:
         except Exception as ex:
             log.error("Could not send profile to front end: " + str(ex))
 
-    def update(self, times_temps_heats_for_zones: dict):
+    def update(self, state: str, times_temps_heats_for_zones_smoothed: dict, t_t_h_z_all: dict, targets: dict):
         # self.update_thingsboard(times_temps_heats_for_zones) SIMULATOR SPEEDUP to 1 !!!= TODO fix mqtt
-        tthz = times_temps_heats_for_zones
+        # self.db.send_time_stamped_message(tthz) TODO
+
+        status = {
+            'state': state,
+            't_t_h_z_smoothed': times_temps_heats_for_zones_smoothed,
+            't_t_h_z_all': t_t_h_z_all,
+            'targets': targets
+        }
+        message = json.dumps(status)
+
+        tthz = t_t_h_z_all
         log.debug('Updating: ' + str(tthz))
 
-        # self.db.send_time_stamped_message(tthz)
 
-        message = json.dumps([tthz['Zone 1']])
+
+        log.debug('Sending websocket length: ' + str(len(message)))
+        log.debug('Sending websocket: ' + str(message))
+
         for observer in self.observers:
             try:
                 observer.send(message)

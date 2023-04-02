@@ -14,26 +14,21 @@ log: Logger = logging.getLogger(__name__)
 
 
 class Controller:
-    def __init__(self, file: str, broker):
+    def __init__(self, file: str, broker, zones, loop_delay):
         self.broker = broker
         self.broker.set_controller_functions(self.start_firing, self.stop_firing)
         self.profile = Profile(file)
-        zone1 = SimZone('Zone 1')
-        zone2 = SimZone('Zone 2')
-        zone3 = SimZone('Zone 3')
-        self.loop_delay = 10
+        self.loop_delay = loop_delay
 
+        self.zones = zones
         self.data_filter = DataFilter
         self.start_time_ms = None
 
-        if zone1.sim_speedup is not None:
-            self.loop_delay = self.loop_delay / zone1.sim_speedup
-            log.info('Sim speed up factor is ' + str(zone1.sim_speedup))
+        self.kiln_zones = KilnZones(zones)
 
-        self.zones = [zone1, zone2, zone3]
-        self.kiln_zones = KilnZones(self.zones)
-
-        self.long_t_t_h_z = {zone1.name: [], zone2.name: [], zone3.name: []}
+        self.long_t_t_h_z = {}
+        for zone in zones:
+            self.long_t_t_h_z.update({zone.name: []})
 
         log.info('Controller initialized.')
 
@@ -58,21 +53,21 @@ class Controller:
         t_t_h_z = self.kiln_zones.get_times_temps_heat_for_zones()
         best_time_temp_for_zones = self.smooth_temperatures(t_t_h_z)
 
+        targets = {}
         if self.state == 'FIRING':
             heats = []
             for zone in t_t_h_z:
-                target = self.profile.get_target_temperature((best_time_temp_for_zones[zone]['time_ms'] - self.start_time_ms) / 1000)
-                temp_error = best_time_temp_for_zones[zone]['temperature'] - target
+                target = self.profile.get_target_temperature((best_time_temp_for_zones[zone][0]['time_ms'] - self.start_time_ms) / 1000)
+                temp_error = best_time_temp_for_zones[zone][0]['temperature'] - target
+                targets.update({zone: target})
 
-                heat = self.__update_heat(best_time_temp_for_zones[zone]['heat_factor'], temp_error)
+                heat = self.__update_heat(best_time_temp_for_zones[zone][0]['heat_factor'], temp_error)
                 heats.append(heat)
             self.kiln_zones.set_heat_for_zones(heats)
         else:
             self.kiln_zones.all_heat_off()
 
-        # best_t_t_h = {'Zone 1': [
-        #     {'time_ms': best_time_temp_for_zones[0][0], 'temperature': best_time_temp_for_zones[0][1], 'heat_factor': t_t_h_z['Zone 1'][0]['heat_factor']}]}
-        self.__notify(best_time_temp_for_zones)
+        self.broker.update(self.state, best_time_temp_for_zones, t_t_h_z, targets)
 
     def smooth_temperatures(self, t_t_h_z):
         filter_result = {}
@@ -94,7 +89,7 @@ class Controller:
                 log.warning('median_result: ' + str(median_result) + ' ' + str(t_t_h_z[zone]))
                 best_temp = 0
             best_time = round((t_t_h_z[zone][-1]['time_ms'] + t_t_h_z[zone][-1]['time_ms']) / 2)
-            best_time_zemp_zone[zone] = {'time_ms': best_time, 'temperature': best_temp, 'heat_factor': t_t_h_z[zone][0]['heat_factor']}
+            best_time_zemp_zone[zone] = [{'time_ms': best_time, 'temperature': best_temp, 'heat_factor': t_t_h_z[zone][0]['heat_factor']}]
 
         return best_time_zemp_zone
 
@@ -116,8 +111,6 @@ class Controller:
 
         return heat
 
-    def __notify(self, t_t_h: dict):
-        self.broker.update(t_t_h)
 
 class notifier:
     def update(self, message):
