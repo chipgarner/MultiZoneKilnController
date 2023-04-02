@@ -22,7 +22,7 @@ class KilnZones:
         tts_for_zones = {}
         next_zone = 1
         for zone in self.zones:
-            tts_for_zones.update({'Zone ' + str(next_zone): zone.get_times_temps_heat()})
+            tts_for_zones.update({zone.name: zone.get_times_temps_heat()})
             next_zone += 1
         return tts_for_zones
 
@@ -41,7 +41,8 @@ class KilnZones:
 
 
 class SimZone:
-    def __init__(self):
+    def __init__(self, name):
+        self.name = name
         self.heat_factor = 0
         self.times_temps_heat = []
         self.tth_length = 20 # How many times_temps_heat are saved

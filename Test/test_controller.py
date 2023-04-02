@@ -2,18 +2,41 @@ from Controller import Controller
 import Profile
 import KilnZones
 
-class FakeNotifier:
+class FakeBroker:
+    def __init__(self):
+        self.update_calls = 0
+        self.start = None
+        self.stop = None
+
     def update(self, times_temps_heats_for_zones: list):
-        pass
+        self.update_calls += 1
+    def set_controller_functions(self, start_firing, stop_firing):
+        self.start = start_firing
+        self.stop = stop_firing
 
 def test_loads_profile():
-    controller = Controller("test-fast.json", FakeNotifier())
+    controller = Controller("test-fast.json", FakeBroker())
 
     assert type(controller.profile) == Profile.Profile
     assert len(controller.profile.data) == 6
 
 
 def test_init_zones():
-    controller = Controller("test-fast.json", FakeNotifier())
+    controller = Controller("test-fast.json", FakeBroker())
 
     assert type(controller.kiln_zones) == KilnZones.KilnZones
+    assert controller.state == 'IDLE'
+
+    for zone in controller.zones:
+        assert zone.heat_factor == 0
+
+
+def test_loop_calls():
+    broker = FakeBroker()
+    controller = Controller("test-fast.json", broker)
+
+    controller.loop_calls()
+
+    assert broker.update_calls == 1
+    assert broker.start is not None
+    assert broker.stop is not None

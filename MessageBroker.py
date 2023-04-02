@@ -66,7 +66,7 @@ class MessageBroker:
 
         # self.db.send_time_stamped_message(tthz)
 
-        message = json.dumps(tthz['Zone 1'])
+        message = json.dumps([tthz['Zone 1']])
         for observer in self.observers:
             try:
                 observer.send(message)

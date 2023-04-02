@@ -35,7 +35,7 @@ class KilnSimulator:
         # Heat is lost by conduction and convection to the environement.Heat loss is proportional to T - T environement.
         # This is split between the usually higher t_elements and t_kiln. Heat is transferred from the elements (plus
         # surronding bricks) to the kiln by radiation. Radiation works much better at higher temperatures
-        # (temperature to the 4th power), which is why things eve out at higher temperatures. Finally, the
+        # (temperature to the 4th power), which is why things even out at higher temperatures. Finally, the
         # thermocouples will be at some temperature between t-elements and t_kiln. This is not inculded here as it
         # gives a longer time delay, which is worse for control design.
 
