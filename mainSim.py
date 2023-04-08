@@ -15,9 +15,9 @@ log = logging.getLogger("Controller")
 server_thread = Thread(target=Server.server, name="server", daemon=True)
 server_thread.start()
 
-zone1 = SimZone('Zone1')
-zone2 = SimZone('Zone 2')
-zone3 = SimZone('Zone 3')
+zone1 = SimZone('Zone 1')
+zone2 = SimZone('Zone2')
+zone3 = SimZone('Zone3')
 zones = [zone1, zone2, zone3]
 
 loop_delay = 30

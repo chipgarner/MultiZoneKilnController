@@ -50,28 +50,30 @@ class Controller:
             time.sleep(self.loop_delay)
 
     def loop_calls(self):
+        # This has all the time temperature data
         t_t_h_z = self.kiln_zones.get_times_temps_heat_for_zones()
-        best_time_temp_for_zones = self.smooth_temperatures(t_t_h_z)
+        # {'Zone 1': {'time_ms': time_ms, 'temperature': temp, 'heat_factor': self.heat_factor}}
+        zones_status = self.smooth_temperatures(t_t_h_z)
 
         targets = {}
         if self.state == 'FIRING':
             heats = []
             for zone in t_t_h_z:
-                target = self.profile.get_target_temperature((best_time_temp_for_zones[zone][0]['time_ms'] - self.start_time_ms) / 1000)
-                temp_error = best_time_temp_for_zones[zone][0]['temperature'] - target
+                target = self.profile.get_target_temperature((zones_status[zone]['time_ms'] - self.start_time_ms) / 1000)
+                temp_error = zones_status[zone]['temperature'] - target
                 targets.update({zone: target})
 
-                heat = self.__update_heat(best_time_temp_for_zones[zone][0]['heat_factor'], temp_error)
+                heat = self.__update_heat(zones_status[zone]['heat_factor'], temp_error)
                 heats.append(heat)
             self.kiln_zones.set_heat_for_zones(heats)
         else:
             self.kiln_zones.all_heat_off()
 
-        self.broker.update(self.state, best_time_temp_for_zones, t_t_h_z, targets)
+        self.broker.update(self.state, zones_status, t_t_h_z, targets)
 
     def smooth_temperatures(self, t_t_h_z):
         filter_result = {}
-        best_time_zemp_zone = {}
+        zones_status = {}
         for zone in t_t_h_z:
             self.long_t_t_h_z[zone] = self.long_t_t_h_z[zone] + t_t_h_z[zone]
             if len(self.long_t_t_h_z[zone]) > 100:
@@ -80,18 +82,27 @@ class Controller:
             filter_result[zone] = self.data_filter.linear(self.long_t_t_h_z[zone])
             log.debug(filter_result[zone])
             if filter_result[zone] is not None:
-                log.info(str(filter_result[zone]['slope'] * 3.6e6) + ' Degrees per hour.')
+                slope = filter_result[zone]['slope'] * 3.6e6
+                log.info(str(slope) + ' Degrees per hour.')
+            else: slope = 0
 
             median_result = self.data_filter.median(t_t_h_z[zone])
             if median_result is not None:
                 best_temp = median_result['median']
+                pstdev = median_result['p_stand_dev']
             else:
                 log.warning('median_result: ' + str(median_result) + ' ' + str(t_t_h_z[zone]))
-                best_temp = 0
-            best_time = round((t_t_h_z[zone][-1]['time_ms'] + t_t_h_z[zone][-1]['time_ms']) / 2)
-            best_time_zemp_zone[zone] = [{'time_ms': best_time, 'temperature': best_temp, 'heat_factor': t_t_h_z[zone][0]['heat_factor']}]
+                best_temp = t_t_h_z[zone][-1]['temperature']
+                pstdev = 0
+            best_time = round((t_t_h_z[zone][0]['time_ms'] + t_t_h_z[zone][-1]['time_ms']) / 2)
+            zones_status[zone] = {'time_ms': best_time,
+                                         'temperature': best_temp,
+                                         'heat_factor': t_t_h_z[zone][0]['heat_factor'],
+                                         'slope': slope,
+                                         'pstdev': pstdev}
 
-        return best_time_zemp_zone
+        return zones_status
+
 
 
     def __zero_heat_zones(self):
