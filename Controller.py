@@ -55,25 +55,26 @@ class Controller:
         # {'Zone 1': {'time_ms': time_ms, 'temperature': temp, 'heat_factor': self.heat_factor}}
         zones_status = self.smooth_temperatures(t_t_h_z)
 
-        targets = {}
         if self.state == 'FIRING':
             heats = []
-            for zone in t_t_h_z:
-                target = self.profile.get_target_temperature((zones_status[zone]['time_ms'] - self.start_time_ms) / 1000)
-                temp_error = zones_status[zone]['temperature'] - target
-                targets.update({zone: target})
+            for index, zone in enumerate(t_t_h_z):
+                target = self.profile.get_target_temperature((zones_status[0]['time_ms'] - self.start_time_ms) / 1000)
+                temp_error = zones_status[0]['temperature'] - target
+                zones_status[index]["target"] = target
 
-                heat = self.__update_heat(zones_status[zone]['heat_factor'], temp_error)
+                heat = self.__update_heat(zones_status[index]['heat_factor'], temp_error)
                 heats.append(heat)
             self.kiln_zones.set_heat_for_zones(heats)
         else:
             self.kiln_zones.all_heat_off()
+            for index, zone in enumerate(zones_status):
+                zones_status[index]["target"] = 0
 
-        self.broker.update(self.state, zones_status, t_t_h_z, targets)
+        self.broker.update(self.state, zones_status, t_t_h_z)
 
     def smooth_temperatures(self, t_t_h_z):
         filter_result = {}
-        zones_status = {}
+        zones_status = []
         for zone in t_t_h_z:
             self.long_t_t_h_z[zone] = self.long_t_t_h_z[zone] + t_t_h_z[zone]
             if len(self.long_t_t_h_z[zone]) > 100:
@@ -95,11 +96,11 @@ class Controller:
                 best_temp = t_t_h_z[zone][-1]['temperature']
                 pstdev = 0
             best_time = round((t_t_h_z[zone][0]['time_ms'] + t_t_h_z[zone][-1]['time_ms']) / 2)
-            zones_status[zone] = {'time_ms': best_time,
+            zones_status.append({'time_ms': best_time,
                                          'temperature': best_temp,
                                          'heat_factor': t_t_h_z[zone][0]['heat_factor'],
                                          'slope': slope,
-                                         'pstdev': pstdev}
+                                         'pstdev': pstdev})
 
         return zones_status
 
