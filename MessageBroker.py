@@ -59,14 +59,14 @@ class MessageBroker:
         except Exception as ex:
             log.error("Could not send profile to front end: " + str(ex))
 
-    def update(self, state: str, zones_status_array: list, t_t_h_z_all: dict):
+    def update(self, state: str, zones_status_array: list, tthz: list):
         # self.update_thingsboard(times_temps_heats_for_zones) SIMULATOR SPEEDUP to 1 !!!= TODO fix mqtt
         # self.db.send_time_stamped_message(tthz) TODO
 
         status = {
             'state': state,
             'zones_status_array': zones_status_array,
-            't_t_h_z_all': t_t_h_z_all,
+            'tthz' : tthz,
         }
         message = json.dumps(status)
 

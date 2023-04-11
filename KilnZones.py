@@ -18,12 +18,16 @@ class KilnZones:
         thread.start()
         log.info('KilnZones running using ' + str(len(zones)) + ' zones.')
 
-    def get_times_temps_heat_for_zones(self) -> dict:
-        tts_for_zones = {}
-        next_zone = 1
+    # def get_times_temps_heat_for_zones(self) -> dict:
+    #     tts_for_zones = {}
+    #     for zone in self.zones:
+    #         tts_for_zones.update({zone.name: zone.get_times_temps_heat()})
+    #     return tts_for_zones
+
+    def get_times_temps_heating_for_zones(self) -> list:
+        tts_for_zones = []
         for zone in self.zones:
-            tts_for_zones.update({zone.name: zone.get_times_temps_heat()})
-            next_zone += 1
+            tts_for_zones.append(zone.get_times_temps_heat())
         return tts_for_zones
 
     def all_heat_off(self):
