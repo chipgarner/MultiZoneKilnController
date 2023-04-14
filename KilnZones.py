@@ -49,7 +49,6 @@ class SimZone:
         self.name = name
         self.heat_factor = 0
         self.times_temps_heat = []
-        self.tth_length = 20 # How many times_temps_heat are saved
         self.kiln_sim = KilnSimulator()
         self.sim_speedup = self.kiln_sim.sim_speedup
         self.start = time.time()

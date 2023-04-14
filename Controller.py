@@ -58,8 +58,8 @@ class Controller:
         if self.state == 'FIRING':
             heats = []
             for index, zone in enumerate(tthz):
-                target = self.profile.get_target_temperature((zones_status[0]['time_ms'] - self.start_time_ms) / 1000)
-                temp_error = zones_status[0]['temperature'] - target
+                target = self.profile.get_target_temperature((zones_status[index]['time_ms'] - self.start_time_ms) / 1000)
+                temp_error = zones_status[index]['temperature'] - target
                 zones_status[index]["target"] = target
 
                 heat = self.__update_heat(zones_status[index]['heat_factor'], temp_error)
