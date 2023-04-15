@@ -23,7 +23,7 @@ class Controller:
         self.data_filter = DataFilter
         self.start_time_ms = None
 
-        self.kiln_zones = KilnZones(zones)
+        self.kiln_zones = KilnZones(zones, broker)
 
         self.long_t_t_h_z = []
         for index, zone in enumerate(zones):
@@ -70,7 +70,7 @@ class Controller:
             for index, zone in enumerate(zones_status):
                 zones_status[index]["target"] = 0
 
-        self.broker.update(self.state, zones_status, tthz)
+        self.broker.update_status(self.state, zones_status, tthz)
 
     def smooth_temperatures(self, t_t_h_z: list) -> list:
         filter_result = []

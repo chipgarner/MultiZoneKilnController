@@ -2,7 +2,7 @@ import time
 
 import Controller
 import Server
-from KilnZones import KilnZones, SimZone
+from KilnZones import SimZone
 import logging
 from threading import Thread
 
@@ -18,11 +18,14 @@ server_thread.start()
 zone1 = SimZone('Zone 1')
 zone2 = SimZone('Zone2')
 zone3 = SimZone('Zone3')
+zone4 = SimZone('Zone3')
 zone1.kiln_sim.power = zone1.kiln_sim.power + 600
 zone3.kiln_sim.power = zone3.kiln_sim.power - 600
+zone4.kiln_sim.power = zone4.kiln_sim.power + 600
 zone1.kiln_sim.heat_loss = zone1.kiln_sim.heat_loss + 3
 zone3.kiln_sim.heat_loss = zone3.kiln_sim.heat_loss - 3
-zones = [zone1, zone2, zone3]
+zone3.kiln_sim.heat_loss = zone4.kiln_sim.heat_loss - 3
+zones = [zone1, zone2, zone3, zone4]
 
 loop_delay = 30
 if zone1.sim_speedup is not None:

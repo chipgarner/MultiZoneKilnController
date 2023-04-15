@@ -11,8 +11,9 @@ def median(t_t_h: list) -> dict:
 
     median = statistics.median(y_list)
     pstdev = statistics.pstdev(y_list)
+    mean = statistics.mean(y_list)
 
-    return {'median': median, 'p_stand_dev': pstdev}
+    return {'mean': mean, 'median': median, 'p_stand_dev': pstdev}
 
 
 def linear(t_t_h: list) -> dict:

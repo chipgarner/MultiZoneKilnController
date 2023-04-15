@@ -59,7 +59,7 @@ class MessageBroker:
         except Exception as ex:
             log.error("Could not send profile to front end: " + str(ex))
 
-    def update(self, state: str, zones_status_array: list, tthz: list):
+    def update_status(self, state: str, zones_status_array: list, tthz: list):
         # self.update_thingsboard(times_temps_heats_for_zones) SIMULATOR SPEEDUP to 1 !!!= TODO fix mqtt
         # self.db.send_time_stamped_message(tthz) TODO
 
@@ -73,9 +73,18 @@ class MessageBroker:
         log.debug('Sending websocket length: ' + str(len(message)))
         log.debug('Sending websocket: ' + str(message))
 
+        self.send_socket(message)
+
+
+    def send_socket(self, message):
         for observer in self.observers:
             try:
                 observer.send(message)
             except WebSocketError:
                 self.observers.remove(observer)
                 log.info('Observer deleted, socket error.')
+
+    def update_tc_data(self, tc_data: list):
+        thermocouple_data = { 'thermocouple_data': tc_data}
+        message = json.dumps(thermocouple_data)
+        self.send_socket(message)

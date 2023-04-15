@@ -12,8 +12,9 @@ log = logging.getLogger(__name__)
 
 
 class KilnZones:
-    def __init__(self, zones: list):
+    def __init__(self, zones: list, broker):
         self.zones = zones
+        self.broker = broker
         thread = threading.Thread(target=self.__sensors_loop, name='KilnZones', daemon=True)
         thread.start()
         log.info('KilnZones running using ' + str(len(zones)) + ' zones.')
@@ -40,8 +41,11 @@ class KilnZones:
 
     def __sensors_loop(self):
         while True:
+            thermocouple_data = []
             for zone in self.zones:
-                zone.update_time_temperature()
+                thermocouple_data.append(zone.update_time_temperature())
+            self.broker.update_tc_data(thermocouple_data)
+
 
 
 class SimZone:
@@ -64,14 +68,16 @@ class SimZone:
             raise ValueError
         self.heat_factor = heat_factor
 
-    def update_time_temperature(self):
+    def update_time_temperature(self) -> dict:
         self.__update_sim()
         temp = self.__get_temperature()
         time_sim = (time.time() - self.start) * self.sim_speedup + self.start
         time_ms = round(time_sim * 1000)  # Thingsboard and SQLite require timestamps in milliseconds
-        self.times_temps_heat.append({'time_ms': time_ms, 'temperature': temp, 'heat_factor': self.heat_factor})
+        thermocouple_data = {'time_ms': time_ms, 'temperature': temp, 'heat_factor': self.heat_factor}
+        self.times_temps_heat.append(thermocouple_data)
 
         time.sleep(1 / self.sim_speedup) # Real sensors take time to read
+        return thermocouple_data
 
     def __update_sim(self):
         self.kiln_sim.update_sim(self.heat_factor)
