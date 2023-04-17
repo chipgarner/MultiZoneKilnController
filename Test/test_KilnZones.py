@@ -8,7 +8,7 @@ from test_controller import FakeBroker
 
 
 def test_init_heating():
-    zone1 = KilnZones.SimZone('Zone 1')
+    zone1 = KilnZones.Zone('Zone 1')
 
     zone1.set_heat(0.1)
 
@@ -21,7 +21,7 @@ def test_init_heating():
 
 
 def test_starts_time_temps_thread():
-    zone1 = KilnZones.SimZone('Zone 1')
+    zone1 = KilnZones.Zone('Zone 1')
     KilnZones.KilnZones([zone1], FakeBroker())
 
     found = False
@@ -33,7 +33,7 @@ def test_starts_time_temps_thread():
 
 
 def test_updates_times_temperatures():
-    zone1 = KilnZones.SimZone('Zone 1')
+    zone1 = KilnZones.Zone('Zone 1')
     zone1.set_heat(0.7)
     KilnZones.KilnZones([zone1], FakeBroker())
 
@@ -50,7 +50,7 @@ def test_updates_times_temperatures():
 
 
 def test_bad_heat_factor_throws():
-    zone1 = KilnZones.SimZone('Zone 1')
+    zone1 = KilnZones.Zone('Zone 1')
 
     with pytest.raises(ValueError):
         zone1.set_heat(1.09)
