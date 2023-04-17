@@ -62,4 +62,4 @@ if __name__ == '__main__':
         sim.update_sim(0.6)
         temp = sim.get_latest_temperature()
         print(temp)
-        time.sleep(1)
+        time.sleep(0.7)

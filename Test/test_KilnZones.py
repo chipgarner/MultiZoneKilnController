@@ -4,6 +4,7 @@ import pytest
 
 import KilnZones
 import threading
+from test_controller import FakeBroker
 
 
 def test_init_heating():
@@ -13,7 +14,7 @@ def test_init_heating():
 
     assert zone1.heat_factor == 0.1
 
-    zones = KilnZones.KilnZones([zone1])
+    zones = KilnZones.KilnZones([zone1], FakeBroker())
     zones.set_heat_for_zones([0.2])
 
     assert zones.zones[0].heat_factor == 0.2
@@ -21,7 +22,7 @@ def test_init_heating():
 
 def test_starts_time_temps_thread():
     zone1 = KilnZones.SimZone('Zone 1')
-    KilnZones.KilnZones([zone1])
+    KilnZones.KilnZones([zone1], FakeBroker())
 
     found = False
     for thread in threading.enumerate():
@@ -34,7 +35,7 @@ def test_starts_time_temps_thread():
 def test_updates_times_temperatures():
     zone1 = KilnZones.SimZone('Zone 1')
     zone1.set_heat(0.7)
-    KilnZones.KilnZones([zone1])
+    KilnZones.KilnZones([zone1], FakeBroker())
 
     t_t_h = zone1.get_times_temps_heat()
 

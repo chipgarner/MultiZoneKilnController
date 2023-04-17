@@ -1,4 +1,5 @@
 import Profile
+import pytest
 
 test_profile = {"data": [[0, 100], [3600, 100], [10800, 1000], [14400, 1150], [16400, 1150], [19400, 700]], "type": "profile", "name": "fast"}
 
@@ -74,3 +75,19 @@ def test_convert_old_profile():
     assert type(new_profile['segments']) is list
     assert new_profile['segments'][0] == {'time': 0, 'temperature': 100}
     assert new_profile['segments'][5] == {'time': 19400, 'temperature': 700}
+
+def test_get_target_slope():
+    profile = Profile.Profile("test-fast.json")
+
+    t_slope = profile.get_target_slope(3000)
+    assert t_slope == 0
+
+    t_slope = profile.get_target_slope(3599)
+    assert t_slope == 0
+
+    t_slope = profile.get_target_slope(3600)
+    assert t_slope == 900.0
+
+
+    t_slope = profile.get_target_slope(18000)
+    assert t_slope == pytest.approx(-1860.0)

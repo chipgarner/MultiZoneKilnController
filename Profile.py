@@ -79,3 +79,14 @@ class Profile:
         incl = float(next_point[1] - prev_point[1]) / float(next_point[0] - prev_point[0])
         temp = prev_point[1] + (time - prev_point[0]) * incl
         return temp
+
+    def get_target_slope(self, time_seconds: float) -> float:
+        if time_seconds > self.get_duration():
+            return 0
+
+        (prev_point, next_point) = self.get_surrounding_points(time_seconds)
+
+        slope = (next_point[1] - prev_point[1]) / (next_point[0] - prev_point[0])
+        slope = slope * 3600 # C/hr
+
+        return slope

@@ -56,6 +56,7 @@ class SimZone:
         self.kiln_sim = KilnSimulator()
         self.sim_speedup = self.kiln_sim.sim_speedup
         self.start = time.time()
+        self.latest_temp = 0
 
     def get_times_temps_heat(self) -> list:
         t_t_h = self.times_temps_heat
@@ -70,10 +71,10 @@ class SimZone:
 
     def update_time_temperature(self) -> dict:
         self.__update_sim()
-        temp = self.__get_temperature()
+        temp, error = self.__get_temperature()
         time_sim = (time.time() - self.start) * self.sim_speedup + self.start
         time_ms = round(time_sim * 1000)  # Thingsboard and SQLite require timestamps in milliseconds
-        thermocouple_data = {'time_ms': time_ms, 'temperature': temp, 'heat_factor': self.heat_factor}
+        thermocouple_data = {'time_ms': time_ms, 'temperature': temp, 'heat_factor': self.heat_factor, 'error': error}
         self.times_temps_heat.append(thermocouple_data)
 
         time.sleep(1 / self.sim_speedup) # Real sensors take time to read
@@ -82,7 +83,15 @@ class SimZone:
     def __update_sim(self):
         self.kiln_sim.update_sim(self.heat_factor)
 
-    def __get_temperature(self) -> float: # From the thermocouple board
+    def __get_temperature(self) -> tuple: # From the thermocouple board
+        error = 0
         temperature = self.kiln_sim.get_latest_temperature()
         temperature += random.gauss(mu=0, sigma=0.65)
-        return temperature
+
+        # Record the error and use the latest good temperature
+        if random.choice([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]) == 1:
+            error = 1
+            temperature = self.latest_temp
+
+        self.latest_temp = temperature
+        return temperature, error
