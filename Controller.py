@@ -44,7 +44,6 @@ class Controller:
     def control_loop(self):
         self.start_time_ms = time.time() * 1000
         self.__zero_heat_zones()
-        # time.sleep(10)  # Let thermocouple loops  start up
         while True:
             self.loop_calls()
             time.sleep(self.loop_delay)
@@ -132,10 +131,20 @@ class Controller:
 
 class notifier:
     def update(self, message):
-        log.info(message)
+        print(message)
+
+    def set_controller_functions(self, start, stop):
+        print('Set_controller_fucntions called')
+
+    def update_status(self, status, tc_data ):
+        print("Update status called")
+
+    def update_tc_data(self, tc_data):
+        print("Update tc_data called")
 
 
 #  This is for testing
 if __name__ == '__main__':
-    controller = Controller("test-fast.json", notifier())
+    # zones = [zone1, zone2, zone3, zone4]
+    controller = Controller("test-fast.json", notifier(), [], 10)
     controller.control_loop()

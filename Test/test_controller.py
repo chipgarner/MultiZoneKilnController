@@ -1,7 +1,7 @@
 from Controller import Controller
 import Profile
 from KilnZones import KilnZones, Zone
-from KilnSimulator import SimZone
+from KilnElectronics import Sim
 
 
 class FakeBroker:
@@ -16,10 +16,10 @@ class FakeBroker:
         self.start = start_firing
         self.stop = stop_firing
 
-zone1 = Zone(SimZone())
-zone2 = Zone(SimZone())
-zone3 = Zone(SimZone())
-zone4 = Zone(SimZone())
+zone1 = Zone(Sim())
+zone2 = Zone(Sim())
+zone3 = Zone(Sim())
+zone4 = Zone(Sim())
 zones = [zone1, zone2, zone3, zone4]
 
 def test_loads_profile():

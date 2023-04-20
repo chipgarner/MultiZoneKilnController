@@ -54,37 +54,6 @@ class KilnSimulator:
         return temperature
 
 
-class SimZone:
-    def __init__(self):
-        # self.name = name
-        self.heat_factor = 0
-        self.kiln_sim = KilnSimulator()
-        self.sim_speedup = self.kiln_sim.sim_speedup
-        self.start = time.time()
-        self.latest_temp = 0
-
-    def set_heat(self, heat_factor: float):
-        self.heat_factor = heat_factor
-
-    def get_temperature(self) -> tuple: # From the thermocouple board
-        self.kiln_sim.update_sim(self.heat_factor)
-        error = 0
-        temperature = self.kiln_sim.get_latest_temperature()
-        temperature += random.gauss(mu=0, sigma=0.65)
-
-        # Record the error and use the latest good temperature
-        if random.choice([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]) == 1:
-            error = 1
-            temperature = self.latest_temp
-
-        self.latest_temp = temperature
-        time_sim = (time.time() - self.start) * self.sim_speedup + self.start
-        time_ms = round(time_sim * 1000)  # Thingsboard and SQLite require timestamps in milliseconds
-
-        time.sleep(0.7 / self.sim_speedup)  # Real sensors take time to read
-        return time_ms, temperature, error
-
-
 #  This is for testing
 if __name__ == '__main__':
     sim = KilnSimulator()

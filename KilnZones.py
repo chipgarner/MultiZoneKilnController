@@ -64,4 +64,3 @@ class Zone:
         self.times_temps_heat.append(thermocouple_data)
 
         return thermocouple_data
-    
