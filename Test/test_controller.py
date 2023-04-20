@@ -1,7 +1,7 @@
 from Controller import Controller
 import Profile
-import KilnZones
-import KilnSimulator
+from KilnZones import KilnZones, Zone
+from KilnSimulator import SimZone
 
 
 class FakeBroker:
@@ -16,10 +16,10 @@ class FakeBroker:
         self.start = start_firing
         self.stop = stop_firing
 
-zone1 = KilnSimulator.SimZone('Zone 1')
-zone2 = KilnSimulator.SimZone('Zone2')
-zone3 = KilnSimulator.SimZone('Zone3')
-zone4 = KilnSimulator.SimZone('Zone3')
+zone1 = Zone(SimZone())
+zone2 = Zone(SimZone())
+zone3 = Zone(SimZone())
+zone4 = Zone(SimZone())
 zones = [zone1, zone2, zone3, zone4]
 
 def test_loads_profile():
@@ -32,11 +32,11 @@ def test_loads_profile():
 def test_init_zones():
     controller = Controller("test-fast.json", FakeBroker(), zones, 10)
 
-    assert type(controller.kiln_zones) == KilnZones.KilnZones
+    assert type(controller.kiln_zones) == KilnZones
     assert controller.state == 'IDLE'
 
     for zone in controller.zones:
-        assert zone.heat_factor == 0
+        assert zone.kiln_elec.heat_factor == 0
 
 
 def test_loop_calls():
