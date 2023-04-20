@@ -79,7 +79,6 @@ class Max31856(KilnElectronics):
         self.sensor.averaging = 16
         self.sensor.noise_rejection = 60
 
-        self.heat_factor = 0  # TODO used to pass variable to broker? get_heat_factor() ?
 
     def set_heat(self, heat_factor: float):
         self.switches.set_heat(heat_factor)
@@ -112,7 +111,6 @@ class Max31855(KilnElectronics):
 
         self.last_temp = 0
 
-        self.heat_factor = 0  # TODO used to pass variable to broker? get_heat_factor() ?
 
     def set_heat(self, heat_factor: float):
         self.switches.set_heat(heat_factor)
@@ -125,6 +123,7 @@ class Max31855(KilnElectronics):
         error = False
         try:
             temp = self.sensor.temperature_NIST
+            print(temp)
             self.last_temp = temp
         except RuntimeError as ex:
             log.error('31855 read temperature crash: ' + str(ex))

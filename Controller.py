@@ -26,7 +26,7 @@ class Controller:
         self.kiln_zones = KilnZones(zones, broker)
 
         self.long_t_t_h_z = []
-        for index, zone in enumerate(zones):
+        for _ in zones:
             self.long_t_t_h_z.append([])
 
         log.info('Controller initialized.')
