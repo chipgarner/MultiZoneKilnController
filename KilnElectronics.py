@@ -11,6 +11,9 @@ import digitalio
 
 from KilnSimulator import KilnSimulator
 
+log_level = logging.DEBUG
+log_format = '%(asctime)s %(levelname)s %(name)s: %(message)s'
+logging.basicConfig(level=log_level, format=log_format)
 log = logging.getLogger(__name__)
 
 class KilnElectronics(ABC):
@@ -72,10 +75,10 @@ class Max31856(KilnElectronics):
     def __init__(self, switches):
         log.info( "Running on board: " + board.board_id)
         self.switches = switches
-        spi = busio.SPI(board.SCK, MOSI=board.MOSI, MISO=board.MISO)
-        cs1 = digitalio.DigitalInOut(board.D5)
+        self.spi = busio.SPI(board.SCK, MOSI=board.MOSI, MISO=board.MISO)
+        self.cs1 = digitalio.DigitalInOut(board.D5)
 
-        self.sensor = adafruit_max31856.MAX31856(spi, cs1)
+        self.sensor = adafruit_max31856.MAX31856(self.spi, self.cs1)
         self.sensor.averaging = 16
         self.sensor.noise_rejection = 60
 
@@ -104,10 +107,11 @@ class Max31855(KilnElectronics):
     def __init__(self, switches):
         log.info( "Running on board: " + board.board_id)
         self.switches = switches
-        spi = busio.SPI(board.SCK, MOSI=board.MOSI, MISO=board.MISO)
-        cs1 = digitalio.DigitalInOut(board.D6)
+        self.spi = busio.SPI(board.SCK, MOSI=board.MOSI, MISO=board.MISO)
+        print(MOSI=board.MOSI)
+        self.cs1 = digitalio.DigitalInOut(board.D6)
 
-        self.sensor = adafruit_max31855.MAX31855(spi, cs1)
+        self.sensor = adafruit_max31855.MAX31855(self.spi, self.cs1)
 
         self.last_temp = 0
 
