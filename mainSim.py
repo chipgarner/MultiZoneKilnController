@@ -3,7 +3,7 @@ import time
 import Controller
 import Server
 from KilnZones import Zone
-from KilnElectronics import Sim, Max31856, FakeSwitches
+from KilnElectronics import Sim
 import logging
 from threading import Thread
 
@@ -17,7 +17,7 @@ server_thread = Thread(target=Server.server, name="server", daemon=True)
 server_thread.start()
 
 zone1 = Zone(Sim())
-zone2 = Zone(Max31856(FakeSwitches()))
+zone2 = Zone(Sim())
 zone3 = Zone(Sim())
 zone4 = Zone(Sim())
 zone1.kiln_elec.kiln_sim.power = zone1.kiln_elec.kiln_sim.power + 600
