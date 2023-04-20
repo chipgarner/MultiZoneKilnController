@@ -66,8 +66,11 @@ class Max31856(KilnElectronics):
         self.sensor.averaging = 16
         self.sensor.noise_rejection = 60
 
+        self.heat_factor = 0
+
     def set_heat(self, heat_factor: float):
         self.switches.set_heat(heat_factor)
+        self.heat_factor = heat_factor
 
     def get_temperature(self) -> tuple:
         error = False
