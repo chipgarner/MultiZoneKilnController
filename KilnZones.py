@@ -60,7 +60,7 @@ class Zone:
 
     def update_time_temperature(self) -> dict:
         time_ms, temp, error = self.kiln_elec.get_temperature()
-        thermocouple_data = {'time_ms': time_ms, 'temperature': temp, 'heat_factor': self.kiln_elec.heat_factor, 'error': error}
+        thermocouple_data = {'time_ms': time_ms, 'temperature': temp, 'heat_factor': self.kiln_elec.get_heat_factor(), 'error': error}
         self.times_temps_heat.append(thermocouple_data)
 
         return thermocouple_data

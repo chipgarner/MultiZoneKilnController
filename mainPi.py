@@ -3,7 +3,7 @@ import time
 import Controller
 import Server
 from KilnZones import Zone
-from KilnElectronics import Sim, Max31856, FakeSwitches
+from KilnElectronics import Max31856, Max31855, FakeSwitches
 import logging
 from threading import Thread
 
@@ -16,7 +16,7 @@ log = logging.getLogger("Controller")
 server_thread = Thread(target=Server.server, name="server", daemon=True)
 server_thread.start()
 
-zone1 = Zone(Max31856(FakeSwitches()))
+zone1 = Zone(Max31855(FakeSwitches()))
 zones = [zone1]
 
 loop_delay = 10

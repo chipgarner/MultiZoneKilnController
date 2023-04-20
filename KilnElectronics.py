@@ -2,6 +2,8 @@ import random
 import time
 from abc import ABC, abstractmethod
 import logging
+
+import adafruit_max31855
 import adafruit_max31856
 import board
 import busio
@@ -18,6 +20,9 @@ class KilnElectronics(ABC):
         # E.g. on one second, off on second for a heat_factor of  0.5.
         pass
 
+    def get_heat_factor(self) -> float:
+        pass
+
     @abstractmethod
     def get_temperature(self) -> tuple:
         pass
@@ -32,6 +37,9 @@ class Sim(KilnElectronics):
 
     def set_heat(self, heat_factor: float):
         self.heat_factor = heat_factor
+
+    def get_heat_factor(self) -> float:
+        return self.heat_factor
 
     def get_temperature(self) -> tuple: # From the thermocouple board
         self.kiln_sim.update_sim(self.heat_factor)
@@ -52,8 +60,13 @@ class Sim(KilnElectronics):
         return time_ms, temperature, error
 
 class FakeSwitches:
+    def __init__(self):
+        self.heat_factor = 0
     def set_heat(self, heat_factor: float):
-        pass
+        self.heat_factor = heat_factor
+
+    def get_heat_factor(self) -> float:
+        return self.heat_factor
 
 class Max31856(KilnElectronics):
     def __init__(self, switches):
@@ -66,15 +79,19 @@ class Max31856(KilnElectronics):
         self.sensor.averaging = 16
         self.sensor.noise_rejection = 60
 
-        self.heat_factor = 0
+        self.heat_factor = 0  # TODO used to pass variable to broker? get_heat_factor() ?
 
     def set_heat(self, heat_factor: float):
         self.switches.set_heat(heat_factor)
         self.heat_factor = heat_factor
 
+    def get_heat_factor(self) -> float:
+        return self.switches.get_heat_factor()
+
     def get_temperature(self) -> tuple:
         error = False
         temp = self.sensor.temperature
+        log.debug("56 temperature: " + str(temp))
 
         for k, v in self.sensor.fault.items():
             if v:
@@ -83,3 +100,40 @@ class Max31856(KilnElectronics):
 
         time_ms = round(time.time() * 1000)
         return time_ms, temp, error
+
+class Max31855(KilnElectronics):
+    def __init__(self, switches):
+        log.info( "Running on board: " + board.board_id)
+        self.switches = switches
+        spi = busio.SPI(board.SCK, MOSI=board.MOSI, MISO=board.MISO)
+        cs1 = digitalio.DigitalInOut(board.D6)
+
+        self.sensor = adafruit_max31855.MAX31855(spi, cs1)
+
+        self.last_temp = 0
+
+        self.heat_factor = 0  # TODO used to pass variable to broker? get_heat_factor() ?
+
+    def set_heat(self, heat_factor: float):
+        self.switches.set_heat(heat_factor)
+        self.heat_factor = heat_factor
+
+    def get_heat_factor(self) -> float:
+        return self.switches.get_heat_factor()
+
+    def get_temperature(self) -> tuple:
+        error = False
+        try:
+            temp = self.sensor.temperature_NIST
+            last_t = temp
+        except RuntimeError as ex:
+            logging.error('Temp2 31855 crash: ' + str(ex))
+            temp = self.last_temp
+
+        self.last_temp = temp
+
+        time.sleep(1)
+
+        time_ms = round(time.time() * 1000)
+        return time_ms, temp, error
+
