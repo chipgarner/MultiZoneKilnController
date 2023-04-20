@@ -5,6 +5,7 @@ import logging
 
 import adafruit_max31855
 import adafruit_max31856
+import adafruit_bitbangio as bitbangio
 import board
 import busio
 import digitalio
@@ -107,7 +108,7 @@ class Max31855(KilnElectronics):
     def __init__(self, switches):
         log.info( "Running on board: " + board.board_id)
         self.switches = switches
-        self.spi = busio.SPI(board.D22, MOSI=board.D17, MISO=board.D27)
+        self.spi = bitbangio.SPI(board.D22, MOSI=board.D17, MISO=board.D27)
         print(board.MOSI)
         self.cs1 = digitalio.DigitalInOut(board.D6)
 
