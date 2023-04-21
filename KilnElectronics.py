@@ -128,11 +128,9 @@ class Max31855(KilnElectronics):
         error = False
         try:
             temp = self.sensor.temperature_NIST
-            print(temp)
             self.last_temp = temp
         except RuntimeError as ex:
             log.error('31855 read temperature crash: ' + str(ex))
-            print('31855 read temperature crash: ' + str(ex))
             temp = self.last_temp
             error = True
 

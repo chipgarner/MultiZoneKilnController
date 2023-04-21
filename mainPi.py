@@ -17,7 +17,8 @@ server_thread = Thread(target=Server.server, name="server", daemon=True)
 server_thread.start()
 
 zone1 = Zone(Max31855(FakeSwitches()))
-zones = [zone1]
+zone2 = Zone(Max31856(FakeSwitches()))
+zones = [zone1, zone2]
 
 loop_delay = 10
 
