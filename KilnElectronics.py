@@ -76,7 +76,7 @@ class Max31856(KilnElectronics):
     def __init__(self, switches):
         log.info( "Running on board: " + board.board_id)
         self.switches = switches
-        self.spi = busio.SPI(board.SCK, MOSI=board.MOSI, MISO=board.MISO)
+        self.spi = busio.SPI(board.SCK, MOSI=board.MOSI, MISO=board.MISO)  # MOSI to SDI, Miso to SDO
         self.cs1 = digitalio.DigitalInOut(board.D5)
 
         self.sensor = adafruit_max31856.MAX31856(self.spi, self.cs1)
