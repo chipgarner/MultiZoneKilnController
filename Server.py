@@ -1,4 +1,5 @@
 import bottle
+from bottle import response
 from gevent.pywsgi import WSGIServer
 from geventwebsocket.handler import WebSocketHandler
 from geventwebsocket import WebSocketError
@@ -11,6 +12,20 @@ log_level = logging.DEBUG
 log_format = '%(asctime)s %(levelname)s %(name)s: %(message)s'
 logging.basicConfig(level=log_level, format=log_format)
 log = logging.getLogger("Server")
+
+# the decorator for cors, allow POST from another computer
+def enable_cors(fn):
+    def _enable_cors(*args, **kwargs):
+        # set CORS headers
+        response.headers['Access-Control-Allow-Origin'] = '*'
+        response.headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, OPTIONS'
+        response.headers['Access-Control-Allow-Headers'] = 'Origin, Accept, Content-Type, X-Requested-With, X-CSRF-Token'
+
+        return fn(*args, **kwargs)
+
+    return _enable_cors
+
+
 
 bottle_app =bottle.Bottle()
 
@@ -61,9 +76,11 @@ def server():
         log.info("websocket (status) closed")
 
     @bottle_app.post('/start')
+    @enable_cors
     def handle_firing_start():
         broker.controller_start_firing()
     @bottle_app.post('/stop')
+    @enable_cors
     def handle_firing_stop():
         broker.controller_stop_firing()
 
