@@ -37,7 +37,7 @@ class KilnZones:
             for zone in self.zones:
                 thermocouple_data.append(zone.update_time_temperature())
 
-            log.debug(thermocouple_data)
+            # log.debug(thermocouple_data)
             # Data is sent to front end on every update, around once per second.
             self.broker.update_tc_data(thermocouple_data)
 

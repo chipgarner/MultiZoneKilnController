@@ -94,7 +94,7 @@ class Max31856(KilnElectronics):
     def get_temperature(self) -> tuple:
         error = False
         temp = self.sensor.temperature
-        log.debug("56 temperature: " + str(temp))
+        # log.debug("56 temperature: " + str(temp))
 
         for k, v in self.sensor.fault.items():
             if v:
