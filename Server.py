@@ -76,11 +76,9 @@ def server():
         log.info("websocket (status) closed")
 
     @bottle_app.post('/start')
-    @enable_cors
     def handle_firing_start():
         broker.controller_start_firing()
     @bottle_app.post('/stop')
-    @enable_cors
     def handle_firing_stop():
         broker.controller_stop_firing()
 
