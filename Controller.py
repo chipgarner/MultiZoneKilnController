@@ -15,7 +15,7 @@ log: Logger = logging.getLogger(__name__)
 class Controller:
     def __init__(self, file: str, broker, zones, loop_delay):
         self.broker = broker
-        self.broker.set_controller_functions(self.start_firing, self.stop_firing)
+        self.broker.set_controller_functions(self.start_stop_firing)
         self.profile = Profile(file)
         self.loop_delay = loop_delay
 
@@ -33,13 +33,13 @@ class Controller:
 
         self.state = "IDLE"  # IDLE or FIRING for now
 
-    def start_firing(self):
-        self.state = 'FIRING'
-        log.debug('Start firing.')
-
-    def stop_firing(self):
-        self.state = 'IDLE'
-        log.debug('Stop firing.')
+    def start_stop_firing(self):
+        if self.state == 'FIRING':
+            self.state = 'IDLE'
+            log.debug('Stop firing.')
+        else:
+            self.state = 'FIRING'
+            log.debug('Start firing.')
 
     def control_loop(self):
         self.start_time_ms = time.time() * 1000
@@ -86,13 +86,15 @@ class Controller:
                 if len(self.long_t_t_h_z[index]) > 10:
                     self.long_t_t_h_z[index].pop(0)
                 log.debug('Long_data: ' + str(len(self.long_t_t_h_z[index])))
+
+                # The linear filter need python 3.8 or above, latest R Pi version is 3.7.3 as of April 22, 2023
                 filter_result.append(self.data_filter.linear(self.long_t_t_h_z[index]))
                 log.debug(filter_result[index])
                 if filter_result[index] is not None:
-                    slope = filter_result[index]['slope'] * 3.6e6
+                    slope = 'NA' #filter_result[index]['slope'] * 3.6e6
                     log.info(str(slope) + ' Degrees per hour.')
                 else:
-                    slope = 0
+                    slope = 'NA'
 
                 median_result = self.data_filter.median(t_t_h_z[index])
                 if median_result is not None:

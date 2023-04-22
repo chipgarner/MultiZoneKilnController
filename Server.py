@@ -75,13 +75,9 @@ def server():
                 break
         log.info("websocket (status) closed")
 
-    @bottle_app.post('/start')
-    def handle_firing_start():
+    @bottle_app.post('/start_stop')
+    def handle_firing_start_stop():
         broker.controller_start_firing()
-    @bottle_app.post('/stop')
-    def handle_firing_stop():
-        broker.controller_stop_firing()
-
 
     @bottle_app.error(404)
     def error404(error):
