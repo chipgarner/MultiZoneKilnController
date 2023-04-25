@@ -12,9 +12,9 @@ class FakeBroker:
 
     def update_status(self, state, times_temps_heats_for_zones: list):
         self.update_calls += 1
-    def set_controller_functions(self, start_firing, stop_firing):
-        self.start = start_firing
-        self.stop = stop_firing
+    def set_controller_functions(self, start_stop_firing):
+        self.start = start_stop_firing
+        self.stop = start_stop_firing
 
 zone1 = Zone(Sim())
 zone2 = Zone(Sim())

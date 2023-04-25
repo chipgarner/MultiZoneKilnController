@@ -5,6 +5,7 @@ from logging import Logger
 from Profile import Profile
 from KilnZones import KilnZones
 import DataFilter
+import pid
 
 log_level = logging.DEBUG
 log_format = '%(asctime)s %(levelname)s %(name)s: %(message)s'
@@ -17,6 +18,9 @@ class Controller:
         self.broker = broker
         self.broker.set_controller_functions(self.start_stop_firing)
         self.profile = Profile(file)
+        # self.pid = Pid.PID()
+        self.pid = pid.PID(10, 0.01, 2, setpoint=27, sample_time=None, output_limits=(0, 100))
+
         self.loop_delay = loop_delay
 
         self.zones = zones
@@ -26,8 +30,10 @@ class Controller:
         self.kiln_zones = KilnZones(zones, broker)
 
         self.long_t_t_h_z = []
+        self.last_times = []
         for _ in zones:
             self.long_t_t_h_z.append([])
+            self.last_times.append(0)
 
         log.info('Controller initialized.')
 
@@ -61,12 +67,13 @@ class Controller:
             heats = []
             for index, zone in enumerate(tthz):
                 target = self.profile.get_target_temperature((zones_status[index]['time_ms'] - self.start_time_ms) / 1000)
-                temp_error = zones_status[index]['temperature'] - target
                 zones_status[index]["target"] = target
                 zones_status[index]["target_slope"] = \
                     self.profile.get_target_slope((zones_status[index]['time_ms'] - self.start_time_ms) / 1000)
 
-                heat = self.__update_heat(zones_status[index]['heat_factor'], temp_error)
+                delta_t = (zones_status[index]['time_ms'] - self.last_times[index]) / 1000
+                self.last_times[index] = zones_status[index]['time_ms']
+                heat = self.__update_heat(target, zones_status[index]['temperature'], delta_t)
                 heats.append(heat)
             self.kiln_zones.set_heat_for_zones(heats)
         else:
@@ -74,6 +81,7 @@ class Controller:
             for index, zone in enumerate(zones_status):
                 zones_status[index]["target"] = 0
                 zones_status[index]["target_slope"] = 0
+                self.last_times[index] = zones_status[index]['time_ms']
 
         self.broker.update_status(self.state, zones_status)
 
@@ -119,16 +127,12 @@ class Controller:
             heats.append(0)
         self.kiln_zones.set_heat_for_zones(heats)
 
-    def __update_heat(self, last_heat: float, temp_error: float) -> float:
+    def __update_heat(self, target: float, temp: float, delta_tm: float) -> float:
 
-        if temp_error > 0:
-            heat = 0
-        else:
-            heat = - temp_error * 0.5
-        if heat > 1:
-            heat = 1
+        self.pid.setpoint = target
+        heat = self.pid(temp, dt=delta_tm)
 
-        return heat
+        return heat / 100.0
 
 
 class notifier:
