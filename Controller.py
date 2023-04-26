@@ -6,10 +6,11 @@ from Profile import Profile
 from KilnZones import KilnZones
 import DataFilter
 import pid
+import Slope
+
 
 log_level = logging.DEBUG
 log_format = '%(asctime)s %(levelname)s %(name)s: %(message)s'
-
 log: Logger = logging.getLogger(__name__)
 
 
@@ -28,11 +29,10 @@ class Controller:
         self.start_time_ms = None
 
         self.kiln_zones = KilnZones(zones, broker)
+        self.slope = Slope.Slope(len(zones))
 
-        self.long_t_t_h_z = []
         self.last_times = []
         for _ in zones:
-            self.long_t_t_h_z.append([])
             self.last_times.append(0)
 
         log.info('Controller initialized.')
@@ -46,6 +46,7 @@ class Controller:
         else:
             self.state = 'FIRING'
             log.debug('Start firing.')
+        self.slope.restart()
 
     def control_loop(self):
         self.start_time_ms = time.time() * 1000
@@ -63,6 +64,12 @@ class Controller:
         # {'time_ms': 1681699156539, 'temperature': 26.35214565357634, 'heat_factor': 0, 'slope': 32.486937287637026, 'pstdev': 0.703745679973122}]
         zones_status = self.smooth_temperatures(tthz)
 
+        min_temp = 2000
+        for zone in zones_status:
+            if zone['temperature'] < min_temp: min_temp = zone['temperature']
+        status = self.profile.update_profile((zones_status[0]['time_ms'] - self.start_time_ms) / 1000, min_temp)
+        if status is not None: self.state = "IDLE"
+
         if self.state == 'FIRING':
             heats = []
             for index, zone in enumerate(tthz):
@@ -79,31 +86,16 @@ class Controller:
         else:
             self.kiln_zones.all_heat_off()
             for index, zone in enumerate(zones_status):
-                zones_status[index]["target"] = 0
+                zones_status[index]["target"] = 'Off'
                 zones_status[index]["target_slope"] = 0
                 self.last_times[index] = zones_status[index]['time_ms']
 
         self.broker.update_status(self.state, zones_status)
 
     def smooth_temperatures(self, t_t_h_z: list) -> list:
-        filter_result = []
         zones_status = []
         for index, t_t_h in enumerate(t_t_h_z):
             if len(t_t_h) > 0:  # No data happens on startup
-                self.long_t_t_h_z[index].append(t_t_h[0])
-                if len(self.long_t_t_h_z[index]) > 10:
-                    self.long_t_t_h_z[index].pop(0)
-                log.debug('Long_data: ' + str(len(self.long_t_t_h_z[index])))
-
-                # The linear filter need python 3.8 or above, latest R Pi version is 3.7.3 as of April 22, 2023
-                filter_result.append(self.data_filter.linear(self.long_t_t_h_z[index]))
-                log.debug(filter_result[index])
-                if filter_result[index] is not None:
-                    slope = 'NA' #filter_result[index]['slope'] * 3.6e6
-                    log.info(str(slope) + ' Degrees per hour.')
-                else:
-                    slope = 'NA'
-
                 median_result = self.data_filter.median(t_t_h_z[index])
                 if median_result is not None:
                     best_temp = median_result['median']
@@ -113,6 +105,9 @@ class Controller:
                     best_temp = t_t_h_z[-1]['temperature']
                     pstdev = 0
                 best_time = round((t_t_h_z[index][0]['time_ms'] + t_t_h_z[index][-1]['time_ms']) / 2)
+
+                slope = self.slope.slope(index, best_time, best_temp, t_t_h_z[index][0]['heat_factor'])
+
                 zones_status.append({'time_ms': best_time,
                                      'temperature': best_temp,
                                      'heat_factor': t_t_h_z[index][0]['heat_factor'],

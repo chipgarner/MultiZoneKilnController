@@ -91,3 +91,18 @@ def test_get_target_slope():
 
     t_slope = profile.get_target_slope(18000)
     assert t_slope == pytest.approx(-1860.0)
+
+def test_udate_profile():
+    profile = Profile.Profile("test-fast.json")
+
+    profile.update_profile(10, 27)
+
+    assert profile.data[3][0] == 14410
+
+    profile.update_profile(20, 199)
+    assert profile.current_segment == 0
+    assert profile.data[3][0] == 14410
+
+    assert profile.get_target_temperature(3700) == 222.5
+    profile.update_profile(3700, 223)
+    assert profile.data[3][0] == 14410

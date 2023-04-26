@@ -1,6 +1,8 @@
 import json
 import os
 import logging
+import time
+import copy
 
 log = logging.getLogger(__name__)
 
@@ -18,6 +20,9 @@ class Profile:
         prf = json.loads(json_data)
         self.name = prf["name"]
         self.data = sorted(prf["data"])
+        self.original = copy.deepcopy(self.data)
+        self.current_segment = None
+        self.segment_start = None
 
     @staticmethod
     def get_profile(file: str) -> str:
@@ -70,9 +75,9 @@ class Profile:
 
         return prev_point, next_point
 
-    def get_target_temperature(self, time):
+    def get_target_temperature(self, time: float) -> float | str:
         if time > self.get_duration():
-            return 0
+            return 'Off'
 
         (prev_point, next_point) = self.get_surrounding_points(time)
 
@@ -90,3 +95,24 @@ class Profile:
         slope = slope * 3600 # C/hr
 
         return slope
+
+    def update_profile(self, time_since_start, lowest_temp) -> str | None:
+        target = self.get_target_temperature(time_since_start)
+        if type(target) is str: return "Off"
+        error = target - lowest_temp
+        if error > 5:
+            if self.current_segment is not None:
+                for index, time_temp in enumerate(self.data):
+                    if index > self.current_segment:
+                        time_temp[0] += 12  # A little longer than the control loop time
+        else:
+            if error < 2:
+                if self.current_segment is None:
+                    self.current_segment = 0
+                    self.segment_start = time.time()
+                    for time_temp in self.data:
+                        time_temp[0] += time_since_start
+                else:
+                    if time_since_start >= self.data[self.current_segment + 1][0]:
+                        self.current_segment += 1
+                        self.segment_start = time.time()

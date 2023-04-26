@@ -17,7 +17,7 @@ def median(t_t_h: list) -> dict:
 
 
 def linear(t_t_h: list) -> dict:
-    # Linear regression added in 3.10.x
+    # Linear regression added in Python 3.10.x, not on Pi as of April 2023
     vers = sys.version_info
     major = vers[0]
     minor = vers[1]
