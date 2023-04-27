@@ -24,6 +24,7 @@ class MessageBroker:
                                           {'time': 10800, 'temperature': 1000}, {'time': 14400, 'temperature': 1150},
                                           {'time': 16400, 'temperature': 1150}, {'time': 19400, 'temperature': 700}]}
         self.last_profile = self.profile_to_ms(self.last_profile)
+        self.updated_profile = None
         self.prof_sent = False
         self.count = 0
 
@@ -51,6 +52,9 @@ class MessageBroker:
         self.update_profile(observer, self.last_profile)
         self.observers.append(observer)
 
+        if self.updated_profile is not None:
+            self.update_profile_all(self.updated_profile)
+
     def update_profile(self, observer, profile):
         prof = {
             'profile': profile,
@@ -62,6 +66,7 @@ class MessageBroker:
             log.error("Could not send profile to front end: " + str(ex))
 
     def update_profile_all(self, profile):
+        self.updated_profile = profile
         prof = {
             'profile_update': profile,
         }
