@@ -2,7 +2,7 @@ import time
 import logging
 from logging import Logger
 
-from Profile import Profile
+import Profile
 from KilnZones import KilnZones
 import DataFilter
 import pid
@@ -18,7 +18,7 @@ class Controller:
     def __init__(self, file: str, broker, zones, loop_delay):
         self.broker = broker
         self.broker.set_controller_functions(self.start_stop_firing)
-        self.profile = Profile(file)
+        self.profile = Profile.Profile(file)
         # self.pid = Pid.PID()
         self.pid = pid.PID(10, 0.01, 2, setpoint=27, sample_time=None, output_limits=(0, 100))
 
@@ -65,10 +65,17 @@ class Controller:
         zones_status = self.smooth_temperatures(tthz)
 
         min_temp = 2000
-        for zone in zones_status:
-            if zone['temperature'] < min_temp: min_temp = zone['temperature']
-        status = self.profile.update_profile((zones_status[0]['time_ms'] - self.start_time_ms) / 1000, min_temp)
-        if status is not None: self.state = "IDLE"
+        time_since_start = 0
+        for index, zone in enumerate(zones_status):
+            if zone['temperature'] < min_temp:
+                min_temp = zone['temperature']
+                time_since_start = (zones_status[index]['time_ms'] - self.start_time_ms) / 1000
+        status = self.profile.update_profile(time_since_start, min_temp, 12)
+        if status is not None:
+            if status == "IDLE":
+                self.state = "IDLE"
+            if status == "update":
+                self.broker.update_profile_all(Profile.convert_old_profile_ms(self.profile.name, self.profile.data, self.start_time_ms))
 
         if self.state == 'FIRING':
             heats = []
@@ -80,7 +87,14 @@ class Controller:
 
                 delta_t = (zones_status[index]['time_ms'] - self.last_times[index]) / 1000
                 self.last_times[index] = zones_status[index]['time_ms']
-                heat = self.__update_heat(target, zones_status[index]['temperature'], delta_t)
+
+                # This can happen if shutoff time is reached between update_profile and get_target_temperature
+                if type(target) is str:
+                    self.state = "IDLE"
+                    heat = 0
+                else:
+                    heat = self.__update_heat(target, zones_status[index]['temperature'], delta_t)
+
                 heats.append(heat)
             self.kiln_zones.set_heat_for_zones(heats)
         else:

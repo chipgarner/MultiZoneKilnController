@@ -40,6 +40,13 @@ class MessageBroker:
             segment['time_ms'] = round((segment['time'] + now) * 1000)
         return profile
 
+    # {'profile': {'name': 'fast', 'segments': [{'time': 1682557662832.0, 'temperature': 100},
+    #                                           {'time': 1682561262832.0, 'temperature': 100},
+    #                                           {'time': 1682568462832.0, 'temperature': 1000},
+    #                                           {'time': 1682572062832.0, 'temperature': 1150},
+    #                                           {'time': 1682574062832.0, 'temperature': 1150},
+                                              # {'time': 1682577062832.0, 'temperature': 700}]}}
+
     def add_observer(self, observer):
         self.update_profile(observer, self.last_profile)
         self.observers.append(observer)
@@ -53,6 +60,13 @@ class MessageBroker:
             observer.send(prof_json)
         except Exception as ex:
             log.error("Could not send profile to front end: " + str(ex))
+
+    def update_profile_all(self, profile):
+        prof = {
+            'profile': profile,
+        }
+        prof_json = json.dumps(prof)
+        self.send_socket(prof_json)
 
     def update_status(self, state: str, zones_status_array: list):
         # self.update_thingsboard(times_temps_heats_for_zones) SIMULATOR SPEEDUP to 1 !!!= TODO fix mqtt

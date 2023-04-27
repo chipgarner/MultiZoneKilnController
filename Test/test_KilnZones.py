@@ -35,7 +35,7 @@ def test_updates_times_temperatures():
     zone1 = KilnZones.Zone(Sim())
     zone1.set_heat(0.7)
     KilnZones.KilnZones([zone1], FakeBroker())
-    time.sleep(0.1)  # Let the zones thread start
+    time.sleep(0.2)  # Let the zones thread start
 
     t_t_h = zone1.get_times_temps_heat()
 

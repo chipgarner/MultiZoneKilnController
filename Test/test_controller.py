@@ -15,6 +15,11 @@ class FakeBroker:
     def set_controller_functions(self, start_stop_firing):
         self.start = start_stop_firing
         self.stop = start_stop_firing
+    def update_tc_data(self, tc_data: list):
+        pass
+
+    def update_profile_all(self, profile):
+        pass
 
 zone1 = Zone(Sim())
 zone2 = Zone(Sim())
@@ -42,6 +47,7 @@ def test_init_zones():
 def test_loop_calls():
     broker = FakeBroker()
     controller = Controller("test-fast.json", broker, zones, 10)
+    controller.start_time_ms = 0
 
     controller.loop_calls()
 

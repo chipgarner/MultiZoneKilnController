@@ -14,6 +14,14 @@ def convert_old_profile(old_profile: dict) ->  dict:
 
     return new_profile
 
+def convert_old_profile_ms(name: str, segments: list, start_ms: float) ->  dict:
+    new_segments = []
+    for i, t_t in enumerate(segments):
+        new_segments.append({"time": t_t[0], "temperature": t_t[1], "time_ms": t_t[0] * 1000 + start_ms})
+    new_profile = {"name": name, "segments": new_segments}
+
+    return new_profile
+
 class Profile:
     def __init__(self, file: str):
         json_data = self.get_profile(file)
@@ -96,7 +104,7 @@ class Profile:
 
         return slope
 
-    def update_profile(self, time_since_start, lowest_temp) -> str | None:
+    def update_profile(self, time_since_start, lowest_temp, delta_t) -> str | None:
         target = self.get_target_temperature(time_since_start)
         if type(target) is str: return "Off"
         error = target - lowest_temp
@@ -104,7 +112,8 @@ class Profile:
             if self.current_segment is not None:
                 for index, time_temp in enumerate(self.data):
                     if index > self.current_segment:
-                        time_temp[0] += 12  # A little longer than the control loop time
+                        time_temp[0] += delta_t
+                return "update"
         else:
             if error < 2:
                 if self.current_segment is None:
@@ -112,6 +121,7 @@ class Profile:
                     self.segment_start = time.time()
                     for time_temp in self.data:
                         time_temp[0] += time_since_start
+                    return "update"
                 else:
                     if time_since_start >= self.data[self.current_segment + 1][0]:
                         self.current_segment += 1

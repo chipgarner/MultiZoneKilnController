@@ -30,14 +30,15 @@ class DbInsertSelect:
 
         return profiles
 
-    def get_profile_by_name(self, name: str) -> str:
+    def get_profile_segments_by_name(self, name: str) -> str:
         cur = self.db.cursor()
         cur.execute("SELECT segments FROM profiles WHERE name = ?;", [name])
-        profile = cur.fetchall()
+        segments = cur.fetchall()
 
-        # profile = json.loads(profile[0][0])
+        segs = '{"segments": segments[0][0]}'
+        segments = json.loads(segs)
 
-        return profile[0][0]
+        return profile
 
 
 import Profile
