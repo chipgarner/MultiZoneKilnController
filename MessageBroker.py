@@ -63,7 +63,7 @@ class MessageBroker:
 
     def update_profile_all(self, profile):
         prof = {
-            'profile': profile,
+            'profile_update': profile,
         }
         prof_json = json.dumps(prof)
         self.send_socket(prof_json)

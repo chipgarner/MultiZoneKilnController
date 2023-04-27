@@ -104,16 +104,18 @@ class Profile:
 
         return slope
 
-    def update_profile(self, time_since_start, lowest_temp, delta_t) -> str | None:
+    def update_profile(self, time_since_start, lowest_temp, delta_t) -> tuple[str | float, bool]:
+        update = False
         target = self.get_target_temperature(time_since_start)
-        if type(target) is str: return "Off"
+        if type(target) is str: return "Off", update
+
         error = target - lowest_temp
         if error > 5:
             if self.current_segment is not None:
                 for index, time_temp in enumerate(self.data):
                     if index > self.current_segment:
                         time_temp[0] += delta_t
-                return "update"
+                update = True
         else:
             if error < 2:
                 if self.current_segment is None:
@@ -121,8 +123,10 @@ class Profile:
                     self.segment_start = time.time()
                     for time_temp in self.data:
                         time_temp[0] += time_since_start
-                    return "update"
+                    update = True
                 else:
                     if time_since_start >= self.data[self.current_segment + 1][0]:
                         self.current_segment += 1
                         self.segment_start = time.time()
+
+        return target, update
