@@ -10,9 +10,9 @@ class FakeBroker:
         self.start = None
         self.stop = None
 
-    def update_status(self, state, times_temps_heats_for_zones: list):
+    def update_status(self, state, manual, times_temps_heats_for_zones: list):
         self.update_calls += 1
-    def set_controller_functions(self, start_stop_firing):
+    def set_controller_functions(self, start_stop_firing, auto_manual):
         self.start = start_stop_firing
         self.stop = start_stop_firing
     def update_tc_data(self, tc_data: list):
@@ -54,3 +54,18 @@ def test_loop_calls():
     assert broker.update_calls == 1
     assert broker.start is not None
     assert broker.stop is not None
+
+def test_modes():
+    controller = Controller("test-fast.json", FakeBroker(), zones, 10)
+
+    assert controller.state == "IDLE"
+
+    controller.start_stop_firing()
+    assert controller.state == "FIRING"
+
+    assert not controller.manual
+    controller.auto_manual()
+    assert controller.manual
+
+    controller.auto_manual()
+    assert  not controller.manual

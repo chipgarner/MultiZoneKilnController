@@ -17,6 +17,8 @@ class MessageBroker:
 
         # Callbacks from Controller.py
         self.controller_start_stop_firing = None
+        self.controller_auto_manual = None
+        self.controller_set_heat_for_zone = None
 
         # TODO
         self.last_profile = {'name': 'fast',
@@ -29,24 +31,25 @@ class MessageBroker:
         self.count = 0
 
     # Callback functions for access to Controller.p
-    def set_controller_functions(self, start_stop_firing):
-        self.controller_start_firing = start_stop_firing
+    def set_controller_functions(self, start_stop_firing, auto_manual, set_heat_for_zone):
+        self.controller_start_stop_firing = start_stop_firing
+        self.controller_auto_manual = auto_manual
+        self.set_heat_for_zone = set_heat_for_zone
 
     def start_stop_firing(self):
         self.controller_start_stop_firing()
+
+    def auto_manual(self):
+        self.controller_auto_manual()
+
+    def set_heat_for_zone(self, heat, zone):
+        self.controller_set_heat_for_zone(heat, zone)
 
     def profile_to_ms(self, profile):
         now = time.time()
         for segment in profile['segments']:
             segment['time_ms'] = round((segment['time'] + now) * 1000)
         return profile
-
-    # {'profile': {'name': 'fast', 'segments': [{'time': 1682557662832.0, 'temperature': 100},
-    #                                           {'time': 1682561262832.0, 'temperature': 100},
-    #                                           {'time': 1682568462832.0, 'temperature': 1000},
-    #                                           {'time': 1682572062832.0, 'temperature': 1150},
-    #                                           {'time': 1682574062832.0, 'temperature': 1150},
-                                              # {'time': 1682577062832.0, 'temperature': 700}]}}
 
     def add_observer(self, observer):
         self.update_profile(observer, self.last_profile)
@@ -73,12 +76,13 @@ class MessageBroker:
         prof_json = json.dumps(prof)
         self.send_socket(prof_json)
 
-    def update_status(self, state: str, zones_status_array: list):
+    def update_status(self, state: str, manual: bool, zones_status_array: list):
         # self.update_thingsboard(times_temps_heats_for_zones) SIMULATOR SPEEDUP to 1 !!!= TODO fix mqtt
         # self.db.send_time_stamped_message(tthz) TODO
 
         status = {
             'state': state,
+            'manual': manual,
             'zones_status_array': zones_status_array,
         }
         message = json.dumps(status)

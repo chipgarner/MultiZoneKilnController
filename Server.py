@@ -1,3 +1,5 @@
+import json
+
 import bottle
 from bottle import response
 from gevent.pywsgi import WSGIServer
@@ -13,7 +15,7 @@ log_format = '%(asctime)s %(levelname)s %(name)s: %(message)s'
 logging.basicConfig(level=log_level, format=log_format)
 log = logging.getLogger("Server")
 
-# the decorator for cors, allow POST from another computer
+# the decorator for cors, allow POST from another computer - not working TODO
 def enable_cors(fn):
     def _enable_cors(*args, **kwargs):
         # set CORS headers
@@ -77,7 +79,19 @@ def server():
 
     @bottle_app.post('/start_stop')
     def handle_firing_start_stop():
-        broker.controller_start_firing()
+        broker.controller_start_stop_firing()
+
+    @bottle_app.post('/manual_auto')
+    def handle_manual_auto():
+        broker.auto_manual()
+
+    @bottle_app.post('/change_power')
+    def handle_manual_auto():
+        message = bottle.request.body.read()
+        message = json.loads(message)
+
+        broker.set_heat_for_zone(int(message['power']), message['zone'])
+
 
     @bottle_app.error(404)
     def error404(error):

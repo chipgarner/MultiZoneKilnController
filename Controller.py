@@ -17,7 +17,7 @@ log: Logger = logging.getLogger(__name__)
 class Controller:
     def __init__(self, file: str, broker, zones, loop_delay):
         self.broker = broker
-        self.broker.set_controller_functions(self.start_stop_firing)
+        self.broker.set_controller_functions(self.start_stop_firing, self.auto_manual, self.set_heat_for_zone)
         self.profile = Profile.Profile(file)
         # self.pid = Pid.PID()
         self.pid = pid.PID(10, 0.01, 2, setpoint=27, sample_time=None, output_limits=(0, 100))
@@ -38,6 +38,7 @@ class Controller:
         log.info('Controller initialized.')
 
         self.state = "IDLE"  # IDLE or FIRING for now
+        self.manual = False
 
     def start_stop_firing(self):
         if self.state == 'FIRING':
@@ -47,6 +48,12 @@ class Controller:
             self.state = 'FIRING'
             log.debug('Start firing.')
         self.slope.restart()
+
+    def auto_manual(self):
+        if self.manual:
+            self.manual = False
+        else:
+            self.manual = True
 
     def control_loop(self):
         self.start_time_ms = time.time() * 1000
@@ -88,7 +95,9 @@ class Controller:
 
                 heat = self.__update_heat(target, zones_status[index]['temperature'], delta_t)
                 heats.append(heat)
-            self.kiln_zones.set_heat_for_zones(heats)
+
+            if not self.manual:
+                self.kiln_zones.set_heat_for_zones(heats)
         else:
             self.kiln_zones.all_heat_off()
             for index, zone in enumerate(zones_status):
@@ -96,7 +105,7 @@ class Controller:
                 zones_status[index]["target_slope"] = 0
                 self.last_times[index] = zones_status[index]['time_ms']
 
-        self.broker.update_status(self.state, zones_status)
+        self.broker.update_status(self.state, self.manual, zones_status)
 
     def smooth_temperatures(self, t_t_h_z: list) -> list:
         zones_status = []
@@ -134,6 +143,10 @@ class Controller:
         heat = self.pid(temp, dt=delta_tm)
 
         return heat / 100.0
+
+    def set_heat_for_zone(self, heat, zone):
+        if self.manual:
+            self.kiln_zones.zones[zone - 1].set_heat(heat / 100)
 
 
 class notifier:
