@@ -44,22 +44,6 @@ def server():
         log.debug('Redirect to index page')
         root = os.path.join(os.path.dirname(__file__), 'UI/build')
         return bottle.static_file('index.html', root=root)
-    # @bottle.route('/stats')
-    # @bottle.route('/stats/<filename>')
-    # def server_static(filename='index.html'):
-    #     root = os.path.join(os.path.dirname(__file__), 'stats', 'UI/build')
-    #     return bottle.static_file(filename, root=root)
-
-    # Open a persistent websocket to UI
-    # @bottle_app.route('/controller')
-    # def controller():
-    #     log.debug(str(bottle.request.environ))
-    #     wsock = get_websocket_from_request()
-    #     if not wsock:
-    #         return 'Expecting a websocket request'
-    #     message = wsock.receive()
-    #     broker.update(message)
-    #     log.debug(message)
 
     # Open a persistent websocket to UI
     @bottle_app.route('/status')
@@ -79,7 +63,7 @@ def server():
 
     @bottle_app.post('/start_stop')
     def handle_firing_start_stop():
-        broker.controller_start_stop_firing()
+        broker.start_stop_firing()
 
     @bottle_app.post('/manual_auto')
     def handle_manual_auto():

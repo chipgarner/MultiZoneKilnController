@@ -16,9 +16,7 @@ class MessageBroker:
         self.db = DbInsertSelect.DbInsertSelect()
 
         # Callbacks from Controller.py
-        self.controller_start_stop_firing = None
-        self.controller_auto_manual = None
-        self.controller_set_heat_for_zone = None
+        self.controller_callbacks = None
 
         # TODO
         self.last_profile = {'name': 'fast',
@@ -31,19 +29,17 @@ class MessageBroker:
         self.count = 0
 
     # Callback functions for access to Controller.p
-    def set_controller_functions(self, start_stop_firing, auto_manual, set_heat_for_zone):
-        self.controller_start_stop_firing = start_stop_firing
-        self.controller_auto_manual = auto_manual
-        self.set_heat_for_zone = set_heat_for_zone
+    def set_controller_functions(self, contoller_callbacks: dict):
+        self.controller_callbacks = contoller_callbacks
 
     def start_stop_firing(self):
-        self.controller_start_stop_firing()
+        self.controller_callbacks['start_stop']()
 
     def auto_manual(self):
-        self.controller_auto_manual()
+        self.controller_callbacks['auto_manual']()
 
     def set_heat_for_zone(self, heat, zone):
-        self.controller_set_heat_for_zone(heat, zone)
+        self.controller_callbacks['set_heat_for_zone'](heat, zone)
 
     def profile_to_ms(self, profile):
         now = time.time()

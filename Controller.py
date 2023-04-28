@@ -17,7 +17,12 @@ log: Logger = logging.getLogger(__name__)
 class Controller:
     def __init__(self, file: str, broker, zones, loop_delay):
         self.broker = broker
-        self.broker.set_controller_functions(self.start_stop_firing, self.auto_manual, self.set_heat_for_zone)
+        broker_to_contoller_callbacks = {
+            'start_stop': self.start_stop_firing,
+            'auto_manual': self.auto_manual,
+            'set_heat_for_zone': self.set_heat_for_zone}
+        self.broker.set_controller_functions(broker_to_contoller_callbacks)
+
         self.profile = Profile.Profile(file)
         # self.pid = Pid.PID()
         self.pid = pid.PID(10, 0.01, 2, setpoint=27, sample_time=None, output_limits=(0, 100))
@@ -147,24 +152,3 @@ class Controller:
     def set_heat_for_zone(self, heat, zone):
         if self.manual:
             self.kiln_zones.zones[zone - 1].set_heat(heat / 100)
-
-
-class notifier:
-    def update(self, message):
-        print(message)
-
-    def set_controller_functions(self, start, stop):
-        print('Set_controller_fucntions called')
-
-    def update_status(self, status, tc_data ):
-        print("Update status called")
-
-    def update_tc_data(self, tc_data):
-        print("Update tc_data called")
-
-
-#  This is for testing
-if __name__ == '__main__':
-    # zones = [zone1, zone2, zone3, zone4]
-    controller = Controller("test-fast.json", notifier(), [], 10)
-    controller.control_loop()

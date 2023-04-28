@@ -12,9 +12,9 @@ class FakeBroker:
 
     def update_status(self, state, manual, times_temps_heats_for_zones: list):
         self.update_calls += 1
-    def set_controller_functions(self, start_stop_firing, auto_manual):
-        self.start = start_stop_firing
-        self.stop = start_stop_firing
+    def set_controller_functions(self, broker_to_controller_callbacks: dict):
+        self.start = broker_to_controller_callbacks['start_stop']
+        self.stop = self.start
     def update_tc_data(self, tc_data: list):
         pass
 

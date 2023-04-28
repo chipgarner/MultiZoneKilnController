@@ -83,6 +83,8 @@ class Max31856(KilnElectronics):
         self.sensor.averaging = 16
         self.sensor.noise_rejection = 60
 
+        self.heat_factor = 0
+
 
     def set_heat(self, heat_factor: float):
         self.switches.set_heat(heat_factor)
@@ -115,6 +117,7 @@ class Max31855(KilnElectronics):
         self.sensor = adafruit_max31855.MAX31855(self.spi, self.cs1)
 
         self.last_temp = 0
+        self.heat_factor = 0
 
 
     def set_heat(self, heat_factor: float):
