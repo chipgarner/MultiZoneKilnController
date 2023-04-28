@@ -104,11 +104,11 @@ class Profile:
 
         return slope
 
-    def update_profile(self, time_since_start, lowest_temp, delta_t) -> tuple[str | float, bool]:
+    def update_profile(self, time_since_start, lowest_temp, delta_t) -> tuple[str | float, bool, bool]:
         update = False
         segment_change = False
         target = self.get_target_temperature(time_since_start)
-        if type(target) is str: return "Off", update
+        if type(target) is str: return "Off", update, segment_change
 
         error = target - lowest_temp
         if error > 5:

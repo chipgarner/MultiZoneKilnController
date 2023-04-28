@@ -20,6 +20,8 @@ class FakeBroker:
 
     def update_profile_all(self, profile):
         pass
+    def new_profile_all(self, profile):
+        pass
 
 zone1 = Zone(Sim())
 zone2 = Zone(Sim())
@@ -28,14 +30,15 @@ zone4 = Zone(Sim())
 zones = [zone1, zone2, zone3, zone4]
 
 def test_loads_profile():
-    controller = Controller("test-fast.json", FakeBroker(), ['zony'], 10)
+    controller = Controller(FakeBroker(), ['zony'], 10)
+    controller.load_profile_by_name('test-fast.json')
 
     assert type(controller.profile) == Profile.Profile
     assert len(controller.profile.data) == 6
 
 
 def test_init_zones():
-    controller = Controller("test-fast.json", FakeBroker(), zones, 10)
+    controller = Controller(FakeBroker(), zones, 10)
 
     assert type(controller.kiln_zones) == KilnZones
     assert controller.state == 'IDLE'
@@ -46,7 +49,7 @@ def test_init_zones():
 
 def test_loop_calls():
     broker = FakeBroker()
-    controller = Controller("test-fast.json", broker, zones, 10)
+    controller = Controller(broker, zones, 10)
     controller.start_time_ms = 0
 
     controller.loop_calls()
@@ -56,7 +59,8 @@ def test_loop_calls():
     assert broker.stop is not None
 
 def test_modes():
-    controller = Controller("test-fast.json", FakeBroker(), zones, 10)
+    controller = Controller(FakeBroker(), zones, 10)
+    controller.load_profile_by_name('test-fast.json')
 
     assert controller.state == "IDLE"
 
