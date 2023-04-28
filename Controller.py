@@ -15,7 +15,7 @@ log: Logger = logging.getLogger(__name__)
 
 
 class Controller:
-    def __init__(self, file: str, broker, zones, loop_delay):
+    def __init__(self, broker, zones, loop_delay):
         self.broker = broker
         broker_to_contoller_callbacks = {
             'start_stop': self.start_stop_firing,
@@ -23,7 +23,7 @@ class Controller:
             'set_heat_for_zone': self.set_heat_for_zone}
         self.broker.set_controller_functions(broker_to_contoller_callbacks)
 
-        self.profile = Profile.Profile(file)
+        self.profile = None
         # self.pid = Pid.PID()
         self.pid = pid.PID(10, 0.01, 2, setpoint=27, sample_time=None, output_limits=(0, 100))
 
@@ -45,12 +45,22 @@ class Controller:
         self.state = "IDLE"  # IDLE or FIRING for now
         self.manual = False
 
+    def load_profile_by_name(self, file: str):
+        self.profile = Profile.Profile(file)
+
     def start_stop_firing(self):
         if self.state == 'FIRING':
             self.state = 'IDLE'
             log.debug('Stop firing.')
         else:
-            self.state = 'FIRING'
+            if self.profile is None:
+                self.state = 'PROFILE'
+                self.load_profile_by_name('fast.json')
+            else:
+                self.state = 'FIRING'
+            if self.start_time_ms is None: # Really start
+                self.start_time_ms = time.time() * 1000
+                self.broker.new_profile_all(Profile.convert_old_profile_ms(self.profile.name, self.profile.data, self.start_time_ms))
             log.debug('Start firing.')
         self.slope.restart()
 
@@ -61,7 +71,6 @@ class Controller:
             self.manual = True
 
     def control_loop(self):
-        self.start_time_ms = time.time() * 1000
         self.__zero_heat_zones()
         while True:
             self.loop_calls()
@@ -76,17 +85,19 @@ class Controller:
         # {'time_ms': 1681699156539, 'temperature': 26.35214565357634, 'heat_factor': 0, 'slope': 32.486937287637026, 'pstdev': 0.703745679973122}]
         zones_status = self.smooth_temperatures(tthz)
 
-        min_temp = 2000
-        time_since_start = 0
-        for index, zone in enumerate(zones_status):
-            if zone['temperature'] < min_temp:
-                min_temp = zone['temperature']
-                time_since_start = (zones_status[index]['time_ms'] - self.start_time_ms) / 1000
-        target, update = self.profile.update_profile(time_since_start, min_temp, 12)
-        if type(target) is str:
-            self.state = "IDLE"
-        elif update:
-                self.broker.update_profile_all(Profile.convert_old_profile_ms(self.profile.name, self.profile.data, self.start_time_ms))
+        if self.profile is not None:
+            min_temp = 2000
+            time_since_start = 0
+            for index, zone in enumerate(zones_status):
+                if zone['temperature'] < min_temp:
+                    min_temp = zone['temperature']
+                    time_since_start = (zones_status[index]['time_ms'] - self.start_time_ms) / 1000
+            target, update, segment_change = self.profile.update_profile(time_since_start, min_temp, 12)
+            if type(target) is str:
+                self.state = "IDLE"
+            elif update:
+                    self.broker.update_profile_all(Profile.convert_old_profile_ms(self.profile.name, self.profile.data, self.start_time_ms))
+            if segment_change: self.slope.restart()
 
         if self.state == 'FIRING':
             heats = []
@@ -110,7 +121,9 @@ class Controller:
                 zones_status[index]["target_slope"] = 0
                 self.last_times[index] = zones_status[index]['time_ms']
 
-        self.broker.update_status(self.state, self.manual, zones_status)
+        display = self.state
+        if self.manual: display = 'MANUAL'
+        self.broker.update_status(display, self.manual, zones_status)
 
     def smooth_temperatures(self, t_t_h_z: list) -> list:
         zones_status = []

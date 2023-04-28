@@ -19,11 +19,12 @@ class MessageBroker:
         self.controller_callbacks = None
 
         # TODO
-        self.last_profile = {'name': 'fast',
-                             'segments': [{'time': 0, 'temperature': 100}, {'time': 3600, 'temperature': 100},
-                                          {'time': 10800, 'temperature': 1000}, {'time': 14400, 'temperature': 1150},
-                                          {'time': 16400, 'temperature': 1150}, {'time': 19400, 'temperature': 700}]}
-        self.last_profile = self.profile_to_ms(self.last_profile)
+        # self.last_profile = {'name': 'fast',
+        #                      'segments': [{'time': 0, 'temperature': 100}, {'time': 3600, 'temperature': 100},
+        #                                   {'time': 10800, 'temperature': 1000}, {'time': 14400, 'temperature': 1150},
+        #                                   {'time': 16400, 'temperature': 1150}, {'time': 19400, 'temperature': 700}]}
+        # self.last_profile = self.profile_to_ms(self.last_profile)
+        self.last_profile = None
         self.updated_profile = None
         self.prof_sent = False
         self.count = 0
@@ -63,6 +64,15 @@ class MessageBroker:
             observer.send(prof_json)
         except Exception as ex:
             log.error("Could not send profile to front end: " + str(ex))
+
+    def new_profile_all(self, profile):
+        self.last_profile = profile
+        prof = {
+            'profile': profile,
+        }
+        prof_json = json.dumps(prof)
+        self.send_socket(prof_json)
+
 
     def update_profile_all(self, profile):
         self.updated_profile = profile

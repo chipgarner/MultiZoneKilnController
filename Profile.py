@@ -106,6 +106,7 @@ class Profile:
 
     def update_profile(self, time_since_start, lowest_temp, delta_t) -> tuple[str | float, bool]:
         update = False
+        segment_change = False
         target = self.get_target_temperature(time_since_start)
         if type(target) is str: return "Off", update
 
@@ -120,6 +121,7 @@ class Profile:
             if error < 2:
                 if self.current_segment is None:
                     self.current_segment = 0
+                    segment_change = True
                     self.segment_start = time.time()
                     for time_temp in self.data:
                         time_temp[0] += time_since_start
@@ -127,6 +129,7 @@ class Profile:
                 else:
                     if time_since_start >= self.data[self.current_segment + 1][0]:
                         self.current_segment += 1
+                        segment_change = True
                         self.segment_start = time.time()
 
-        return target, update
+        return target, update, segment_change
