@@ -59,7 +59,7 @@ if __name__ == '__main__':
     print(profile)
 
     profile = Profile.Profile("fast.json")
-    profile = json.loads(profile.get_profile("fast.json"))
+    profile = json.loads(profile.load_profile_by_name("fast.json"))
     new_fast = Profile.convert_old_profile(profile)
     new_fast['name'] = 'new_fast'
     DbInsertSelect().add_profile(new_fast['name'], str(new_fast['segments']))

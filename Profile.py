@@ -1,5 +1,6 @@
 import json
 import os
+from os.path import isfile, join
 import logging
 import time
 import copy
@@ -23,23 +24,28 @@ def convert_old_profile_ms(name: str, segments: list, start_ms: float) ->  dict:
     return new_profile
 
 class Profile:
-    def __init__(self, file: str):
-        json_data = self.get_profile(file)
-        prf = json.loads(json_data)
-        self.name = prf["name"]
-        self.data = sorted(prf["data"])
-        self.original = copy.deepcopy(self.data)
+    def __init__(self):
+        self.profiles_directory = os.path.abspath(os.path.join(os.path.dirname(__file__), '.', 'Profiles'))
+
         self.current_segment = None
         self.segment_start = None
 
-    @staticmethod
-    def get_profile(file: str) -> str:
-        profile_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '.', 'Profiles', file))
+
+
+    def load_profile_by_name(self, file: str):
+        profile_path = os.path.join(self.profiles_directory, file)
         log.debug(profile_path)
         with open(profile_path) as infile:
             profile_json = json.dumps(json.load(infile))
 
-        return profile_json
+        prf = json.loads(profile_json)
+        self.name = prf["name"]
+        self.data = sorted(prf["data"])
+        self.original = copy.deepcopy(self.data)
+
+    def get_profiles_names(self) -> list:
+        files = [f for f in os.listdir(self.profiles_directory) if isfile(join(self.profiles_directory, f))]
+        return files
 
     def get_duration(self) -> int:
         return max([t for (t, x) in self.data])

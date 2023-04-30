@@ -46,7 +46,8 @@ class Controller:
         self.manual = False
 
     def load_profile_by_name(self, file: str):
-        self.profile = Profile.Profile(file)
+        self.profile = Profile.Profile()
+        self.profile.load_profile_by_name(file)
 
     def start_stop_firing(self):
         if self.state == 'FIRING':
@@ -102,7 +103,7 @@ class Controller:
         if self.state == 'FIRING':
             heats = []
             for index, zone in enumerate(tthz):
-                zones_status[index]["target"] = target
+                zones_status[index]["target"] = target # This can be None if profile is None FIRING - not allowed
                 zones_status[index]["target_slope"] = \
                     self.profile.get_target_slope((zones_status[index]['time_ms'] - self.start_time_ms) / 1000)
 

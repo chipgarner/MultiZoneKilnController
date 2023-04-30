@@ -4,7 +4,8 @@ import pytest
 test_profile = {"data": [[0, 100], [3600, 100], [10800, 1000], [14400, 1150], [16400, 1150], [19400, 700]], "type": "profile", "name": "fast"}
 
 def test_get_target_temperature():
-    profile = Profile.Profile("test-fast.json")
+    profile = Profile.Profile()
+    profile.load_profile_by_name("test-fast.json")
 
     temperature = profile.get_target_temperature(3000)
     assert int(temperature) == 200
@@ -14,7 +15,8 @@ def test_get_target_temperature():
 
 
 def test_find_time_from_temperature():
-    profile = Profile.Profile("test-fast.json")
+    profile = Profile.Profile()
+    profile.load_profile_by_name("test-fast.json")
 
     time = profile.find_next_time_from_temperature(500)
     assert time == 4800
@@ -27,7 +29,8 @@ def test_find_time_from_temperature():
 
 
 def test_find_time_odd_profile():
-    profile = Profile.Profile("test-cases.json")
+    profile = Profile.Profile()
+    profile.load_profile_by_name("test-cases.json")
 
     time = profile.find_next_time_from_temperature(500)
     assert time == 4200
@@ -37,7 +40,9 @@ def test_find_time_odd_profile():
 
 
 def test_find_x_given_y_on_line_from_two_points():
-    profile = Profile.Profile("test-fast.json")
+    profile = Profile.Profile()
+    profile.load_profile_by_name("test-fast.json")
+
 
     y = 500
     p1 = [3600, 200]
@@ -77,7 +82,8 @@ def test_convert_old_profile():
     assert new_profile['segments'][5] == {'time': 19400, 'temperature': 700}
 
 def test_get_target_slope():
-    profile = Profile.Profile("test-fast.json")
+    profile = Profile.Profile()
+    profile.load_profile_by_name("test-fast.json")
 
     t_slope = profile.get_target_slope(3000)
     assert t_slope == 0
@@ -93,7 +99,8 @@ def test_get_target_slope():
     assert t_slope == pytest.approx(-1860.0)
 
 def test_udate_profile():
-    profile = Profile.Profile("test-fast.json")
+    profile = Profile.Profile()
+    profile.load_profile_by_name("test-fast.json")
 
     profile.update_profile(10, 201, 12)
     assert profile.current_segment == 0  # It started
@@ -109,3 +116,11 @@ def test_udate_profile():
     assert profile.get_target_temperature(3700) == 219.5
     profile.update_profile(3700, 223, 12)
     assert profile.data[3][0] == 14422
+
+def test_get_profiles_list():
+    profile = Profile.Profile()
+
+    profiles = profile.get_profiles_names()
+
+    assert len(profiles) >= 3
+    assert "test-fast.json" in profiles

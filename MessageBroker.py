@@ -11,7 +11,7 @@ log = logging.getLogger(__name__)
 
 class MessageBroker:
     def __init__(self):
-        self.last_profile = None
+        self.current_profile = None
         self.observers = []
         self.db = DbInsertSelect.DbInsertSelect()
 
@@ -24,7 +24,7 @@ class MessageBroker:
         #                                   {'time': 10800, 'temperature': 1000}, {'time': 14400, 'temperature': 1150},
         #                                   {'time': 16400, 'temperature': 1150}, {'time': 19400, 'temperature': 700}]}
         # self.last_profile = self.profile_to_ms(self.last_profile)
-        self.last_profile = None
+        self.current_profile = None
         self.updated_profile = None
         self.prof_sent = False
         self.count = 0
@@ -49,7 +49,7 @@ class MessageBroker:
         return profile
 
     def add_observer(self, observer):
-        self.update_profile(observer, self.last_profile)
+        self.update_profile(observer, self.current_profile)
         self.observers.append(observer)
 
         if self.updated_profile is not None:
@@ -65,8 +65,10 @@ class MessageBroker:
         except Exception as ex:
             log.error("Could not send profile to front end: " + str(ex))
 
+
+    # Send to all observers
     def new_profile_all(self, profile):
-        self.last_profile = profile
+        self.current_profile = profile
         prof = {
             'profile': profile,
         }
