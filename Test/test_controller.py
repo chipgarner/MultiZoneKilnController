@@ -73,3 +73,19 @@ def test_modes():
 
     controller.auto_manual()
     assert  not controller.manual
+
+def test_no_profile_selected_sends_list():
+    controller = Controller(FakeBroker(), zones, 10)
+
+    message = controller.get_profile_message()
+
+    assert message[0] == 'fast.json'
+
+def test_profile_selected_sends_profile():
+    controller = Controller(FakeBroker(), zones, 10)
+    controller.set_profile_by_name('fast.json')
+
+    message = controller.get_profile_message()
+
+    assert type(message) is dict
+    assert message["segments"][3]["temperature"] == 1150

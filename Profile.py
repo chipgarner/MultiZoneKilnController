@@ -27,6 +27,9 @@ class Profile:
     def __init__(self):
         self.profiles_directory = os.path.abspath(os.path.join(os.path.dirname(__file__), '.', 'Profiles'))
 
+        self.original = None
+        self.data = None
+        self.name = None
         self.current_segment = None
         self.segment_start = None
 

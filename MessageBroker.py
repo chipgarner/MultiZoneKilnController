@@ -42,12 +42,6 @@ class MessageBroker:
     def set_heat_for_zone(self, heat, zone):
         self.controller_callbacks['set_heat_for_zone'](heat, zone)
 
-    def profile_to_ms(self, profile):
-        now = time.time()
-        for segment in profile['segments']:
-            segment['time_ms'] = round((segment['time'] + now) * 1000)
-        return profile
-
     def add_observer(self, observer):
         self.update_profile(observer, self.current_profile)
         self.observers.append(observer)

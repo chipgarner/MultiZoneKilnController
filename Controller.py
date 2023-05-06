@@ -8,7 +8,6 @@ import DataFilter
 import pid
 import Slope
 
-
 log_level = logging.DEBUG
 log_format = '%(asctime)s %(levelname)s %(name)s: %(message)s'
 log: Logger = logging.getLogger(__name__)
@@ -17,13 +16,12 @@ log: Logger = logging.getLogger(__name__)
 class Controller:
     def __init__(self, broker, zones, loop_delay):
         self.broker = broker
-        broker_to_contoller_callbacks = {
-            'start_stop': self.start_stop_firing,
-            'auto_manual': self.auto_manual,
-            'set_heat_for_zone': self.set_heat_for_zone}
+        broker_to_contoller_callbacks = {'start_stop': self.start_stop_firing, 'auto_manual': self.auto_manual,
+            'set_heat_for_zone': self.set_heat_for_zone, 'get_profile_message': self.get_profile_message,
+            'set_profile_by_name': self.set_profile_by_name}
         self.broker.set_controller_functions(broker_to_contoller_callbacks)
 
-        self.profile = None
+        self.profile = Profile.Profile()
         # self.pid = Pid.PID()
         self.pid = pid.PID(10, 0.01, 2, setpoint=27, sample_time=None, output_limits=(0, 100))
 
@@ -46,7 +44,6 @@ class Controller:
         self.manual = False
 
     def load_profile_by_name(self, file: str):
-        self.profile = Profile.Profile()
         self.profile.load_profile_by_name(file)
 
     def start_stop_firing(self):
@@ -54,15 +51,13 @@ class Controller:
             self.state = 'IDLE'
             log.debug('Stop firing.')
         else:
-            if self.profile is None:
-                self.state = 'PROFILE'
-                self.load_profile_by_name('fast.json')
-            else:
+            if self.profile is not None:
                 self.state = 'FIRING'
-            if self.start_time_ms is None: # Really start
-                self.start_time_ms = time.time() * 1000
-                self.broker.new_profile_all(Profile.convert_old_profile_ms(self.profile.name, self.profile.data, self.start_time_ms))
-            log.debug('Start firing.')
+                self.start_time_ms = time.time() * 1000  # Start or restart
+                self.set_profile_by_name('fast.json')
+                self.broker.new_profile_all(
+                    Profile.convert_old_profile_ms(self.profile.name, self.profile.data, self.start_time_ms))
+                log.debug('Start firing.')
         self.slope.restart()
 
     def auto_manual(self):
@@ -70,6 +65,23 @@ class Controller:
             self.manual = False
         else:
             self.manual = True
+
+    def get_profile_names(self) -> list:
+        return self.profile.get_profiles_names()
+
+    def get_profile_message(self) -> dict | list:
+        if self.profile.name is None:
+            message = self.get_profile_names()
+        else:
+            message = Profile.convert_old_profile_ms(self.profile.name, self.profile.data, self.start_time_ms)
+        return message
+
+    def set_profile_by_name(self, name: str):
+        self.load_profile_by_name(name)
+        if self.start_time_ms is None:
+            self.start_time_ms = time.time() * 1000
+        self.broker.new_profile_all(
+            Profile.convert_old_profile_ms(self.profile.name, self.profile.data, self.start_time_ms))
 
     def control_loop(self):
         self.__zero_heat_zones()
@@ -85,27 +97,30 @@ class Controller:
         # [{'time_ms': 1681699155538, 'temperature': 26.61509180150021, 'heat_factor': 0, 'slope': -38.53027597928395, 'pstdev': 0.11994385358365571},
         # {'time_ms': 1681699156539, 'temperature': 26.35214565357634, 'heat_factor': 0, 'slope': 32.486937287637026, 'pstdev': 0.703745679973122}]
         zones_status = self.smooth_temperatures(tthz)
+        target = 'OFF'
 
-        if self.profile is not None:
+        if self.profile.name is not None:
             min_temp = 2000
             time_since_start = 0
             for index, zone in enumerate(zones_status):
                 if zone['temperature'] < min_temp:
                     min_temp = zone['temperature']
                     time_since_start = (zones_status[index]['time_ms'] - self.start_time_ms) / 1000
-            target, update, segment_change = self.profile.update_profile(time_since_start, min_temp, 12)
+            target, update, segment_change = self.profile.update_profile(time_since_start, min_temp,
+                                                                         12)  # TODO loop_delay + 2, doesn't work woth sim speedup
+            if segment_change: self.slope.restart()
             if type(target) is str:
                 self.state = "IDLE"
-            elif update:
-                    self.broker.update_profile_all(Profile.convert_old_profile_ms(self.profile.name, self.profile.data, self.start_time_ms))
-            if segment_change: self.slope.restart()
+            elif update: # The profile has shifted, show the shift in the UI
+                self.broker.update_profile_all(
+                    Profile.convert_old_profile_ms(self.profile.name, self.profile.data, self.start_time_ms))
 
         if self.state == 'FIRING':
             heats = []
             for index, zone in enumerate(tthz):
-                zones_status[index]["target"] = target # This can be None if profile is None FIRING - not allowed
-                zones_status[index]["target_slope"] = \
-                    self.profile.get_target_slope((zones_status[index]['time_ms'] - self.start_time_ms) / 1000)
+                zones_status[index]["target"] = target  # This can be None if profile is None FIRING - not allowed
+                zones_status[index]["target_slope"] = self.profile.get_target_slope(
+                    (zones_status[index]['time_ms'] - self.start_time_ms) / 1000)
 
                 delta_t = (zones_status[index]['time_ms'] - self.last_times[index]) / 1000
                 self.last_times[index] = zones_status[index]['time_ms']
@@ -142,11 +157,9 @@ class Controller:
 
                 slope = self.slope.slope(index, best_time, best_temp, t_t_h_z[index][0]['heat_factor'])
 
-                zones_status.append({'time_ms': best_time,
-                                     'temperature': best_temp,
-                                     'heat_factor': t_t_h_z[index][0]['heat_factor'],
-                                     'slope': slope,
-                                     'pstdev': pstdev})
+                zones_status.append(
+                    {'time_ms': best_time, 'temperature': best_temp, 'heat_factor': t_t_h_z[index][0]['heat_factor'],
+                     'slope': slope, 'pstdev': pstdev})
 
         return zones_status
 
