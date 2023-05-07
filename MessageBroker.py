@@ -11,23 +11,15 @@ log = logging.getLogger(__name__)
 
 class MessageBroker:
     def __init__(self):
-        self.current_profile = None
         self.observers = []
         self.db = DbInsertSelect.DbInsertSelect()
 
         # Callbacks from Controller.py
         self.controller_callbacks = None
 
-        # TODO
-        # self.last_profile = {'name': 'fast',
-        #                      'segments': [{'time': 0, 'temperature': 100}, {'time': 3600, 'temperature': 100},
-        #                                   {'time': 10800, 'temperature': 1000}, {'time': 14400, 'temperature': 1150},
-        #                                   {'time': 16400, 'temperature': 1150}, {'time': 19400, 'temperature': 700}]}
-        # self.last_profile = self.profile_to_ms(self.last_profile)
-        self.current_profile = None
+        self.original_profile = None
         self.updated_profile = None
-        self.prof_sent = False
-        self.count = 0
+        self.profile_names = None
 
     # Callback functions for access to Controller.p
     def set_controller_functions(self, contoller_callbacks: dict):
@@ -43,11 +35,23 @@ class MessageBroker:
         self.controller_callbacks['set_heat_for_zone'](heat, zone)
 
     def add_observer(self, observer):
-        self.update_profile(observer, self.current_profile)
+        names = self.controller_callbacks['get_profile_message']()
+
+        if self.original_profile is not None:
+            self.update_profile(observer, self.original_profile)
         self.observers.append(observer)
 
         if self.updated_profile is not None:
             self.update_profile_all(self.updated_profile)
+        if names is not None:
+            self.profile_names = names
+            self.update_names(names)
+
+    def update_names(self, names: list):
+        profile_names = {
+            'profile_names': names
+        }
+        self.send_socket(json.dumps(profile_names))
 
     def update_profile(self, observer, profile):
         prof = {
@@ -62,7 +66,7 @@ class MessageBroker:
 
     # Send to all observers
     def new_profile_all(self, profile):
-        self.current_profile = profile
+        self.original_profile = profile
         prof = {
             'profile': profile,
         }

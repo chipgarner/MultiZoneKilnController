@@ -31,7 +31,7 @@ zones = [zone1, zone2, zone3, zone4]
 
 def test_loads_profile():
     controller = Controller(FakeBroker(), ['zony'], 10)
-    controller.load_profile_by_name('test-fast.json')
+    controller.set_profile_by_name('test-fast.json')
 
     assert type(controller.profile) == Profile.Profile
     assert len(controller.profile.data) == 6
@@ -41,7 +41,7 @@ def test_init_zones():
     controller = Controller(FakeBroker(), zones, 10)
 
     assert type(controller.kiln_zones) == KilnZones
-    assert controller.state == 'IDLE'
+    assert not controller.controller_state.get_state()['firing']
 
     for zone in controller.zones:
         assert zone.kiln_elec.heat_factor == 0
@@ -60,19 +60,19 @@ def test_loop_calls():
 
 def test_modes():
     controller = Controller(FakeBroker(), zones, 10)
-    controller.load_profile_by_name('test-fast.json')
+    controller.set_profile_by_name('test-fast.json')
 
-    assert controller.state == "IDLE"
+    assert not controller.controller_state.get_state()['firing']
 
     controller.start_stop_firing()
-    assert controller.state == "FIRING"
+    assert controller.controller_state.get_state()['firing']
 
-    assert not controller.manual
+    assert not controller.controller_state.get_state()['manual']
     controller.auto_manual()
-    assert controller.manual
+    assert controller.controller_state.get_state()['manual']
 
     controller.auto_manual()
-    assert  not controller.manual
+    assert  not controller.controller_state.get_state()['manual']
 
 def test_no_profile_selected_sends_list():
     controller = Controller(FakeBroker(), zones, 10)
@@ -81,11 +81,10 @@ def test_no_profile_selected_sends_list():
 
     assert message[0] == 'fast.json'
 
-def test_profile_selected_sends_profile():
+def test_profile_selected_sends_list():
     controller = Controller(FakeBroker(), zones, 10)
     controller.set_profile_by_name('fast.json')
 
     message = controller.get_profile_message()
 
-    assert type(message) is dict
-    assert message["segments"][3]["temperature"] == 1150
+    assert type(message) is list
