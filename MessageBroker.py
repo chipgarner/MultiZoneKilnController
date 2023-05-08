@@ -34,8 +34,11 @@ class MessageBroker:
     def set_heat_for_zone(self, heat, zone):
         self.controller_callbacks['set_heat_for_zone'](heat, zone)
 
+    def set_profile(self, profile_name: str):
+        self.controller_callbacks['set_profile_by_name'](profile_name + '.json')
+
     def add_observer(self, observer):
-        names = self.controller_callbacks['get_profile_message']()
+        names = self.controller_callbacks['get_profile_names']()
 
         if self.original_profile is not None:
             self.update_profile(observer, self.original_profile)

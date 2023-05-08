@@ -123,4 +123,4 @@ def test_get_profiles_list():
     profiles = profile.get_profiles_names()
 
     assert len(profiles) >= 3
-    assert "test-fast.json" in profiles
+    assert {'name': 'test-fast'} in profiles

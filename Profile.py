@@ -47,8 +47,11 @@ class Profile:
         self.original = copy.deepcopy(self.data)
 
     def get_profiles_names(self) -> list:
+        profile_names = []
         files = [f for f in os.listdir(self.profiles_directory) if isfile(join(self.profiles_directory, f))]
-        return files
+        for file in files:
+            profile_names.append({'name': file.split('.')[0]})
+        return profile_names
 
     def get_duration(self) -> int:
         return max([t for (t, x) in self.data])

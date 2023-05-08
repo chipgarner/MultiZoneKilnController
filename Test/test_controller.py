@@ -79,7 +79,7 @@ def test_no_profile_selected_sends_list():
 
     message = controller.get_profile_message()
 
-    assert message[0] == 'fast.json'
+    assert message[0] == {'name': 'fast'}
 
 def test_profile_selected_sends_list():
     controller = Controller(FakeBroker(), zones, 10)

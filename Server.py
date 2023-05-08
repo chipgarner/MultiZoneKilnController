@@ -55,8 +55,8 @@ def server():
         log.info("websocket (status) opened")
         while True:
             try:
-                message = wsock.receive()
-                wsock.send("Your message was: %r" % message)
+                wsock.receive()
+                # wsock.send("Your message was: %r" % message)
             except WebSocketError:
                 break
         log.info("websocket (status) closed")
@@ -76,6 +76,12 @@ def server():
 
         broker.set_heat_for_zone(int(message['power']), message['zone'])
 
+    @bottle_app.post('/profile')
+    def handle_profile():
+        message = bottle.request.body.read()
+        message = json.loads(message)
+
+        broker.set_profile((message['profile_name']))
 
     @bottle_app.error(404)
     def error404(error):

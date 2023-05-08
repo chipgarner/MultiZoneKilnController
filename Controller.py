@@ -17,7 +17,7 @@ class Controller:
     def __init__(self, broker, zones, loop_delay):
         self.broker = broker
         broker_to_controller_callbacks = {'start_stop': self.start_stop_firing, 'auto_manual': self.auto_manual,
-            'set_heat_for_zone': self.set_heat_for_zone, 'get_profile_message': self.get_profile_message,
+            'set_heat_for_zone': self.set_heat_for_zone, 'get_profile_names': self.get_profile_names,
             'set_profile_by_name': self.set_profile_by_name}
         self.broker.set_controller_functions(broker_to_controller_callbacks)
 
@@ -49,7 +49,6 @@ class Controller:
             self.controller_state.firing_off()
             log.debug('Stop firing.')
         else:
-            self.set_profile_by_name('fast.json')  # TODO NO
             if self.controller_state.get_state()['profile_chosen']:
                 self.controller_state.firing_on()
                 self.start_time_ms = time.time() * 1000  # Start or restart
@@ -75,19 +74,14 @@ class Controller:
     def get_profile_names(self) -> list:
         return self.profile.get_profiles_names()
 
-    def get_profile_message(self) -> list | None:
-        names = None
-        if not self.controller_state.get_state()['firing']:
-            names = self.profile_names
-        return names
-
     def set_profile_by_name(self, name: str):
-        self.profile.load_profile_by_name(name)
         if not self.controller_state.choosing_profile():
             log.error('Could not set the profile')
-        if self.start_time_ms is None:
-            self.start_time_ms = time.time() * 1000
-        self.send_updated_profile(self.profile.name, self.profile.data, self.start_time_ms)
+        else:
+            self.profile.load_profile_by_name(name)
+            if self.start_time_ms is None:
+                self.start_time_ms = time.time() * 1000
+            self.send_updated_profile(self.profile.name, self.profile.data, self.start_time_ms)
 
     def control_loop(self):
         self.__zero_heat_zones()
