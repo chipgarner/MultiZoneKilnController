@@ -10,8 +10,10 @@ class FakeBroker:
         self.start = None
         self.stop = None
 
-    def update_status(self, state, manual, times_temps_heats_for_zones: list):
+    def update_UI_status(self, state: dict):
         self.update_calls += 1
+    def update_zones(self, zones: list):
+        pass
     def set_controller_functions(self, broker_to_controller_callbacks: dict):
         self.start = broker_to_controller_callbacks['start_stop']
         self.stop = self.start
@@ -60,9 +62,12 @@ def test_loop_calls():
 
 def test_modes():
     controller = Controller(FakeBroker(), zones, 10)
-    controller.set_profile_by_name('test-fast.json')
-
     assert not controller.controller_state.get_state()['firing']
+
+    controller.start_stop_firing()
+    assert not controller.controller_state.get_state()['firing'] # Can't strt if profile is not set
+
+    controller.set_profile_by_name('test-fast.json')
 
     controller.start_stop_firing()
     assert controller.controller_state.get_state()['firing']
@@ -77,7 +82,7 @@ def test_modes():
 def test_no_profile_selected_sends_list():
     controller = Controller(FakeBroker(), zones, 10)
 
-    message = controller.get_profile_message()
+    message = controller.get_profile_names()
 
     assert message[0] == {'name': 'fast'}
 
@@ -85,6 +90,6 @@ def test_profile_selected_sends_list():
     controller = Controller(FakeBroker(), zones, 10)
     controller.set_profile_by_name('fast.json')
 
-    message = controller.get_profile_message()
+    message = controller.get_profile_names()
 
     assert type(message) is list

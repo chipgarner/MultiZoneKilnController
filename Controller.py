@@ -16,9 +16,11 @@ log: Logger = logging.getLogger(__name__)
 class Controller:
     def __init__(self, broker, zones, loop_delay):
         self.broker = broker
-        broker_to_controller_callbacks = {'start_stop': self.start_stop_firing, 'auto_manual': self.auto_manual,
-            'set_heat_for_zone': self.set_heat_for_zone, 'get_profile_names': self.get_profile_names,
-            'set_profile_by_name': self.set_profile_by_name}
+        broker_to_controller_callbacks = {'start_stop': self.start_stop_firing,
+                                          'auto_manual': self.auto_manual,
+                                          'set_heat_for_zone': self.set_heat_for_zone,
+                                          'get_profile_names': self.get_profile_names,
+                                          'set_profile_by_name': self.set_profile_by_name}
         self.broker.set_controller_functions(broker_to_controller_callbacks)
 
         self.profile = Profile.Profile()
@@ -41,18 +43,15 @@ class Controller:
 
         log.info('Controller initialized.')
 
-        self.controller_state = ControllerState()
-
+        self.controller_state = ControllerState(self.profile_names)
 
     def start_stop_firing(self):
         if self.controller_state.get_state()['firing']:
             self.controller_state.firing_off()
             log.debug('Stop firing.')
         else:
-            if self.controller_state.get_state()['profile_chosen']:
-                self.controller_state.firing_on()
+            if self.controller_state.firing_on():
                 self.start_time_ms = time.time() * 1000  # Start or restart
-
                 self.send_profile(self.profile.name, self.profile.data, self.start_time_ms)
                 log.debug('Start firing.')
                 self.send_updated_profile(self.profile.name, self.profile.data, self.start_time_ms)
@@ -64,7 +63,6 @@ class Controller:
     def send_updated_profile(self, name: str, data: list, start_ms: float):
         self.broker.update_profile_all(Profile.convert_old_profile_ms(name, data, start_ms))
 
-
     def auto_manual(self):
         if not self.controller_state.get_state()['manual']:
             self.controller_state.manual_on()
@@ -75,7 +73,7 @@ class Controller:
         return self.profile.get_profiles_names()
 
     def set_profile_by_name(self, name: str):
-        if not self.controller_state.choosing_profile():
+        if not self.controller_state.choosing_profile(name):
             log.error('Could not set the profile')
         else:
             self.profile.load_profile_by_name(name)
@@ -90,12 +88,7 @@ class Controller:
             time.sleep(self.loop_delay)
 
     def loop_calls(self):
-        # [[{'time_ms': 1681699151525, 'temperature': 26.61509180150021, 'heat_factor': 0, 'error': 0},
-        # {'time_ms': 1681699153531, 'temperature': 26.61509180150021, 'heat_factor': 0, 'error': 1},
-        # {'time_ms': 1681699155537, 'temperature': 26.61509180150021, 'heat_factor': 0, 'error': 1}]]
         tthz = self.kiln_zones.get_times_temps_heating_for_zones()
-        # [{'time_ms': 1681699155538, 'temperature': 26.61509180150021, 'heat_factor': 0, 'slope': -38.53027597928395, 'pstdev': 0.11994385358365571},
-        # {'time_ms': 1681699156539, 'temperature': 26.35214565357634, 'heat_factor': 0, 'slope': 32.486937287637026, 'pstdev': 0.703745679973122}]
         zones_status = self.smooth_temperatures(tthz)
         target = 'OFF'
 
@@ -111,7 +104,7 @@ class Controller:
             if segment_change: self.slope.restart()
             if type(target) is str:
                 self.controller_state.firing_off()
-            elif update: # The profile has shifted, show the shift in the UI
+            elif update:  # The profile has shifted, show the shift in the UI
                 self.send_updated_profile(self.profile.name, self.profile.data, self.start_time_ms)
 
         if self.controller_state.get_state()['firing']:
@@ -136,10 +129,15 @@ class Controller:
                 zones_status[index]["target_slope"] = 0
                 self.last_times[index] = zones_status[index]['time_ms']
 
-        if self.controller_state.get_state()['manual']: display = 'MANUAL'
-        elif self.controller_state.get_state()['firing']: display = 'FIRING'
-        else: display = 'IDLE'
-        self.broker.update_status(display, self.controller_state.get_state()['manual'], zones_status)
+        # if self.controller_state.get_state()['manual']:
+        #     display = 'MANUAL'
+        # elif self.controller_state.get_state()['firing']:
+        #     display = 'FIRING'
+        # else:
+        #     display = 'IDLE'
+        # self.broker.update_status(display, self.controller_state.get_state()['manual'], zones_status)
+        self.broker.update_UI_status(self.controller_state.get_UI_status())
+        self.broker.update_zones(zones_status)
 
     def smooth_temperatures(self, t_t_h_z: list) -> list:
         zones_status = []
@@ -181,15 +179,26 @@ class Controller:
             self.kiln_zones.zones[zone - 1].set_heat(heat / 100)
 
 
-# This clall limits the possible states to the ones we want. For example, don't start the firing without
-# furst choosing a profile.
+# This class limits the possible states to the ones we want. For example, don't start the firing without
+# first choosing a profile. All the logic is in one place, instead of repeating logic on the fornt end.
 class ControllerState:
-    def __init__(self):
-        self.__controller_state = {
-            'firing': False,
-            'profile_chosen': False,
-            'manual': False
+    def __init__(self, profile_names):
+        self.__controller_state = {'firing': False, 'profile_chosen': False, 'manual': False}
+
+        # This avoids repeating logic on the front end.
+        self.__UI_status = {
+            'label': 'IDLE',
+            'StartStop': 'Start',
+            'StartStopDisabled': True,
+            'Manual': False,
+            'ManualDisabled': True,
+            'ProfileName': 'None',
+            'ProfileNames': profile_names,
+            'ProfileSelectDisabled': True,
         }
+
+    def get_UI_status(self):
+        return self.__UI_status
 
     def get_state(self):
         return self.__controller_state
@@ -198,17 +207,42 @@ class ControllerState:
         worked = False
         if self.__controller_state['profile_chosen']:
             self.__controller_state['firing'] = True
+
+            self.__UI_status['label'] = 'FIRING'
+            self.__UI_status['StartStop'] = 'Stop'
+            self.__UI_status['StartStopDisabled'] = False
+            self.__UI_status['Manual'] = False
+            self.__UI_status['ManualDisabled'] = False
+            self.__UI_status['ProfileSelectDisabled'] = True
+
             worked = True
         return worked
 
     def firing_off(self) -> bool:
         self.__controller_state['firing'] = False
+
+        self.__UI_status['label'] = 'IDLE'
+        self.__UI_status['StartStop'] = 'Start'
+        self.__UI_status['StartStopDisabled'] = False
+        self.__UI_status['Manual'] = False
+        self.__UI_status['ManualDisabled'] = True
+        self.__UI_status['ProfileSelectDisabled'] = False
+
         return True
 
-    def choosing_profile(self) -> bool:
+    def choosing_profile(self, name) -> bool:
         worked = False
-        if not self.__controller_state['firing']:
+        if not (self.__controller_state['firing'] or self.__controller_state['manual']):
             self.__controller_state['profile_chosen'] = True
+            self.__UI_status['ProfileName'] = name
+
+            self.__UI_status['label'] = 'IDLE'
+            self.__UI_status['StartStop'] = 'Start'
+            self.__UI_status['StartStopDisabled'] = False
+            self.__UI_status['Manual'] = False
+            self.__UI_status['ManualDisabled'] = True
+            self.__UI_status['ProfileSelectDisabled'] = False
+
             worked = True
         return worked
 
@@ -216,9 +250,25 @@ class ControllerState:
         worked = False
         if self.__controller_state['firing']:
             self.__controller_state['manual'] = True
+
+            self.__UI_status['label'] = 'MANUAL'
+            self.__UI_status['StartStop'] = 'Stop'
+            self.__UI_status['StartStopDisabled'] = False
+            self.__UI_status['Manual'] = True
+            self.__UI_status['ManualDisabled'] = False
+            self.__UI_status['ProfileSelectDisabled'] = True
+
             worked = True
         return worked
 
     def manual_off(self) -> bool:
         self.__controller_state['manual'] = False
+
+        self.__UI_status['label'] = 'FIRING'
+        self.__UI_status['StartStop'] = 'Stop'
+        self.__UI_status['StartStopDisabled'] = False
+        self.__UI_status['Manual'] = False
+        self.__UI_status['ManualDisabled'] = False
+        self.__UI_status['ProfileSelectDisabled'] = True
+
         return True

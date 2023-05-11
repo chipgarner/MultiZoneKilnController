@@ -12,7 +12,7 @@ log = logging.getLogger(__name__)
 class MessageBroker:
     def __init__(self):
         self.observers = []
-        self.db = DbInsertSelect.DbInsertSelect()
+        # self.db = DbInsertSelect.DbInsertSelect()
 
         # Callbacks from Controller.py
         self.controller_callbacks = None
@@ -85,22 +85,21 @@ class MessageBroker:
         prof_json = json.dumps(prof)
         self.send_socket(prof_json)
 
-    def update_status(self, state: str, manual: bool, zones_status_array: list):
-        # self.update_thingsboard(times_temps_heats_for_zones) SIMULATOR SPEEDUP to 1 !!!= TODO fix mqtt
-        # self.db.send_time_stamped_message(tthz) TODO
-
+    def update_UI_status(self, UI_message: dict):
         status = {
-            'state': state,
-            'manual': manual,
-            'zones_status_array': zones_status_array,
+            'status': UI_message
         }
         message = json.dumps(status)
-
-        log.debug('Sending websocket length: ' + str(len(message)))
-        log.debug('Sending websocket: ' + str(message))
-
         self.send_socket(message)
 
+    def update_zones(self, zones_status_array: list):
+        # self.update_thingsboard(times_temps_heats_for_zones) SIMULATOR SPEEDUP to 1 !!!= TODO fix mqtt
+        # self.db.send_time_stamped_message(tthz) TODO
+        zones = {
+            'zones_status_array': zones_status_array,
+        }
+        message = json.dumps(zones)
+        self.send_socket(message)
 
     def send_socket(self, message):
         for observer in self.observers:

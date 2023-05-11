@@ -123,14 +123,14 @@ class Profile:
         if type(target) is str: return "Off", update, segment_change
 
         error = target - lowest_temp
-        if error > 5:
+        if error > 5: # Too cold, move segment times so it can catch up
             if self.current_segment is not None:
                 for index, time_temp in enumerate(self.data):
                     if index > self.current_segment:
                         time_temp[0] += delta_t
                 update = True
         else:
-            if error < 2:
+            if error < 2: # Check for segment completed, switch to next segment
                 if self.current_segment is None:
                     self.current_segment = 0
                     segment_change = True
