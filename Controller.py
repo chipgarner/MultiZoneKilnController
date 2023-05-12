@@ -15,16 +15,7 @@ log: Logger = logging.getLogger(__name__)
 
 class Controller:
     def __init__(self, broker, zones, loop_delay):
-        self.broker = broker
-        broker_to_controller_callbacks = {'start_stop': self.start_stop_firing,
-                                          'auto_manual': self.auto_manual,
-                                          'set_heat_for_zone': self.set_heat_for_zone,
-                                          'get_profile_names': self.get_profile_names,
-                                          'set_profile_by_name': self.set_profile_by_name}
-        self.broker.set_controller_functions(broker_to_controller_callbacks)
-
         self.profile = Profile.Profile()
-        self.profile_names = self.get_profile_names()
         # self.pid = Pid.PID()
         self.pid = pid.PID(10, 0.01, 2, setpoint=27, sample_time=None, output_limits=(0, 100))
 
@@ -41,9 +32,19 @@ class Controller:
         for _ in zones:
             self.last_times.append(0)
 
-        log.info('Controller initialized.')
+        self.broker = broker
+        broker_to_controller_callbacks = {'start_stop': self.start_stop_firing,
+                                          'auto_manual': self.auto_manual,
+                                          'set_heat_for_zone': self.set_heat_for_zone,
+                                          'get_profile_names': self.get_profile_names,
+                                          'set_profile_by_name': self.set_profile_by_name}
+        self.broker.set_controller_functions(broker_to_controller_callbacks)
 
+        self.profile_names = self.get_profile_names()
         self.controller_state = ControllerState(self.profile_names)
+        self.broker.update_UI_status(self.controller_state.get_UI_status())
+
+        log.info('Controller initialized.')
 
     def start_stop_firing(self):
         if self.controller_state.get_state()['firing']:
@@ -56,6 +57,7 @@ class Controller:
                 log.debug('Start firing.')
                 self.send_updated_profile(self.profile.name, self.profile.data, self.start_time_ms)
         self.slope.restart()
+        self.broker.update_UI_status(self.controller_state.get_UI_status())
 
     def send_profile(self, name: str, data: list, start_ms: float):
         self.broker.new_profile_all(Profile.convert_old_profile_ms(name, data, start_ms))
@@ -68,6 +70,7 @@ class Controller:
             self.controller_state.manual_on()
         else:
             self.controller_state.manual_off()
+        self.broker.update_UI_status(self.controller_state.get_UI_status())
 
     def get_profile_names(self) -> list:
         return self.profile.get_profiles_names()
@@ -129,13 +132,6 @@ class Controller:
                 zones_status[index]["target_slope"] = 0
                 self.last_times[index] = zones_status[index]['time_ms']
 
-        # if self.controller_state.get_state()['manual']:
-        #     display = 'MANUAL'
-        # elif self.controller_state.get_state()['firing']:
-        #     display = 'FIRING'
-        # else:
-        #     display = 'IDLE'
-        # self.broker.update_status(display, self.controller_state.get_state()['manual'], zones_status)
         self.broker.update_UI_status(self.controller_state.get_UI_status())
         self.broker.update_zones(zones_status)
 
@@ -194,7 +190,7 @@ class ControllerState:
             'ManualDisabled': True,
             'ProfileName': 'None',
             'ProfileNames': profile_names,
-            'ProfileSelectDisabled': True,
+            'ProfileSelectDisabled': False,
         }
 
     def get_UI_status(self):

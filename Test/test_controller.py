@@ -6,14 +6,15 @@ from KilnElectronics import Sim
 
 class FakeBroker:
     def __init__(self):
+        self.update_UI_calls = 0
         self.update_calls = 0
         self.start = None
         self.stop = None
 
     def update_UI_status(self, state: dict):
-        self.update_calls += 1
+        self.update_UI_calls += 1
     def update_zones(self, zones: list):
-        pass
+        self.update_calls += 1
     def set_controller_functions(self, broker_to_controller_callbacks: dict):
         self.start = broker_to_controller_callbacks['start_stop']
         self.stop = self.start
@@ -56,6 +57,7 @@ def test_loop_calls():
 
     controller.loop_calls()
 
+    assert broker.update_UI_calls == 2
     assert broker.update_calls == 1
     assert broker.start is not None
     assert broker.stop is not None

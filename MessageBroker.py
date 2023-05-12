@@ -1,6 +1,5 @@
 import logging
 import json
-import time
 
 from geventwebsocket import WebSocketError
 
