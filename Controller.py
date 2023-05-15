@@ -96,24 +96,28 @@ class Controller:
         target = 'OFF'
 
         if self.profile.name is not None:
-            min_temp = 2000
-            time_since_start = 0
-            for index, zone in enumerate(zones_status):
-                if zone['temperature'] < min_temp:
-                    min_temp = zone['temperature']
-                    time_since_start = (zones_status[index]['time_ms'] - self.start_time_ms) / 1000
-            target, update, segment_change = self.profile.update_profile(time_since_start, min_temp,
-                                                                         12)  # TODO loop_delay + 2, doesn't work woth sim speedup
-            if segment_change: self.slope.restart()
+            min_temp, time_since_start = self.lagging_temp_time(zones_status, self.start_time_ms)
+            target = self.profile.get_target_temperature(time_since_start)
             if type(target) is str:
                 self.controller_state.firing_off()
-            elif update:  # The profile has shifted, show the shift in the UI
-                self.send_updated_profile(self.profile.name, self.profile.data, self.start_time_ms)
+            else:
+                error = target - min_temp
+
+                segment_change = False
+                update = False
+                if error < 2:  # Temperature close enough or high, check segment time
+                    segment_change, update = self.profile.check_switch_segment(time_since_start)
+                if segment_change: self.slope.restart()
+
+                if error > 5:  # Too cold, move segment times so it can catch up
+                    update = self.profile.check_shift_profile(time_since_start, min_temp)
+                if update:  # The profile has shifted, show the shift in the UI
+                    self.send_updated_profile(self.profile.name, self.profile.data, self.start_time_ms)
 
         if self.controller_state.get_state()['firing']:
             heats = []
             for index, zone in enumerate(tthz):
-                zones_status[index]["target"] = target  # This can be None if profile is None FIRING - not allowed
+                zones_status[index]["target"] = target
                 zones_status[index]["target_slope"] = self.profile.get_target_slope(
                     (zones_status[index]['time_ms'] - self.start_time_ms) / 1000)
 
@@ -135,6 +139,17 @@ class Controller:
         self.broker.update_UI_status(self.controller_state.get_UI_status())
         self.broker.update_zones(zones_status)
 
+    def lagging_temp_time(self, zones_status, start_time_ms):
+        min_temp = 2000
+        time_since_start = 0
+        for index, zone in enumerate(zones_status):
+            if zone['temperature'] < min_temp:
+                min_temp = zone['temperature']
+                time_since_start = (zones_status[index]['time_ms'] - start_time_ms) / 1000
+
+        return min_temp, time_since_start
+
+
     def smooth_temperatures(self, t_t_h_z: list) -> list:
         zones_status = []
         for index, t_t_h in enumerate(t_t_h_z):
@@ -149,11 +164,14 @@ class Controller:
                     pstdev = 0
                 best_time = round((t_t_h_z[index][0]['time_ms'] + t_t_h_z[index][-1]['time_ms']) / 2)
 
-                slope = self.slope.slope(index, best_time, best_temp, t_t_h_z[index][0]['heat_factor'])
+                slope, slope_data_length = self.slope.slope(index, best_time, best_temp, t_t_h_z[index][0]['heat_factor'])
 
-                zones_status.append(
-                    {'time_ms': best_time, 'temperature': best_temp, 'heat_factor': t_t_h_z[index][0]['heat_factor'],
-                     'slope': slope, 'pstdev': pstdev})
+                zones_status.append({'time_ms': best_time,
+                                     'temperature': best_temp,
+                                     'heat_factor': t_t_h_z[index][0]['heat_factor'],
+                                     'slope': slope,
+                                     'slope_data_length': slope_data_length,
+                                     'pstdev': pstdev})
 
         return zones_status
 

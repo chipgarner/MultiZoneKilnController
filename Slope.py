@@ -13,7 +13,7 @@ class Slope:
         self.restart()
 
     # TODO Average heat factor is likely to become important.
-    def slope(self, index: int, best_time: float, best_temp: float, heat_factor: float) -> float:
+    def slope(self, index: int, best_time: float, best_temp: float, heat_factor: float) -> tuple[float, int]:
         self.long_smoothed_t_t_h_z[index].append({'time_ms': best_time,
                                                   'temperature': best_temp,
                                                   'heat_factor': heat_factor})
@@ -34,7 +34,7 @@ class Slope:
         else:
             slope = 'NA'
 
-        return slope
+        return slope, len(self.long_smoothed_t_t_h_z[index]) # Data length
 
     def restart(self):
         self.long_smoothed_t_t_h_z = []

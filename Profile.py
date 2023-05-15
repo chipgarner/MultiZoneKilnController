@@ -116,32 +116,44 @@ class Profile:
 
         return slope
 
-    def update_profile(self, time_since_start, lowest_temp, delta_t) -> tuple[str | float, bool, bool]:
+    def check_shift_profile(self, time_since_start, min_temp) -> bool:
         update = False
-        segment_change = False
-        target = self.get_target_temperature(time_since_start)
-        if type(target) is str: return "Off", update, segment_change
-
-        error = target - lowest_temp
-        if error > 5: # Too cold, move segment times so it can catch up
-            if self.current_segment is not None:
+        if self.current_segment is not None:
+            prev_point = self.data[self.current_segment]
+            next_point = self.data[self.current_segment + 1]
+            segment_age = time_since_start - prev_point[0]
+            if segment_age > 600: # Let the contoller get establiched on the segment
+                delta_t = self.delta_t_from_slope(prev_point, next_point, time_since_start, min_temp)
                 for index, time_temp in enumerate(self.data):
                     if index > self.current_segment:
                         time_temp[0] += delta_t
                 update = True
-        else:
-            if error < 2: # Check for segment completed, switch to next segment
-                if self.current_segment is None:
-                    self.current_segment = 0
-                    segment_change = True
-                    self.segment_start = time.time()
-                    for time_temp in self.data:
-                        time_temp[0] += time_since_start
-                    update = True
-                else:
-                    if time_since_start >= self.data[self.current_segment + 1][0]:
-                        self.current_segment += 1
-                        segment_change = True
-                        self.segment_start = time.time()
+        return update
 
-        return target, update, segment_change
+    def delta_t_from_slope(self, prev_point, next_point, time_since_start, min_temp):
+        delta_t = (next_point[1] - prev_point[1]) * (time_since_start - prev_point[0]) \
+        / (min_temp - prev_point[1]) + prev_point[0] - next_point[0]
+
+        return delta_t
+
+    def check_switch_segment(self, time_since_start: float) -> tuple[bool, bool]:
+        segment_change = False
+        update = False
+
+        # Don't change the segment until temperature is met or exceeded
+        if self.current_segment is None:
+
+                self.current_segment = 0
+                segment_change = True
+                self.segment_start = time.time()
+                for time_temp in self.data:
+                    time_temp[0] += time_since_start
+                update = True  # Shift profile start on start of first segment
+        else:
+            # Require both time and temeprtature to swtich to the next segment
+            if time_since_start >= self.data[self.current_segment + 1][0]:
+                self.current_segment += 1
+                segment_change = True
+                self.segment_start = time.time()
+
+        return segment_change, update
