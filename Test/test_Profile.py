@@ -6,10 +6,15 @@ test_profile = {"data": [[0, 100], [3600, 100], [10800, 1000], [14400, 1150], [1
 def test_get_target_temperature():
     profile = Profile.Profile()
     profile.load_profile_by_name("test-fast.json")
+    profile.current_segment = 0
 
     temperature = profile.get_target_temperature(3000)
     assert int(temperature) == 200
 
+    temperature = profile.get_target_temperature(6004)
+    assert temperature == 200 # Segment is stil 0, can't go above 200
+
+    profile.current_segment = 1
     temperature = profile.get_target_temperature(6004)
     assert temperature == 801.0
 
@@ -35,8 +40,8 @@ def test_find_time_odd_profile():
     time = profile.find_next_time_from_temperature(500)
     assert time == 4200
 
-    time = profile.find_next_time_from_temperature(2023)
-    assert time == 16676.0
+    time = profile.find_next_time_from_temperature(1023)
+    assert time == 17876.0
 
 
 def test_find_x_given_y_on_line_from_two_points():
@@ -84,6 +89,7 @@ def test_convert_old_profile():
 def test_get_target_slope():
     profile = Profile.Profile()
     profile.load_profile_by_name("test-fast.json")
+    profile.current_segment = 0
 
     t_slope = profile.get_target_slope(3000)
     assert t_slope == 0
@@ -91,10 +97,11 @@ def test_get_target_slope():
     t_slope = profile.get_target_slope(3599)
     assert t_slope == 0
 
+    profile.current_segment = 1
     t_slope = profile.get_target_slope(3600)
     assert t_slope == 900.0
 
-
+    profile.current_segment = 4
     t_slope = profile.get_target_slope(18000)
     assert t_slope == pytest.approx(-1860.0)
 
@@ -109,6 +116,7 @@ def test_get_profiles_list():
 def test_delta_t_from_slope():
     profile = Profile.Profile()
     profile.load_profile_by_name("fast.json")
+    profile.current_segment = 1
 
     time_since_start = 4300
     target = profile.get_target_temperature(time_since_start)
@@ -156,3 +164,24 @@ def test_delta_t_from_steep_slope():
     delta_t = profile.delta_t_from_slope(prev_point, next_point, time_since_start, min_temp)
 
     assert int(delta_t) == 13
+
+# 2023-05-15 07:14:36,632 DEBUG Profile: delta_t: -3600.0
+# 2023-05-15 07:14:36,632 DEBUG Profile: min_temp: 199.6605512332587
+# 2023-05-15 07:14:36,632 DEBUG Controller: target: 206.35399999999981
+# 2023-05-15 07:14:36,733 DEBUG Profile: delta_t: -2.2737367544323206e-13
+# 2023-05-15 07:14:36,733 DEBUG Profile: min_temp: 200.00684420783344
+# 2023-05-15 07:14:36,733 DEBUG Controller: target: 500.0
+def test_delta_t_from_wrong_segment():
+    profile = Profile.Profile()
+    profile.load_profile_by_name("test-cases.json")
+    profile.current_segment = 0
+
+    time_since_start = 3613 # Segment 1
+    target = profile.get_target_temperature(time_since_start)
+    min_temp = 199.66
+    prev_point = profile.data[profile.current_segment]
+    next_point = profile.data[profile.current_segment  + 1]
+
+    delta_t = profile.delta_t_from_slope(prev_point, next_point, time_since_start, min_temp)
+
+    assert int(delta_t) == -3600

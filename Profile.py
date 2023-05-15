@@ -84,29 +84,29 @@ class Profile:
         if time > self.get_duration():
             return None, None
 
-        prev_point = None
-        next_point = None
-
-        for i in range(len(self.data)):
-            if time < self.data[i][0]:
-                prev_point = self.data[i - 1]
-                next_point = self.data[i]
-                break
+        prev_point = self.data[self.current_segment]
+        next_point = self.data[self.current_segment + 1]
 
         return prev_point, next_point
 
     def get_target_temperature(self, time: float) -> float | str:
         if time > self.get_duration():
             return 'Off'
+        if self.current_segment is None:
+            return self.data[0][1]
 
-        (prev_point, next_point) = self.get_surrounding_points(time)
+        prev_point, next_point = self.get_surrounding_points(time)
 
-        incl = float(next_point[1] - prev_point[1]) / float(next_point[0] - prev_point[0])
-        temp = prev_point[1] + (time - prev_point[0]) * incl
+        if time > next_point[0]: temp = next_point[1]
+        else:
+            incl = float(next_point[1] - prev_point[1]) / float(next_point[0] - prev_point[0])
+            temp = prev_point[1] + (time - prev_point[0]) * incl
         return temp
 
     def get_target_slope(self, time_seconds: float) -> float:
         if time_seconds > self.get_duration():
+            return 0
+        if self.current_segment is None:
             return 0
 
         (prev_point, next_point) = self.get_surrounding_points(time_seconds)
@@ -122,12 +122,16 @@ class Profile:
             prev_point = self.data[self.current_segment]
             next_point = self.data[self.current_segment + 1]
             segment_age = time_since_start - prev_point[0]
-            if segment_age > 600: # Let the contoller get establiched on the segment
-                delta_t = self.delta_t_from_slope(prev_point, next_point, time_since_start, min_temp)
-                for index, time_temp in enumerate(self.data):
-                    if index > self.current_segment:
-                        time_temp[0] += delta_t
-                update = True
+            if segment_age > 600: # Let the contoller get established on the segment
+                if min_temp - prev_point[1] > 5: # Avoid divide by small number or negative time change
+                    # +2 to reduce PID induced stall on very steep segments on jump at 600 seconds
+                    delta_t = self.delta_t_from_slope(prev_point, next_point, time_since_start, min_temp + 2)
+                    for index, time_temp in enumerate(self.data):
+                        if index > self.current_segment:
+                            time_temp[0] += delta_t
+                    update = True
+                    log.debug('delta_t: ' + str(delta_t))
+                    log.debug('min_temp: ' + str(min_temp))
         return update
 
     def delta_t_from_slope(self, prev_point, next_point, time_since_start, min_temp):
@@ -150,7 +154,7 @@ class Profile:
                     time_temp[0] += time_since_start
                 update = True  # Shift profile start on start of first segment
         else:
-            # Require both time and temeprtature to swtich to the next segment
+            # Require both time and temperature to swtich to the next segment
             if time_since_start >= self.data[self.current_segment + 1][0]:
                 self.current_segment += 1
                 segment_change = True

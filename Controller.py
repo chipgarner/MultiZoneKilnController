@@ -112,6 +112,7 @@ class Controller:
                 if error > 5:  # Too cold, move segment times so it can catch up
                     update = self.profile.check_shift_profile(time_since_start, min_temp)
                 if update:  # The profile has shifted, show the shift in the UI
+                    log.debug('target: ' + str(target) + ', error: ' + str(error))
                     self.send_updated_profile(self.profile.name, self.profile.data, self.start_time_ms)
 
         if self.controller_state.get_state()['firing']:
@@ -126,6 +127,10 @@ class Controller:
 
                 heat = self.__update_heat(target, zones_status[index]['temperature'], delta_t)
                 heats.append(heat)
+
+                log.debug(str(target - zones_status[index]['temperature']))
+
+            log.debug(heats)
 
             if not self.controller_state.get_state()['manual']:
                 self.kiln_zones.set_heat_for_zones(heats)
