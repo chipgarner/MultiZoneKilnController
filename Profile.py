@@ -4,6 +4,7 @@ from os.path import isfile, join
 import logging
 import time
 import copy
+from typing import Union
 
 log = logging.getLogger(__name__)
 
@@ -89,7 +90,7 @@ class Profile:
 
         return prev_point, next_point
 
-    def get_target_temperature(self, time: float) -> float | str:
+    def get_target_temperature(self, time: float) -> Union[float, str]:
         if time > self.get_duration():
             return 'Off'
         if self.current_segment is None:
