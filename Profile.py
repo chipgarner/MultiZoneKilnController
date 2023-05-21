@@ -141,7 +141,7 @@ class Profile:
 
         return delta_t
 
-    def check_switch_segment(self, time_since_start: float) -> tuple[bool, bool]:
+    def check_switch_segment(self, time_since_start: float) -> Union[bool, bool]:
         segment_change = False
         update = False
 
