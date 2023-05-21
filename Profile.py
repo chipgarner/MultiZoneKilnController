@@ -4,7 +4,7 @@ from os.path import isfile, join
 import logging
 import time
 import copy
-from typing import Union
+from typing import Union, Tuple
 
 log = logging.getLogger(__name__)
 
@@ -141,7 +141,7 @@ class Profile:
 
         return delta_t
 
-    def check_switch_segment(self, time_since_start: float) -> Union[bool, bool]:
+    def check_switch_segment(self, time_since_start: float) -> Tuple[bool, bool]:
         segment_change = False
         update = False
 

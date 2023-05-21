@@ -1,5 +1,5 @@
 import logging
-
+from typing import Tuple
 
 log = logging.getLogger(__name__)
 log.level = logging.INFO
@@ -13,7 +13,7 @@ class Slope:
         self.restart()
 
     # TODO Average heat factor is likely to become important.
-    def slope(self, index: int, best_time: float, best_temp: float, heat_factor: float) -> tuple[float, int]:
+    def slope(self, index: int, best_time: float, best_temp: float, heat_factor: float) -> Tuple[float, int]:
         self.long_smoothed_t_t_h_z[index].append({'time_ms': best_time,
                                                   'temperature': best_temp,
                                                   'heat_factor': heat_factor})
