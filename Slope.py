@@ -2,7 +2,7 @@ import logging
 from typing import Tuple
 
 log = logging.getLogger(__name__)
-log.level = logging.INFO
+log.level = logging.DEBUG
 
 
 
@@ -17,7 +17,7 @@ class Slope:
         self.long_smoothed_t_t_h_z[index].append({'time_ms': best_time,
                                                   'temperature': best_temp,
                                                   'heat_factor': heat_factor})
-        if len(self.long_smoothed_t_t_h_z[index]) > 100:
+        if len(self.long_smoothed_t_t_h_z[index]) > 20:
             self.long_smoothed_t_t_h_z[index].pop(0)
         log.debug('Long_data: ' + str(len(self.long_smoothed_t_t_h_z[index])))
 

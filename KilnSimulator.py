@@ -9,9 +9,9 @@ log.level = logging.INFO
 
 class KilnSimulator:
     def __init__(self):
-        self.latest_temperature = 207 # Temperatures are in degrees Centigrade
+        self.latest_temperature = 27 # Temperatures are in degrees Centigrade
         self.latest_time = time.time()
-        self.sim_speedup = 10
+        self.sim_speedup = 100
         log.warning('Running simulator. In case you thought otherwise.')
 
         self.t_environment = 27 # Degrees C

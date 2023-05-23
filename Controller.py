@@ -131,7 +131,10 @@ class Controller:
                 delta_t = (zones_status[index]['time_ms'] - self.last_times[index]) / 1000
                 self.last_times[index] = zones_status[index]['time_ms']
 
-                heat = self.__update_heat(target, zones_status[index]['temperature'], delta_t)
+                heat = self.__update_heat(target,
+                                          zones_status[index]['temperature'],
+                                          zones_status[index]['heat_factor'],
+                                          delta_t)
                 heats.append(heat)
 
                 log.debug(str(target - zones_status[index]['temperature']))
@@ -192,12 +195,26 @@ class Controller:
             heats.append(0)
         self.kiln_zones.set_heat_for_zones(heats)
 
-    def __update_heat(self, target: float, temp: float, delta_tm: float) -> float:
+    def __update_heat(self, target: float, temp: float, last_heat: float, delta_tm: float) -> float:
 
-        self.pid.setpoint = target
-        heat = self.pid(temp, dt=delta_tm)
+        heat = last_heat
+        error = target - temp
+        # if error > 5: heat = 1.0
+        # elif error < -5: heat = 0.0
+        # else:
+        if abs(error) > 1.0:
+            heat = error * 0.2
+        else:
+            delta_heat = error * 0.001
+            heat = heat + delta_heat
 
-        return heat / 100.0
+        if heat > 1.0: heat = 1.0
+        if heat < 0.0: heat = 0.0
+
+        # self.pid.setpoint = target
+        # heat = self.pid(temp, dt=delta_tm)
+
+        return heat
 
     def set_heat_for_zone(self, heat, zone):
         if self.controller_state.get_state()['manual']:
