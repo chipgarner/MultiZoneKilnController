@@ -53,6 +53,12 @@ class Controller:
         else:
             if self.controller_state.firing_on():
                 self.start_time_ms = time.time() * 1000  # Start or restart
+
+                min_temp = self.slope.get_latest_min_temp()
+                if min_temp > 100: # Hot start
+                    self.start_time_ms = self.start_time_ms - \
+                                         self.profile.hot_start(min_temp) * 1000
+
                 self.send_profile(self.profile.name, self.profile.data, self.start_time_ms)
                 log.debug('Start firing.')
                 self.send_updated_profile(self.profile.name, self.profile.data, self.start_time_ms)

@@ -40,3 +40,15 @@ class Slope:
         self.long_smoothed_t_t_h_z = []
         for _ in range(self.num_zones):
             self.long_smoothed_t_t_h_z.append([])
+
+    def get_latest_min_temp(self) -> float:
+        min_temp = 0
+        if len(self.long_smoothed_t_t_h_z[0]) > 0:
+            min_temp = 3000
+            for tthz in self.long_smoothed_t_t_h_z:
+                for tth in tthz:
+                    if tth['temperature'] < min_temp:
+                        min_temp = tth['temperature']
+
+        return min_temp
+

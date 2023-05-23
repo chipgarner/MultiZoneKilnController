@@ -17,6 +17,9 @@ log_format = '%(asctime)s %(levelname)s %(name)s: %(message)s'
 logging.basicConfig(level=log_level, format=log_format)
 log = logging.getLogger(__name__)
 
+# Each zone needs it's own KilElectronics for thermocouples and switching. Diffferent zones can
+# have different hardware if needed. Power and any ohter sensors should also go here.
+
 class KilnElectronics(ABC):
     @abstractmethod
     def set_heat(self, heat_factor: float):
@@ -40,7 +43,8 @@ class Sim(KilnElectronics):
         self.latest_temp = 0
 
     def set_heat(self, heat_factor: float):
-        self.heat_factor = heat_factor
+        heat = 5.0 * round(heat_factor * 100 / 5) / 100.0  # Make it 20 steps
+        self.heat_factor = heat
 
     def get_heat_factor(self) -> float:
         return self.heat_factor

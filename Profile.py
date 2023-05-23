@@ -34,8 +34,6 @@ class Profile:
         self.current_segment = None
         self.segment_start = None
 
-
-
     def load_profile_by_name(self, file: str):
         profile_path = os.path.join(self.profiles_directory, file)
         log.debug(profile_path)
@@ -67,19 +65,28 @@ class Profile:
         x = (y - point1[1]) * (point2[0] - point1[0]) / (point2[1] - point1[1]) + point1[0]
         return x
 
-    def find_next_time_from_temperature(self, temperature):
+    def find_next_time_from_temperature(self, temperature: float) -> Tuple[float, int]:
         time = 0  # The seek function will not do anything if this returns zero, no useful intersection was found
-        for index, point2 in enumerate(self.data):
-            if point2[1] >= temperature:
+        segment = 0
+        for index, point in enumerate(self.data):
+            if point[1] >= temperature:
                 if index > 0:  # Zero here would be before the first segment
                     if self.data[index - 1][1] <= temperature:  # We have an intersection
-                        time = self.find_x_given_y_on_line_from_two_points(temperature, self.data[index - 1], point2)
+                        time = self.find_x_given_y_on_line_from_two_points(temperature, self.data[index - 1], point)
+                        segment = index - 1
                         if time == 0:
-                            if self.data[index - 1][1] == point2[1]:  # It's a flat segment that matches the temperature
+                            if self.data[index - 1][1] == point[1]:  # It's a flat segment that matches the temperature
                                 time = self.data[index - 1][0]
                                 break
 
-        return time
+        return time, segment
+
+    def hot_start(self, temperature: float) -> float:
+        t_time, segment = self.find_next_time_from_temperature(temperature)
+        self.current_segment = segment
+        self.segment_start = time.time() - self.data[segment][0]
+        return t_time
+
 
     def get_surrounding_points(self, time):
         if time > self.get_duration():

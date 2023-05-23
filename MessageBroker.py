@@ -53,7 +53,9 @@ class MessageBroker:
         profile_names = {
             'profile_names': names
         }
-        self.send_socket(json.dumps(profile_names))
+        names_json = json.dumps(profile_names)
+        log.debug("Names " + names_json)
+        self.send_socket(names_json)
 
     def update_profile(self, observer, profile):
         prof = {
@@ -73,6 +75,7 @@ class MessageBroker:
             'profile': profile,
         }
         prof_json = json.dumps(prof)
+        log.debug("New " + prof_json)
         self.send_socket(prof_json)
 
 
@@ -82,6 +85,7 @@ class MessageBroker:
             'profile_update': profile,
         }
         prof_json = json.dumps(prof)
+        log.debug("Update " + prof_json)
         self.send_socket(prof_json)
 
     def update_UI_status(self, UI_message: dict):

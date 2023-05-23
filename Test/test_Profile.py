@@ -23,25 +23,29 @@ def test_find_time_from_temperature():
     profile = Profile.Profile()
     profile.load_profile_by_name("test-fast.json")
 
-    time = profile.find_next_time_from_temperature(500)
+    time, segment = profile.find_next_time_from_temperature(500)
     assert time == 4800
+    assert segment == 1
 
-    time = profile.find_next_time_from_temperature(2004)
+    time, segment = profile.find_next_time_from_temperature(2004)
     assert time == 10857.6
+    assert segment == 2
 
-    time = profile.find_next_time_from_temperature(1900)
+    time, segment = profile.find_next_time_from_temperature(1900)
     assert time == 10400.0
-
+    assert segment == 1
 
 def test_find_time_odd_profile():
     profile = Profile.Profile()
     profile.load_profile_by_name("test-cases.json")
 
-    time = profile.find_next_time_from_temperature(500)
+    time, segment = profile.find_next_time_from_temperature(500)
     assert time == 4200
+    assert segment == 2
 
-    time = profile.find_next_time_from_temperature(1023)
+    time, segment = profile.find_next_time_from_temperature(1023)
     assert time == 17876.0
+    assert segment == 5
 
 
 def test_find_x_given_y_on_line_from_two_points():
