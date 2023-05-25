@@ -197,22 +197,19 @@ class Controller:
 
     def __update_heat(self, target: float, temp: float, last_heat: float, delta_tm: float) -> float:
 
-        heat = last_heat
-        error = target - temp
-        # if error > 5: heat = 1.0
-        # elif error < -5: heat = 0.0
+        # heat = last_heat
+        # error = target - temp
+        # if abs(error) > 1.0:
+        #     heat = error * 0.2
         # else:
-        if abs(error) > 1.0:
-            heat = error * 0.2
-        else:
-            delta_heat = error * 0.001
-            heat = heat + delta_heat
+        #     delta_heat = error * 0.001
+        #     heat = heat + delta_heat
+        #
+        # if heat > 1.0: heat = 1.0
+        # if heat < 0.0: heat = 0.0
 
-        if heat > 1.0: heat = 1.0
-        if heat < 0.0: heat = 0.0
-
-        # self.pid.setpoint = target
-        # heat = self.pid(temp, dt=delta_tm)
+        self.pid.setpoint = target
+        heat = self.pid(temp, dt=delta_tm) / 100
 
         return heat
 
