@@ -1,7 +1,9 @@
+import math
 import random
 import time
 from abc import ABC, abstractmethod
 import logging
+from typing import Tuple
 
 import adafruit_max31855
 import adafruit_max31856
@@ -147,4 +149,77 @@ class Max31855(KilnElectronics):
 
         time_ms = round(time.time() * 1000)
         return time_ms, temp, error
+
+class SSR:
+    def __init__(self, heater): # Heater has the CircuitPython GPIO: heater = digitalio.DigitalInOut(GPIO)
+        self.heat_factor = 0
+        self.resolution = 20
+        self.on_off = []
+        self.set_heat_off()
+
+        self.heater = heater
+
+        self.running = True
+
+    def set_heat_off(self):
+        onoff = []
+        for i in range(self.resolution):
+            onoff.append(False)
+
+        self.on_off = onoff.copy()
+
+    def get_heat_factor(self) -> float:
+        return self.heat_factor
+
+    def heater_loop(self):
+        cycle_time = 0.1 # Depends on the SSR, many will work at 10 Hertz
+        # while self.running:
+        #     self.*:heater.value
+
+    def cycles_on_off(self, heat_factor: float) -> Tuple[int, int]:
+        # 20 cycles keeps the round off errors small
+        cycles_on = round(heat_factor * 20)
+        cycles_off = 20 - cycles_on
+
+        return cycles_on, cycles_off
+
+    def set_cycles_list(self, heat_factor: float) -> list:
+        onoff = []
+        cycles_on, cycles_off = self.cycles_on_off(heat_factor)
+        for i in range(self.resolution):
+            onoff.append(False)
+        if cycles_off == 0:
+            for i in range(self.resolution):
+                onoff[i] = True
+
+        else:
+            rm = 0
+            index = 0
+            if cycles_on > cycles_off:
+                for i in range(self.resolution):
+                    onoff[i] = True
+                for offs in range(cycles_off):
+                    skips = round(cycles_on / cycles_off + rm / cycles_off)
+                    rm = math.remainder(cycles_on, cycles_off)
+                    onoff[index] = False
+                    index += skips + 1
+                    if index >= self.resolution: break
+            else:
+                for ons in range(cycles_on):
+                    skips = round(cycles_off / cycles_on + rm / cycles_on)
+                    rm = math.remainder(cycles_off, cycles_on)
+                    onoff[index] = True
+                    index += skips + 1
+                    if index >= self.resolution: break
+
+        return onoff
+
+    def set_heat(self, heat_factor: float):
+        onoff = self.set_cycles_list(heat_factor)
+        self.on_off = onoff.copy()
+
+        ons = [x for x in onoff if x]
+        self.heat_factor = len(ons) / self.resolution
+
+
 

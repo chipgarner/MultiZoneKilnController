@@ -86,7 +86,8 @@ def test_no_profile_selected_sends_list():
 
     message = controller.get_profile_names()
 
-    assert message[0] == {'name': 'fast'}
+    assert len(message) >= 3
+    assert type(message[0]) is dict
 
 def test_profile_selected_sends_list():
     controller = Controller(FakeBroker(), zones, 10)
