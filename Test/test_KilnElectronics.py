@@ -62,6 +62,12 @@ def test_more():
     assert hf == 0.15
     assert len(ssr.on_off) == 20
 
+    ssr.set_heat(0.63)
+    hf = ssr.get_heat_factor()
+
+    assert hf == 0.65
+    assert len(ssr.on_off) == 20
+
 def test_set_cycles_list():
     ssr = SSR(None)
 

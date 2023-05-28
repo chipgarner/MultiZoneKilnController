@@ -43,13 +43,14 @@ class Sim(KilnElectronics):
         self.sim_speedup = self.kiln_sim.sim_speedup
         self.start = time.time()  # This is needed for thr simulator speedup
         self.latest_temp = 0
+        self.switches = SSR(None)
 
     def set_heat(self, heat_factor: float):
-        heat = 5.0 * round(heat_factor * 100 / 5) / 100.0  # Make it 20 steps
-        self.heat_factor = heat
+        self.switches.set_heat(heat_factor)
+        self.heat_factor = self.switches.get_heat_factor()
 
     def get_heat_factor(self) -> float:
-        return self.heat_factor
+        return self.switches.get_heat_factor()
 
     def get_temperature(self) -> tuple: # From the thermocouple board
         self.kiln_sim.update_sim(self.heat_factor)
@@ -178,12 +179,14 @@ class SSR:
 
     def cycles_on_off(self, heat_factor: float) -> Tuple[int, int]:
         # 20 cycles keeps the round off errors small
-        cycles_on = round(heat_factor * 20)
-        cycles_off = 20 - cycles_on
+        cycles_on = round(heat_factor * self.resolution)
+        cycles_off = self.resolution - cycles_on
 
         return cycles_on, cycles_off
 
     def set_cycles_list(self, heat_factor: float) -> list:
+        #TODO there must be a simpler way to do this. It spreads out the on off cycles nicely over 20 steps
+        # It seems way to complicated, and code is repeated as it is symetric around 50%
         onoff = []
         cycles_on, cycles_off = self.cycles_on_off(heat_factor)
         for i in range(self.resolution):
@@ -194,19 +197,51 @@ class SSR:
                 onoff[i] = True
             return onoff
 
-        rm = 0
-        index = 0
+        onoff = []
         if cycles_on > cycles_off:
-            for i in range(self.resolution):
-                onoff[i] = True
-            for offs in range(cycles_off):
-                skips = round(cycles_on / cycles_off + rm / cycles_off)
-                rm = math.remainder(cycles_on, cycles_off)
-                onoff[index] = False
-                index += skips + 1
-                if index >= self.resolution: break
+            if cycles_off > 0:
+                skips, mod = divmod(cycles_on, cycles_off)
+                if mod > 0:  # Need to skip some number (n1) of skips and some number (n2) of skips + 1
+                    # n1 + n2 = ons: n1*skips + n2(skips + 1) = offs. Solve for n1 and n2
+                    n2 = cycles_on - skips * cycles_off
+                    n1 = cycles_off - n2
+                else:
+                    n1 = cycles_off
+                    n2 = 0
+
+                if n2 > 0:
+                    ns = n1 / n2
+                    num_shorts = round(ns)
+                    if ns > 0 and num_shorts < 1:
+                        skips += 1
+                else:
+                    num_shorts = 0
+
+                if num_shorts >= 1:
+                    index = 0
+                    while index < self.resolution:
+                        # Longs
+                        onoff.append(False)
+                        for i in range(skips + 1):
+                            onoff.append(True)
+                        # shorts, there may be more of these than longs
+                        for _ in range(num_shorts):
+                            onoff.append(False)
+                            for i in range(skips):
+                                onoff.append(True)
+
+                        index = len(onoff) - 1
+                else:
+                    index = 0
+                    while index < self.resolution:
+                        onoff.append(False)
+                        for i in range(skips):
+                            onoff.append(True)
+
+                        index = len(onoff)
+
+                onoff = onoff[:20]
         else:
-            onoff = []
             if cycles_on > 0:
                 skips, mod = divmod(cycles_off, cycles_on)
                 if mod > 0:  # Need to skip some number (n1) of skips and some number (n2) of skips + 1
