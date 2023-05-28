@@ -205,12 +205,26 @@ class SSR:
                     index += skips + 1
                     if index >= self.resolution: break
             else:
-                for ons in range(cycles_on):
-                    skips = round(cycles_off / cycles_on + rm / cycles_on)
-                    rm = math.remainder(cycles_off, cycles_on)
-                    onoff[index] = True
-                    index += skips + 1
-                    if index >= self.resolution: break
+                if cycles_on > 0:
+                    skips, mod = divmod(cycles_off, cycles_on)
+                    ons = cycles_on
+                    if mod > 0: # Need to skip some number (n1) of skips and some number (n2) of sips + 1
+                        # n1 + n2 = ons: n1*skips + n2(skips + 1) = offs. Solve for n1 and n2
+                        n2 = cycles_off - skips * cycles_on
+                        n1 = cycles_on - n2
+                    else:
+                        n1 = skips
+                        n2 = 0
+
+                    for ons in range(cycles_on):
+                        if n2 > 0:
+                            skip = skips + 1
+                            n2 -= 1
+                        else: skip = skips
+
+                        onoff[index] = True
+                        index += skip + 1
+                        if index >= self.resolution: break
 
         return onoff
 
