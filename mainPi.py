@@ -1,9 +1,9 @@
 import time
-
+import digitalio
 import Controller
 import Server
 from KilnZones import Zone
-from KilnElectronics import Max31856, Max31855, FakeSwitches
+from KilnElectronics import Max31856, Max31855, FakeSwitches, SSR
 import logging
 from threading import Thread
 
@@ -16,8 +16,12 @@ log = logging.getLogger("Controller")
 server_thread = Thread(target=Server.server, name="server", daemon=True)
 server_thread.start()
 
-zone1 = Zone(Max31855(FakeSwitches()))
-zone2 = Zone(Max31856(FakeSwitches()))
+htop = digitalio.DigitalInOut(17) # These are the GPIO pins the heaters are soldered to.
+htop.direction = digitalio.Direction.OUTPUT
+hbottom = digitalio.DigitalInOut(27)
+hbottom.direction = digitalio.Direction.OUTPUT
+zone1 = Zone(Max31855(SSR(htop)))
+zone2 = Zone(Max31856(SSR(hbottom)))
 zones = [zone1, zone2]
 
 loop_delay = 10

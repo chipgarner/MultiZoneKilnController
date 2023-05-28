@@ -1,5 +1,6 @@
 import math
 import random
+import threading
 import time
 from abc import ABC, abstractmethod
 import logging
@@ -37,13 +38,18 @@ class KilnElectronics(ABC):
         pass
 
 class Sim(KilnElectronics):
+    class FakeHeater:
+        def __init__(self):
+            self.value = None
+
     def __init__(self):
         self.heat_factor = 0
         self.kiln_sim = KilnSimulator()
         self.sim_speedup = self.kiln_sim.sim_speedup
         self.start = time.time()  # This is needed for thr simulator speedup
         self.latest_temp = 0
-        self.switches = SSR(None)
+        heater = self.FakeHeater()
+        self.switches = SSR(heater)
 
     def set_heat(self, heat_factor: float):
         self.switches.set_heat(heat_factor)
@@ -152,6 +158,8 @@ class Max31855(KilnElectronics):
         return time_ms, temp, error
 
 class SSR:
+    # heater = digitalio.DigitalInOut(config.gpio_heat)
+    # heater.direction = digitalio.Direction.OUTPUT
     def __init__(self, heater): # Heater has the CircuitPython GPIO: heater = digitalio.DigitalInOut(GPIO)
         self.heat_factor = 0
         self.resolution = 20
@@ -161,6 +169,8 @@ class SSR:
         self.heater = heater
 
         self.running = True
+        thread = threading.Thread(target=self.__heater_loop, name='SsrSwitch', daemon=True)
+        thread.start()
 
     def set_heat_off(self):
         onoff = []
@@ -172,10 +182,13 @@ class SSR:
     def get_heat_factor(self) -> float:
         return self.heat_factor
 
-    def heater_loop(self):
+    def __heater_loop(self):
         cycle_time = 0.1 # Depends on the SSR, many will work at 10 Hertz
-        # while self.running:
-        #     self.*:heater.value
+        while self.running:
+            onoff = self.on_off.copy()
+            for on in onoff:
+                self.heater.value = on
+                time.sleep(cycle_time)
 
     def cycles_on_off(self, heat_factor: float) -> Tuple[int, int]:
         # 20 cycles keeps the round off errors small
