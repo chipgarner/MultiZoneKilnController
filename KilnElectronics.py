@@ -188,9 +188,11 @@ class SSR:
         cycles_on, cycles_off = self.cycles_on_off(heat_factor)
         for i in range(self.resolution):
             onoff.append(False)
+        if cycles_on == 0: return onoff
         if cycles_off == 0:
             for i in range(self.resolution):
                 onoff[i] = True
+            return onoff
 
         else:
             rm = 0
@@ -205,26 +207,49 @@ class SSR:
                     index += skips + 1
                     if index >= self.resolution: break
             else:
+                onoff = []
                 if cycles_on > 0:
                     skips, mod = divmod(cycles_off, cycles_on)
-                    ons = cycles_on
-                    if mod > 0: # Need to skip some number (n1) of skips and some number (n2) of sips + 1
+                    if mod > 0:  # Need to skip some number (n1) of skips and some number (n2) of skips + 1
                         # n1 + n2 = ons: n1*skips + n2(skips + 1) = offs. Solve for n1 and n2
                         n2 = cycles_off - skips * cycles_on
                         n1 = cycles_on - n2
                     else:
-                        n1 = skips
+                        n1 = cycles_on
                         n2 = 0
 
-                    for ons in range(cycles_on):
-                        if n2 > 0:
-                            skip = skips + 1
-                            n2 -= 1
-                        else: skip = skips
+                    if n2 > 0:
+                        ns = n1 / n2
+                        num_shorts = round(ns)
+                        if ns > 0 and num_shorts < 1:
+                            skips += 1
+                    else:
+                        num_shorts = 0
 
-                        onoff[index] = True
-                        index += skip + 1
-                        if index >= self.resolution: break
+                    if num_shorts >= 1:
+                        index = 0
+                        while index < self.resolution:
+                            # Longs
+                            onoff.append(True)
+                            for i in range(skips + 1):
+                                onoff.append(False)
+                            # shorts, there may be more of these than longs
+                            for _ in range(num_shorts):
+                                onoff.append(True)
+                                for i in range(skips):
+                                    onoff.append(False)
+
+                            index = len(onoff) - 1
+                    else:
+                        index = 0
+                        while index < self.resolution:
+                            onoff.append(True)
+                            for i in range(skips):
+                                onoff.append(False)
+
+                            index = len(onoff)
+
+                    onoff = onoff[:20]
 
         return onoff
 
