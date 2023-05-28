@@ -194,62 +194,61 @@ class SSR:
                 onoff[i] = True
             return onoff
 
+        rm = 0
+        index = 0
+        if cycles_on > cycles_off:
+            for i in range(self.resolution):
+                onoff[i] = True
+            for offs in range(cycles_off):
+                skips = round(cycles_on / cycles_off + rm / cycles_off)
+                rm = math.remainder(cycles_on, cycles_off)
+                onoff[index] = False
+                index += skips + 1
+                if index >= self.resolution: break
         else:
-            rm = 0
-            index = 0
-            if cycles_on > cycles_off:
-                for i in range(self.resolution):
-                    onoff[i] = True
-                for offs in range(cycles_off):
-                    skips = round(cycles_on / cycles_off + rm / cycles_off)
-                    rm = math.remainder(cycles_on, cycles_off)
-                    onoff[index] = False
-                    index += skips + 1
-                    if index >= self.resolution: break
-            else:
-                onoff = []
-                if cycles_on > 0:
-                    skips, mod = divmod(cycles_off, cycles_on)
-                    if mod > 0:  # Need to skip some number (n1) of skips and some number (n2) of skips + 1
-                        # n1 + n2 = ons: n1*skips + n2(skips + 1) = offs. Solve for n1 and n2
-                        n2 = cycles_off - skips * cycles_on
-                        n1 = cycles_on - n2
-                    else:
-                        n1 = cycles_on
-                        n2 = 0
+            onoff = []
+            if cycles_on > 0:
+                skips, mod = divmod(cycles_off, cycles_on)
+                if mod > 0:  # Need to skip some number (n1) of skips and some number (n2) of skips + 1
+                    # n1 + n2 = ons: n1*skips + n2(skips + 1) = offs. Solve for n1 and n2
+                    n2 = cycles_off - skips * cycles_on
+                    n1 = cycles_on - n2
+                else:
+                    n1 = cycles_on
+                    n2 = 0
 
-                    if n2 > 0:
-                        ns = n1 / n2
-                        num_shorts = round(ns)
-                        if ns > 0 and num_shorts < 1:
-                            skips += 1
-                    else:
-                        num_shorts = 0
+                if n2 > 0:
+                    ns = n1 / n2
+                    num_shorts = round(ns)
+                    if ns > 0 and num_shorts < 1:
+                        skips += 1
+                else:
+                    num_shorts = 0
 
-                    if num_shorts >= 1:
-                        index = 0
-                        while index < self.resolution:
-                            # Longs
-                            onoff.append(True)
-                            for i in range(skips + 1):
-                                onoff.append(False)
-                            # shorts, there may be more of these than longs
-                            for _ in range(num_shorts):
-                                onoff.append(True)
-                                for i in range(skips):
-                                    onoff.append(False)
-
-                            index = len(onoff) - 1
-                    else:
-                        index = 0
-                        while index < self.resolution:
+                if num_shorts >= 1:
+                    index = 0
+                    while index < self.resolution:
+                        # Longs
+                        onoff.append(True)
+                        for i in range(skips + 1):
+                            onoff.append(False)
+                        # shorts, there may be more of these than longs
+                        for _ in range(num_shorts):
                             onoff.append(True)
                             for i in range(skips):
                                 onoff.append(False)
 
-                            index = len(onoff)
+                        index = len(onoff) - 1
+                else:
+                    index = 0
+                    while index < self.resolution:
+                        onoff.append(True)
+                        for i in range(skips):
+                            onoff.append(False)
 
-                    onoff = onoff[:20]
+                        index = len(onoff)
+
+                onoff = onoff[:20]
 
         return onoff
 
