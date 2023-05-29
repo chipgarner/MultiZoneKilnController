@@ -29,7 +29,7 @@ zones = [zone1, zone2]
 loop_delay = 10
 
 broker = Server.broker
-controller = Controller.Controller("fast.json", broker, zones, loop_delay)
+controller = Controller.Controller(broker, zones, loop_delay)
 time.sleep(0.1)
 controller.control_loop()
 
