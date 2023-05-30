@@ -78,10 +78,11 @@ class Sim(KilnElectronics):
 
 class Max31856(KilnElectronics):
     def __init__(self, switches):
-        log.info( "Running on board: " + board.board_id)
+        log.info( "56 Running on board: " + board.board_id)
         self.switches = switches
+        # SCK D11, MOSI D10, MISO D9
         self.spi = busio.SPI(board.SCK, MOSI=board.MOSI, MISO=board.MISO)  # MOSI to SDI, Miso to SDO
-        self.cs1 = digitalio.DigitalInOut(board.D5)
+        self.cs1 = digitalio.DigitalInOut(board.D7)
 
         self.sensor = adafruit_max31856.MAX31856(self.spi, self.cs1)
         self.sensor.averaging = 16
@@ -112,11 +113,11 @@ class Max31856(KilnElectronics):
 
 class Max31855(KilnElectronics):
     def __init__(self, switches):
-        log.info( "Running on board: " + board.board_id)
+        log.info( "55 running on board: " + board.board_id)
         self.switches = switches
-        self.spi = bitbangio.SPI(board.D22, MOSI=board.D17, MISO=board.D27)
-        print(board.MOSI)
-        self.cs1 = digitalio.DigitalInOut(board.D6)
+        self.spi = busio.SPI(board.D21, MOSI=board.D20, MISO=board.D19)
+        # self.spi = bitbangio.SPI(board.D22, MOSI=board.D17, MISO=board.D27)
+        self.cs1 = digitalio.DigitalInOut(board.D16)
 
         self.sensor = adafruit_max31855.MAX31855(self.spi, self.cs1)
 
