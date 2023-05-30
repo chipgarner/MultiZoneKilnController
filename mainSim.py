@@ -16,10 +16,10 @@ log = logging.getLogger("Controller")
 server_thread = Thread(target=Server.server, name="server", daemon=True)
 server_thread.start()
 
-zone1 = Zone(Sim())
-zone2 = Zone(Sim())
-zone3 = Zone(Sim())
-zone4 = Zone(Sim())
+zone1 = Zone(Sim('1'))
+zone2 = Zone(Sim('2'))
+zone3 = Zone(Sim('3'))
+zone4 = Zone(Sim('4'))
 zone1.kiln_elec.kiln_sim.power = zone1.kiln_elec.kiln_sim.power + 600
 zone3.kiln_elec.kiln_sim.power = zone3.kiln_elec.kiln_sim.power - 600
 zone4.kiln_elec.kiln_sim.power = zone4.kiln_elec.kiln_sim.power + 600

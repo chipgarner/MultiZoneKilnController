@@ -19,7 +19,6 @@ class Slope:
                                                   'heat_factor': heat_factor})
         if len(self.long_smoothed_t_t_h_z[index]) > 20:
             self.long_smoothed_t_t_h_z[index].pop(0)
-        log.debug('Long_data: ' + str(len(self.long_smoothed_t_t_h_z[index])))
 
         if len(self.long_smoothed_t_t_h_z[index]) > 1:
             t_t_h = self.long_smoothed_t_t_h_z[index]

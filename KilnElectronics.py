@@ -1,4 +1,3 @@
-import math
 import random
 import threading
 import time
@@ -42,14 +41,14 @@ class Sim(KilnElectronics):
         def __init__(self):
             self.value = None
 
-    def __init__(self):
+    def __init__(self, name: str):
         self.heat_factor = 0
         self.kiln_sim = KilnSimulator()
         self.sim_speedup = self.kiln_sim.sim_speedup
         self.start = time.time()  # This is needed for thr simulator speedup
         self.latest_temp = 0
         heater = self.FakeHeater()
-        self.switches = SSR(heater)
+        self.switches = SSR(heater, "SSR " + name)
 
     def set_heat(self, heat_factor: float):
         self.switches.set_heat(heat_factor)
@@ -76,14 +75,6 @@ class Sim(KilnElectronics):
         time.sleep(0.7 / self.sim_speedup)  # Real sensors take time to read
         return time_ms, temperature, error
 
-class FakeSwitches:
-    def __init__(self):
-        self.heat_factor = 0
-    def set_heat(self, heat_factor: float):
-        self.heat_factor = heat_factor
-
-    def get_heat_factor(self) -> float:
-        return self.heat_factor
 
 class Max31856(KilnElectronics):
     def __init__(self, switches):
@@ -160,16 +151,17 @@ class Max31855(KilnElectronics):
 class SSR:
     # heater = digitalio.DigitalInOut(config.gpio_heat)
     # heater.direction = digitalio.Direction.OUTPUT
-    def __init__(self, heater): # Heater has the CircuitPython GPIO: heater = digitalio.DigitalInOut(GPIO)
+    def __init__(self, heater, pin_name: str): # Heater has the CircuitPython GPIO: heater = digitalio.DigitalInOut(GPIO)
         self.heat_factor = 0
         self.resolution = 20
         self.on_off = []
         self.set_heat_off()
 
         self.heater = heater
+        thread_name = 'SSR pin ' + pin_name
+        thread = threading.Thread(target=self.__heater_loop, name=thread_name, daemon=True)
 
         self.running = True
-        thread = threading.Thread(target=self.__heater_loop, name='SsrSwitch', daemon=True)
         thread.start()
 
     def set_heat_off(self):
@@ -185,6 +177,7 @@ class SSR:
     def __heater_loop(self):
         cycle_time = 0.1 # Depends on the SSR, many will work at 10 Hertz
         while self.running:
+            log.debug('Thread: ' + threading.current_thread().name)
             onoff = self.on_off.copy()
             for on in onoff:
                 self.heater.value = on

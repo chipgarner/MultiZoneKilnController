@@ -137,10 +137,6 @@ class Controller:
                                           delta_t)
                 heats.append(heat)
 
-                log.debug(str(target - zones_status[index]['temperature']))
-
-            log.debug(heats)
-
             if not self.controller_state.get_state()['manual']:
                 self.kiln_zones.set_heat_for_zones(heats)
         else:
