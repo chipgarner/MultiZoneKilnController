@@ -115,8 +115,8 @@ class Max31855(KilnElectronics):
     def __init__(self, switches):
         log.info( "55 running on board: " + board.board_id)
         self.switches = switches
-        self.spi = busio.SPI(board.D21, MOSI=board.D20, MISO=board.D19)
-        # self.spi = bitbangio.SPI(board.D22, MOSI=board.D17, MISO=board.D27)
+        # self.spi = busio.SPI(board.D21, MOSI=board.D20, MISO=board.D19) These are spi1, do not seem to be supported
+        self.spi = bitbangio.SPI(board.D21, MOSI=board.D20, MISO=board.D19)
         self.cs1 = digitalio.DigitalInOut(board.D16)
 
         self.sensor = adafruit_max31855.MAX31855(self.spi, self.cs1)
