@@ -1,6 +1,7 @@
 import time
 import logging
 from logging import Logger
+import threading
 
 import Profile
 from KilnZones import KilnZones
@@ -41,7 +42,7 @@ class Controller:
         self.broker.set_controller_functions(broker_to_controller_callbacks)
 
         self.profile_names = self.get_profile_names()
-        self.controller_state = ControllerState(self.profile_names)
+        self.controller_state = ControllerState()
         self.broker.update_UI_status(self.controller_state.get_UI_status())
 
         log.info('Controller initialized.')
@@ -85,7 +86,7 @@ class Controller:
         if not self.controller_state.choosing_profile(name):
             log.error('Could not set the profile')
         else:
-            self.profile.load_profile_by_name(name)
+            self.profile.load_profile_by_name(name + '.json')
             if self.start_time_ms is None:
                 self.start_time_ms = time.time() * 1000
             self.send_updated_profile(self.profile.name, self.profile.data, self.start_time_ms)
@@ -94,6 +95,7 @@ class Controller:
         self.__zero_heat_zones()
         while True:
             self.loop_calls()
+            log.debug('Thread: ' + threading.current_thread().name)
             time.sleep(self.loop_delay)
 
     def loop_calls(self):
@@ -217,7 +219,7 @@ class Controller:
 # This class limits the possible states to the ones we want. For example, don't start the firing without
 # first choosing a profile. All the logic is in one place, instead of repeating logic on the fornt end.
 class ControllerState:
-    def __init__(self, profile_names):
+    def __init__(self):
         self.__controller_state = {'firing': False, 'profile_chosen': False, 'manual': False}
 
         # This avoids repeating logic on the front end.
@@ -228,7 +230,6 @@ class ControllerState:
             'Manual': False,
             'ManualDisabled': True,
             'ProfileName': 'None',
-            'ProfileNames': profile_names,
             'ProfileSelectDisabled': False,
         }
 

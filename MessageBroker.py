@@ -34,7 +34,7 @@ class MessageBroker:
         self.controller_callbacks['set_heat_for_zone'](heat, zone)
 
     def set_profile(self, profile_name: str):
-        self.controller_callbacks['set_profile_by_name'](profile_name + '.json')
+        self.controller_callbacks['set_profile_by_name'](profile_name)
 
     def add_observer(self, observer):
         names = self.controller_callbacks['get_profile_names']()

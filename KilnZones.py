@@ -39,6 +39,7 @@ class KilnZones:
 
             # Data is sent to front end on every update, around once per second.
             self.broker.update_tc_data(thermocouple_data)
+            log.debug('Thread: ' + threading.current_thread().name)
 
 import KilnSimulator
 class Zone:
