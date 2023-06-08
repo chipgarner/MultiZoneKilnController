@@ -99,7 +99,7 @@ class Profile:
 
     def get_target_temperature(self, time: float) -> Union[float, str]:
         if time > self.get_duration():
-            return 'Off'
+            return 'Done'
         if self.current_segment is None:
             return self.data[0][1]
 

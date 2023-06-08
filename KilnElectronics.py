@@ -178,7 +178,7 @@ class SSR:
     def __heater_loop(self):
         cycle_time = 0.1 # Depends on the SSR, many will work at 10 Hertz
         while self.running:
-            log.debug('Thread: ' + threading.current_thread().name)
+            # log.debug('Thread: ' + threading.current_thread().name)
             onoff = self.on_off.copy()
             for on in onoff:
                 self.heater.value = on

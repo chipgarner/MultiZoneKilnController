@@ -45,6 +45,8 @@ class Controller:
         self.controller_state = ControllerState()
         self.broker.update_UI_status(self.controller_state.get_UI_status())
 
+        self.min_temp = 0
+
         log.info('Controller initialized.')
 
     def start_stop_firing(self):
@@ -55,10 +57,9 @@ class Controller:
             if self.controller_state.firing_on():
                 self.start_time_ms = time.time() * 1000  # Start or restart
 
-                min_temp = self.slope.get_latest_min_temp()
-                if min_temp > 100: # Hot start
+                if self.min_temp > 100: # Hot start
                     self.start_time_ms = self.start_time_ms - \
-                                         self.profile.hot_start(min_temp) * 1000
+                                         self.profile.hot_start(self.min_temp) * 1000
 
                 self.send_profile(self.profile.name, self.profile.data, self.start_time_ms)
                 log.debug('Start firing.')
@@ -104,12 +105,13 @@ class Controller:
         target = 'OFF'
 
         if self.profile.name is not None:
-            min_temp, time_since_start = self.lagging_temp_time(zones_status, self.start_time_ms)
+            self.min_temp, time_since_start, heat_factor = \
+                self.lagging_temp_time_heat(zones_status, self.start_time_ms)
             target = self.profile.get_target_temperature(time_since_start)
             if type(target) is str:
-                self.controller_state.firing_off()
+                self.controller_state.firing_finished()
             else:
-                error = target - min_temp
+                error = target - self.min_temp
 
                 segment_change = False
                 update = False
@@ -118,7 +120,8 @@ class Controller:
                 if segment_change: self.slope.restart()
 
                 if error > 5:  # Too cold, move segment times so it can catch up
-                    update = self.profile.check_shift_profile(time_since_start, min_temp)
+                    if heat_factor > 0.99:
+                        update = self.profile.check_shift_profile(time_since_start, self.min_temp)
                 if update:  # The profile has shifted, show the shift in the UI
                     log.debug('target: ' + str(target) + ', error: ' + str(error))
                     self.send_updated_profile(self.profile.name, self.profile.data, self.start_time_ms)
@@ -151,15 +154,18 @@ class Controller:
         self.broker.update_UI_status(self.controller_state.get_UI_status())
         self.broker.update_zones(zones_status)
 
-    def lagging_temp_time(self, zones_status, start_time_ms):
-        min_temp = 2000
+    @staticmethod
+    def lagging_temp_time_heat(zones_status, start_time_ms):
+        min_temp = 3000
         time_since_start = 0
+        heat_factor = 0
         for index, zone in enumerate(zones_status):
             if zone['temperature'] < min_temp:
                 min_temp = zone['temperature']
                 time_since_start = (zones_status[index]['time_ms'] - start_time_ms) / 1000
+                heat_factor = zone['heat_factor']
 
-        return min_temp, time_since_start
+        return min_temp, time_since_start, heat_factor
 
 
     def smooth_temperatures(self, t_t_h_z: list) -> list:
@@ -253,6 +259,12 @@ class ControllerState:
 
             worked = True
         return worked
+
+    def firing_finished(self):
+        self.firing_off()
+        self.__UI_status['label'] = 'Done'
+        self.__UI_status['StartStopDisabled'] = True
+        self.__UI_status['ProfileSelectDisabled'] = True
 
     def firing_off(self) -> bool:
         self.__controller_state['firing'] = False

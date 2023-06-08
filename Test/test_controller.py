@@ -34,7 +34,7 @@ zones = [zone1, zone2, zone3, zone4]
 
 def test_loads_profile():
     controller = Controller(FakeBroker(), ['zony'], 10)
-    controller.set_profile_by_name('test-fast.json')
+    controller.set_profile_by_name('test-fast')
 
     assert type(controller.profile) == Profile.Profile
     assert len(controller.profile.data) == 6
@@ -69,7 +69,7 @@ def test_modes():
     controller.start_stop_firing()
     assert not controller.controller_state.get_state()['firing'] # Can't strt if profile is not set
 
-    controller.set_profile_by_name('test-fast.json')
+    controller.set_profile_by_name('test-fast')
 
     controller.start_stop_firing()
     assert controller.controller_state.get_state()['firing']
@@ -91,7 +91,7 @@ def test_no_profile_selected_sends_list():
 
 def test_profile_selected_sends_list():
     controller = Controller(FakeBroker(), zones, 10)
-    controller.set_profile_by_name('fast.json')
+    controller.set_profile_by_name('fast')
 
     message = controller.get_profile_names()
 

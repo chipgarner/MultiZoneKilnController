@@ -33,15 +33,18 @@ class Slope:
         else:
             slope = 'NA'
 
+        log.debug('Slope update, data: ' + str(self.long_smoothed_t_t_h_z[index]))
         return slope, len(self.long_smoothed_t_t_h_z[index]) # Data length
 
     def restart(self):
+        log.debug('Slope restart called.')
         self.long_smoothed_t_t_h_z = []
         for _ in range(self.num_zones):
             self.long_smoothed_t_t_h_z.append([])
 
     def get_latest_min_temp(self) -> float:
         min_temp = 0
+        log.debug(str(self.long_smoothed_t_t_h_z[0]))
         if len(self.long_smoothed_t_t_h_z[0]) > 0:
             min_temp = 3000
             for tthz in self.long_smoothed_t_t_h_z:

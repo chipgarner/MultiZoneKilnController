@@ -1,7 +1,7 @@
 from Controller import ControllerState
 
 def test_firing_on():
-    c_state = ControllerState(['This', 'That'])
+    c_state = ControllerState()
 
     assert not c_state.firing_on()
 
@@ -19,7 +19,7 @@ def test_firing_on():
     assert state['firing']
 
 def test_cant_choose_profile_while_firing():
-    c_state = ControllerState(['This', 'That'])
+    c_state = ControllerState()
     assert c_state.choosing_profile('This')
     c_state.firing_on()
 
@@ -32,7 +32,7 @@ def test_cant_choose_profile_while_firing():
     assert not state['firing']
 
 def test_cant_switch_manual_unless_firing():
-    c_state = ControllerState(['This', 'That'])
+    c_state = ControllerState()
     assert c_state.choosing_profile('That')
 
     assert not c_state.manual_on()

@@ -45,7 +45,6 @@ def test_UI_adds_observer_idle():
             'Manual': False,
             'ManualDisabled': True,
             'ProfileName': 'None',
-            'ProfileNames': broker.profile_names,
             'ProfileSelectDisabled': False,
         }
 
@@ -63,7 +62,6 @@ def test_choose_profile():
             'StartStopDisabled': False,
             'Manual': False,
             'ManualDisabled': True,
-            'ProfileName': 'fast.json',
-            'ProfileNames': broker.profile_names,
+            'ProfileName': 'fast',
             'ProfileSelectDisabled': False,
         }
