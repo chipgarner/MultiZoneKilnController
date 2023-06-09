@@ -19,8 +19,8 @@ log_format = '%(asctime)s %(levelname)s %(name)s: %(message)s'
 logging.basicConfig(level=log_level, format=log_format)
 log = logging.getLogger(__name__)
 
-# Each zone needs it's own KilElectronics for thermocouples and switching. Diffferent zones can
-# have different hardware if needed. Power and any ohter sensors should also go here.
+# Each zone needs it's own KilnElectronics for thermocouples and switching. Diffferent zones can
+# have different hardware if needed. Power and any other sensors should also go here.
 
 class KilnElectronics(ABC):
     @abstractmethod
@@ -115,8 +115,7 @@ class Max31855(KilnElectronics):
     def __init__(self, switches):
         log.info( "55 running on board: " + board.board_id)
         self.switches = switches
-        # self.spi = busio.SPI(board.D21, MOSI=board.D20, MISO=board.D19) These are spi1, do not seem to be supported
-        self.spi = bitbangio.SPI(board.D21, MOSI=board.D20, MISO=board.D19)
+        self.spi = busio.SPI(board.SCK, MOSI=board.MOSI, MISO=board.MISO) # MOSI is not used on 31855
         self.cs1 = digitalio.DigitalInOut(board.D16)
 
         self.sensor = adafruit_max31855.MAX31855(self.spi, self.cs1)

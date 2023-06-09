@@ -33,7 +33,6 @@ class Slope:
         else:
             slope = 'NA'
 
-        log.debug('Slope update, data: ' + str(self.long_smoothed_t_t_h_z[index]))
         return slope, len(self.long_smoothed_t_t_h_z[index]) # Data length
 
     def restart(self):
