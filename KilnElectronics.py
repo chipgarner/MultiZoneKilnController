@@ -116,7 +116,7 @@ class Max31855(KilnElectronics):
         log.info( "55 running on board: " + board.board_id)
         self.switches = switches
         self.spi = busio.SPI(board.SCK, MOSI=board.MOSI, MISO=board.MISO) # MOSI is not used on 31855
-        self.cs1 = digitalio.DigitalInOut(board.D16)
+        self.cs1 = digitalio.DigitalInOut(board.D5)
 
         self.sensor = adafruit_max31855.MAX31855(self.spi, self.cs1)
 
