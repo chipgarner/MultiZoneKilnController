@@ -82,7 +82,7 @@ class Max31856(KilnElectronics):
         self.switches = switches
         # SCK D11, MOSI D10, MISO D9
         self.spi = busio.SPI(board.SCK, MOSI=board.MOSI, MISO=board.MISO)  # MOSI to SDI, Miso to SDO
-        self.cs1 = digitalio.DigitalInOut(board.D7)
+        self.cs1 = digitalio.DigitalInOut(board.D6)
 
         self.sensor = adafruit_max31856.MAX31856(self.spi, self.cs1)
         self.sensor.averaging = 16
