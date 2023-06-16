@@ -1,5 +1,6 @@
 import logging
 import json
+import threading
 
 from geventwebsocket import WebSocketError
 
@@ -19,6 +20,8 @@ class MessageBroker:
         self.original_profile = None
         self.updated_profile = None
         self.profile_names = None
+
+        self.lock = threading.Lock()
 
     # Callback functions for access to Controller.p
     def set_controller_functions(self, contoller_callbacks: dict):
@@ -108,7 +111,8 @@ class MessageBroker:
     def send_socket(self, message):
         for observer in self.observers:
             try:
-                observer.send(message)
+                with self.lock:
+                    observer.send(message)
             except WebSocketError:
                 self.observers.remove(observer)
                 log.info('Observer deleted, socket error.')
