@@ -7,7 +7,6 @@ from typing import Tuple
 
 import adafruit_max31855
 import adafruit_max31856
-import adafruit_bitbangio as bitbangio
 import board
 import busio
 import digitalio
