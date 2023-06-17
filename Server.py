@@ -1,10 +1,14 @@
 import json
 
+import gevent.monkey
+gevent.monkey.patch_socket()
+
 import bottle
 from bottle import response
 from gevent.pywsgi import WSGIServer
 from geventwebsocket.handler import WebSocketHandler
 from geventwebsocket import WebSocketError
+
 import logging
 import MessageBroker
 import os
@@ -112,9 +116,9 @@ def server():
     port = 8081
     log.info("listening on %s:%d" % (ip, port))
 
-    server = WSGIServer((ip, port), bottle_app,
+    the_server = WSGIServer((ip, port), bottle_app,
                     handler_class=WebSocketHandler)
-    server.serve_forever()
+    the_server.serve_forever()
 
 
 if __name__ == '__main__':

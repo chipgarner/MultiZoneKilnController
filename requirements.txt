@@ -1,0 +1,5 @@
+pytest==7.2.1
+paho-mqtt==1.6.1
+websockets==10.4
+gevent==22.10.2
+bottle==0.12.24

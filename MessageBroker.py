@@ -4,8 +4,6 @@ import threading
 
 from geventwebsocket import WebSocketError
 
-from Database import DbInsertSelect
-
 log = logging.getLogger(__name__)
 
 
