@@ -69,7 +69,7 @@ class Sim(KilnElectronics):
 
         self.latest_temp = temperature
         time_sim = (time.time() - self.start) * self.sim_speedup + self.start
-        time_ms = round(time_sim * 1000)  # Thingsboard and SQLite require timestamps in milliseconds
+        time_ms = round(time_sim * 1000)  # Thingsboard etc require timestamps in milliseconds
 
         time.sleep(0.7 / self.sim_speedup)  # Real sensors take time to read
         return time_ms, temperature, error

@@ -26,7 +26,7 @@ zone4.kiln_elec.kiln_sim.power = zone4.kiln_elec.kiln_sim.power + 600
 zone1.kiln_elec.kiln_sim.heat_loss = zone1.kiln_elec.kiln_sim.heat_loss + 3
 zone3.kiln_elec.kiln_sim.heat_loss = zone3.kiln_elec.kiln_sim.heat_loss - 3
 zone3.kiln_elec.kiln_sim.heat_loss = zone4.kiln_elec.kiln_sim.heat_loss - 3
-zones = [zone1, zone2]
+zones = [zone1, zone2, zone3, zone4]
 
 loop_delay = 10
 if zone1.kiln_elec.kiln_sim.sim_speedup is not None:

@@ -20,9 +20,6 @@ cd ~
 sudo pip3 install --upgrade adafruit-python-shell
 wget https://raw.githubusercontent.com/adafruit/Raspberry-Pi-Installer-Scripts/master/raspi-blinka.py
 sudo python3 raspi-blinka.py
- 
-???? Not needed? sudo pip3 install adafruit-circuitpython-lis3dh
-
 pip3 install adafruit-circuitpython-max31855
 pip3 install adafruit-circuitpython-max31856
 
