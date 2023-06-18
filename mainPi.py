@@ -23,7 +23,7 @@ htop.direction = digitalio.Direction.OUTPUT
 hbottom = digitalio.DigitalInOut(board.D27)
 hbottom.direction = digitalio.Direction.OUTPUT
 zone1 = Zone(Max31855(SSR(htop, 'D17')))
-zone2 = Zone(Max31856(SSR(hbottom, 'D27')))
+# zone2 = Zone(Max31856(SSR(hbottom, 'D27')))
 zones = [zone1]
 
 loop_delay = 10
