@@ -89,6 +89,7 @@ class Max31856(KilnElectronics):
         # self.sensor.noise_rejection = 60
 
         self.heat_factor = 0
+        self.last_temp = -42
 
 
     def set_heat(self, heat_factor: float):
@@ -100,16 +101,25 @@ class Max31856(KilnElectronics):
 
     def get_temperature(self) -> tuple:
         error = False
-        temp = self.sensor.temperature
-        # log.debug("56 temperature: " + str(temp))
 
-        for k, v in self.sensor.fault.items():
-            if v:
-                log.error('Temp1 31856 fault: ' + str(k))
-                error = True
+        try:
+            temp = self.sensor.read_temp_c()
+            data = self.sensor.read_fault_register()
+            noConnection = (data & 0x00000001) != 0
+            unknownError = (data & 0xfe) != 0
+            if noConnection or unknownError:
+                    log.error('Temp1 31856 no connection or unknown.')
+                    temp = self.last_temp
+                    error = True
+        except RuntimeError as ex:
+            log.error('31856 read error: ' + str(ex))
+            temp = self.last_temp
+            error = True
 
+        self.last_temp = temp
         time_ms = round(time.time() * 1000)
         return time_ms, temp, error
+
 class Max31856Halts(KilnElectronics):
     # My 56 quits and blocks the thread, does not recover on restart.
     def __init__(self, switches):

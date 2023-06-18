@@ -281,4 +281,4 @@ class MAX31856(object):
         """Depreciated due to Python naming convention, use read_internal_temp_c instead
         """
         warnings.warn("Depreciated due to Python naming convention, use read_internal_temp_c() instead", DeprecationWarning)
-        return read_internal_temp_c(self)
+        return self.read_internal_temp_c(self)
