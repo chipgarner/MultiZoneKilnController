@@ -107,6 +107,8 @@ class MAX31856(object):
                 di (integer): Pin number for software SPI MOSI
             hardware_spi (SPI.SpiDev): If using hardware SPI, define the connection
         """
+
+        logging.basicConfig(level=logging.INFO)
         self._logger = logging.getLogger('Adafruit_MAX31856.MAX31856')
         self._spi = None
         self.tc_type = tc_type
