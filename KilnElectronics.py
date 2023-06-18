@@ -10,6 +10,7 @@ import adafruit_max31856
 import board
 import busio
 import digitalio
+from max31856 import MAX31856
 
 from KilnSimulator import KilnSimulator
 
@@ -76,6 +77,41 @@ class Sim(KilnElectronics):
 
 
 class Max31856(KilnElectronics):
+    #trying old code using bitbangio, new version stops and will not recover with restart
+    def __init__(self, switches):
+        log.info( "56 Running on board: " + board.board_id)
+        self.switches = switches
+        # SCK D11, MOSI D10, MISO D9
+        software_spi = {"clk": 11, "cs": 6, "do": 9, "di": 10}
+        self.sensor = MAX31856(software_spi=software_spi, tc_type=MAX31856.MAX31856_K_TYPE)
+
+        # self.sensor.averaging = 16
+        # self.sensor.noise_rejection = 60
+
+        self.heat_factor = 0
+
+
+    def set_heat(self, heat_factor: float):
+        self.switches.set_heat(heat_factor)
+        self.heat_factor = heat_factor
+
+    def get_heat_factor(self) -> float:
+        return self.switches.get_heat_factor()
+
+    def get_temperature(self) -> tuple:
+        error = False
+        temp = self.sensor.temperature
+        # log.debug("56 temperature: " + str(temp))
+
+        for k, v in self.sensor.fault.items():
+            if v:
+                log.error('Temp1 31856 fault: ' + str(k))
+                error = True
+
+        time_ms = round(time.time() * 1000)
+        return time_ms, temp, error
+class Max31856Halts(KilnElectronics):
+    # My 56 quits and blocks the thread, does not recover on restart.
     def __init__(self, switches):
         log.info( "56 Running on board: " + board.board_id)
         self.switches = switches
