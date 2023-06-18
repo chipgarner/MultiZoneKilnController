@@ -172,5 +172,5 @@ class MAX31855(object):
         if raw is None or len(raw) != 4:
             raise RuntimeError('Did not read expected number of bytes from device!')
         value = raw[0] << 24 | raw[1] << 16 | raw[2] << 8 | raw[3]
-        self._logger.debug('Raw value: 0x{0:08X}'.format(value & 0xFFFFFFFF))
+        # self._logger.debug('Raw value: 0x{0:08X}'.format(value & 0xFFFFFFFF))
         return value
