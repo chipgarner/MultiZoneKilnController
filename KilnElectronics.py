@@ -118,7 +118,7 @@ class Max31856(KilnElectronics):
 
         self.last_temp = temp
         time_ms = round(time.time() * 1000)
-        log.debug(str(time_ms) + '. ' + str(temp) + ', ' + str(error) )
+        # log.debug(str(time_ms) + '. ' + str(temp) + ', ' + str(error) )
         return time_ms, temp, error
 
 class Max31856Halts(KilnElectronics):

@@ -219,7 +219,7 @@ class MAX31856(object):
 
         temp_c = MAX31856._thermocouple_temp_from_bytes(val_low_byte, val_mid_byte, val_high_byte)
 
-        self._logger.debug("Thermocouple Temperature {0} deg. C".format(temp_c))
+        # self._logger.debug("Thermocouple Temperature {0} deg. C".format(temp_c))
 
         return temp_c
 
@@ -251,8 +251,8 @@ class MAX31856(object):
             raise RuntimeError('Did not read expected number of bytes from device!')
 
         value = raw[1]
-        self._logger.debug('Read Register: 0x{0:02X}, Raw Value: 0x{1:02X}'.format(
-            (address & 0xFFFF), (value & 0xFFFF)))
+        # self._logger.debug('Read Register: 0x{0:02X}, Raw Value: 0x{1:02X}'.format(
+        #     (address & 0xFFFF), (value & 0xFFFF)))
         return value
 
     def _write_register(self, address, write_value):
