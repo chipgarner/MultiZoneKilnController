@@ -102,12 +102,11 @@ class Max31855(KilnElectronics):
         error = False
 
         try:
-            temp = self.sensor.read_temp_c()
-            data = self.sensor.read_fault_register()
-            noConnection = (data & 0x00000001) != 0
-            unknownError = (data & 0xfe) != 0
-            if noConnection or unknownError:
-                    log.error('Temp1 31855 error.')
+            temp = self.sensor.readTempC()
+            data = self.sensor.readState()
+            for key, value in data.items():
+                if value:
+                    log.error('MAX31855 error: ' + key)
                     temp = self.last_temp
                     error = True
         except RuntimeError as ex:
@@ -152,7 +151,7 @@ class Max31856(KilnElectronics):
             noConnection = (data & 0x00000001) != 0
             unknownError = (data & 0xfe) != 0
             if noConnection or unknownError:
-                    log.error('Temp1 31856 no connection or unknown.')
+                    log.error('31856 no connection or unknown.')
                     temp = self.last_temp
                     error = True
         except RuntimeError as ex:
