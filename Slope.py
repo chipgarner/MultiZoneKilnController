@@ -1,5 +1,5 @@
 import logging
-import scipy
+from scipy import stats
 from typing import Tuple
 
 log = logging.getLogger(__name__)
@@ -45,7 +45,7 @@ class Slope:
         for tt in tth:
             times.append(tt['time_ms'] / 1000 - t_initial)
             temps.append(tt['temperature'])
-        result = scipy.stats.linregress(times, temps)
+        result = stats.linregress(times, temps)
         # slope, intercept, rvalue, pvalue, stderr, intercept_stderr
 
         return result.slope, result.stderr # Values in degrees C per second,
