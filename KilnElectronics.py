@@ -73,7 +73,7 @@ class Sim(KilnElectronics):
         time_sim = (time.time() - self.start) * self.sim_speedup + self.start
         time_ms = round(time_sim * 1000)  # Thingsboard etc require timestamps in milliseconds
 
-        time.sleep(0.7 / self.sim_speedup)  # Real sensors take time to read
+        time.sleep(0.5 / self.sim_speedup)  # Real sensors take time to read
         return time_ms, temperature, error
 
 class Max31855(KilnElectronics):

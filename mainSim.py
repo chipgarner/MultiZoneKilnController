@@ -28,7 +28,7 @@ zone3.kiln_elec.kiln_sim.heat_loss = zone3.kiln_elec.kiln_sim.heat_loss - 3
 zone3.kiln_elec.kiln_sim.heat_loss = zone4.kiln_elec.kiln_sim.heat_loss - 3
 zones = [zone1, zone2, zone3, zone4]
 
-loop_delay = 10
+loop_delay = 20
 if zone1.kiln_elec.kiln_sim.sim_speedup is not None:
     loop_delay = loop_delay / zone1.kiln_elec.kiln_sim.sim_speedup
     log.info('Sim speed up factor is ' + str(zone1.kiln_elec.kiln_sim.sim_speedup))

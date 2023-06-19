@@ -172,23 +172,26 @@ class Controller:
         zones_status = []
         for index, t_t_h in enumerate(t_t_h_z):
             if len(t_t_h) > 0:  # No data happens on startup
-                median_result = self.data_filter.median(t_t_h_z[index])
+                log.debug('Smooth temps list length: ' + str(len(t_t_h)))
+                median_result = self.data_filter.median(t_t_h)
                 if median_result is not None:
                     best_temp = median_result['median']
                     pstdev = median_result['p_stand_dev']
                 else:
-                    log.warning('median_result: ' + str(median_result) + ' ' + str(t_t_h_z[index]))
+                    log.warning('median_result: ' + str(median_result) + ' ' + str(t_t_h))
                     best_temp = t_t_h_z[-1]['temperature']
-                    pstdev = 0
-                best_time = round((t_t_h_z[index][0]['time_ms'] + t_t_h_z[index][-1]['time_ms']) / 2)
+                    pstdev = 'NA'
+                best_time = round((t_t_h[0]['time_ms'] + t_t_h[-1]['time_ms']) / 2)
 
-                slope, slope_data_length = self.slope.slope(index, best_time, best_temp, t_t_h_z[index][0]['heat_factor'])
+                slope, stderror = self.slope.slope(index, best_time, best_temp, t_t_h[0]['heat_factor'])
+
+                if isinstance(pstdev, float): pstdev = "{:.2f}".format(pstdev)
 
                 zones_status.append({'time_ms': best_time,
                                      'temperature': best_temp,
-                                     'heat_factor': t_t_h_z[index][0]['heat_factor'],
+                                     'heat_factor': t_t_h[0]['heat_factor'],
                                      'slope': slope,
-                                     'slope_data_length': slope_data_length,
+                                     'slope_data_length': -1,
                                      'pstdev': pstdev})
 
         return zones_status
