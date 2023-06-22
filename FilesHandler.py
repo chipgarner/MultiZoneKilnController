@@ -24,3 +24,6 @@ class FilesHandler:
         if self.full_path is not None:
             with open(self.full_path, 'a') as f:
                 f.write(update_message + "\n")
+
+    def  get_full_path(self):
+        return self.full_path

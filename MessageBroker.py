@@ -73,6 +73,11 @@ class MessageBroker:
         except Exception as ex:
             log.error("Could not send profile to front end: " + str(ex))
 
+        path = self.fileshandler.get_full_path()
+        if path is not None:
+            with open(path, 'r') as firing:
+                for line in firing:
+                    observer.send(line)
 
     # Send to all observers. Update the original profile start time on start button pressed.
     def new_profile_all(self, profile):
