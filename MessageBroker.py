@@ -1,6 +1,7 @@
 import logging
 import json
 import threading
+import FilesHandler
 
 from geventwebsocket import WebSocketError
 
@@ -10,7 +11,6 @@ log = logging.getLogger(__name__)
 class MessageBroker:
     def __init__(self):
         self.observers = []
-        # self.db = DbInsertSelect.DbInsertSelect()
 
         # Callbacks from Controller.py
         self.controller_callbacks = None
@@ -18,6 +18,8 @@ class MessageBroker:
         self.original_profile = None
         self.updated_profile = None
         self.profile_names = None
+
+        self.fileshandler = FilesHandler.FilesHandler()
 
         self.lock = threading.Lock()
 
@@ -50,6 +52,8 @@ class MessageBroker:
             self.profile_names = names
             self.update_names(names)
 
+        log.debug('Added observer with profile names: ' + str(names))
+
     def update_names(self, names: list):
         profile_names = {
             'profile_names': names
@@ -58,6 +62,7 @@ class MessageBroker:
         log.debug("Names " + names_json)
         self.send_socket(names_json)
 
+    # On adding an observer.
     def update_profile(self, observer, profile):
         prof = {
             'profile': profile,
@@ -69,8 +74,9 @@ class MessageBroker:
             log.error("Could not send profile to front end: " + str(ex))
 
 
-    # Send to all observers
+    # Send to all observers. Update the original profile start time on start button pressed.
     def new_profile_all(self, profile):
+        self.fileshandler.start_firing(profile)
         self.original_profile = profile
         prof = {
             'profile': profile,
@@ -79,7 +85,7 @@ class MessageBroker:
         log.debug("New " + prof_json)
         self.send_socket(prof_json)
 
-
+    # Dynamically udated profile durign firing, e.g. when temperature falls behind.
     def update_profile_all(self, profile):
         self.updated_profile = profile
         prof = {
@@ -100,10 +106,12 @@ class MessageBroker:
     def update_zones(self, zones_status_array: list):
         # self.update_thingsboard(times_temps_heats_for_zones) SIMULATOR SPEEDUP to 1 !!!= TODO fix mqtt
         # self.db.send_time_stamped_message(tthz) TODO
+
         zones = {
             'zones_status_array': zones_status_array,
         }
         message = json.dumps(zones)
+        self.fileshandler.save_update(message)
         self.send_socket(message)
 
     def send_socket(self, message):

@@ -31,10 +31,6 @@ def test_cycles_on_off():
         ssr.set_heat(heat_factor)
         hf = ssr.get_heat_factor()
         error = heat_factor - hf
-        print(str(heat_factor) + '  hf: ' + str(hf))
-        print('Error: ' + str(error))
-        print('On: ' + str(cycles_on) + ' Off: ' + str(cycles_off))
-        print(ssr.on_off)
         assert len(ssr.on_off) == ssr.resolution
         assert abs(error) < 0.0201
 

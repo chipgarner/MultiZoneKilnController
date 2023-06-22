@@ -90,6 +90,10 @@ def test_convert_old_profile():
     assert new_profile['segments'][0] == {'time': 0, 'temperature': 100}
     assert new_profile['segments'][5] == {'time': 19400, 'temperature': 700}
 
+def test_save_old_profile_as_new():
+    old_profile = test_profile
+    Profile.save_old_profile_as_new(old_profile)
+
 def test_get_target_slope():
     profile = Profile.Profile()
     profile.load_profile_by_name("test-fast.json")

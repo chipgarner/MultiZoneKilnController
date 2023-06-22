@@ -16,6 +16,23 @@ def convert_old_profile(old_profile: dict) ->  dict:
 
     return new_profile
 
+# TODO use actual (not time since start) segment in minutes (hours?0
+def save_old_profile_as_new(old_profile: dict):
+    new_profile = convert_old_profile(old_profile)
+    last_seg_time = 0
+    for segment in new_profile['segments']:
+        seg_time = segment['time'] - last_seg_time
+        last_seg_time = segment['time']
+        segment['time'] = seg_time / 60
+
+    new_profile['segments'] = new_profile['segments'][1:]
+
+    file_name = new_profile['name'] + '.' + 'json'
+    path = os.path.abspath(os.path.join(os.path.dirname(__file__), 'NewProfiles/', file_name))
+    with open(path, 'w') as f:
+        f.write(json.dumps(new_profile))
+
+
 def convert_old_profile_ms(name: str, segments: list, start_ms: float) ->  dict:
     new_segments = []
     for i, t_t in enumerate(segments):

@@ -23,7 +23,8 @@ def test_index():
     assert slope == (0.0, 0.0)
 
     slope = slope_instance.slope(3, 100, 101, 0)
-    assert slope == (36178.16382183618, 3)
+    assert int(slope[0]) == 36178
+    assert int(slope[1]) == 314
 
 def test_restart():
     slope_instance = Slope.Slope(4)

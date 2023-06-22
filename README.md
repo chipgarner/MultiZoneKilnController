@@ -1,4 +1,9 @@
 # KilnControls
+This code is based on https://github.com/jbruce12000/kiln-controller.
+I wrote this because I wanted to be able to control ceramic kilns with mutilple heating zones. Most kilns, except very small test kilns, have two or three control zones, like top middlle and bottom. This is true of both manually and automatically controlled ceramic kilns. This software allows controlling one to four zones.
+
+I also wanted to be able to change the UI and did not want to re-learn old web frameworks. The front end (https://github.com/chipgarner/Kiln-Controls) uses React, which is state pf the art now but will probably be an old framework in a few years.
+
 
 FET wiring: https://elinux.org/RPi_GPIO_Interface_Circuits
 

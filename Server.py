@@ -60,7 +60,6 @@ def server():
         while True:
             try:
                 wsock.receive()
-                # wsock.send("Your message was: %r" % message)
             except WebSocketError:
                 break
         log.info("websocket (status) closed")
