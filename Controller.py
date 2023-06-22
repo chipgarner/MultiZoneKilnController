@@ -57,7 +57,7 @@ class Controller:
             if self.controller_state.firing_on():
                 self.start_time_ms = time.time() * 1000  # Start or restart
 
-                if self.min_temp > 100: # Hot start
+                if self.min_temp > 60: # Hot start
                     self.start_time_ms = self.start_time_ms - \
                                          self.profile.hot_start(self.min_temp) * 1000
 
