@@ -4,7 +4,6 @@ import os
 
 class FilesHandler:
     def __init__(self):
-        self.firing_name = None
         self.full_path = None
         self.firings_directory = os.path.abspath(os.path.join(os.path.dirname(__file__), '.', 'Firings'))
 
@@ -45,7 +44,7 @@ class FilesHandler:
             files.sort()
             path = os.path.join(self.firings_directory, files[-1])
             line = self.get_last_line(path)
-            if line is not None:
+            if line is not None and line != 'null':
                 line = json.loads(line)
                 time_ms = line["zones_status_array"][0]["time_ms"]
                 age = (time.time() - time_ms/1000) /3600  # Hours

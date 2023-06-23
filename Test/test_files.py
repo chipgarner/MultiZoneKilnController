@@ -4,7 +4,7 @@ def test_start_firing():
     files = FilesHandler.FilesHandler()
     files.start_firing(None)
 
-    assert files.create_firing_file_name() == files.firing_name # Can fail once very near the hour
+    assert files.create_firing_file_name() in files.full_path # Can fail once very near the hour
 
 def test_get_firing_file_name():
     files = FilesHandler.FilesHandler()

@@ -3,11 +3,11 @@ from Controller import Controller
 from KilnZones import KilnZones, Zone
 from KilnElectronics import Sim
 
-
-zone1 = Zone(Sim('1'))
-zone2 = Zone(Sim('2'))
-zone3 = Zone(Sim('3'))
-zone4 = Zone(Sim('4'))
+sim_speed_up_factor = 1
+zone1 = Zone(Sim('1', sim_speed_up_factor))
+zone2 = Zone(Sim('2', sim_speed_up_factor))
+zone3 = Zone(Sim('3', sim_speed_up_factor))
+zone4 = Zone(Sim('4', sim_speed_up_factor))
 zones = [zone1, zone2, zone3, zone4]
 
 class TestBroker(MessageBroker.MessageBroker):
