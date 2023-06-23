@@ -7,10 +7,10 @@ log.level = logging.INFO
 # Each zone has its own simulator.
 
 class KilnSimulator:
-    def __init__(self):
+    def __init__(self, speed_up_factor: int):
         self.latest_temperature = 27 # Temperatures are in degrees Centigrade
         self.latest_time = time.time()
-        self.sim_speedup = 100
+        self.sim_speedup = speed_up_factor
         log.warning('Running simulator. In case you thought otherwise.')
 
         self.t_environment = 27 # Degrees C

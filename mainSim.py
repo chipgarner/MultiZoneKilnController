@@ -16,10 +16,11 @@ log = logging.getLogger("Controller")
 server_thread = Thread(target=Server.server, name="server", daemon=True)
 server_thread.start()
 
-zone1 = Zone(Sim('1'))
-zone2 = Zone(Sim('2'))
-zone3 = Zone(Sim('3'))
-zone4 = Zone(Sim('4'))
+sim_speed_up_factor = 1
+zone1 = Zone(Sim('1', sim_speed_up_factor))
+zone2 = Zone(Sim('2', sim_speed_up_factor))
+zone3 = Zone(Sim('3', sim_speed_up_factor))
+zone4 = Zone(Sim('4', sim_speed_up_factor))
 zone1.kiln_elec.kiln_sim.power = zone1.kiln_elec.kiln_sim.power + 600
 zone3.kiln_elec.kiln_sim.power = zone3.kiln_elec.kiln_sim.power - 600
 zone4.kiln_elec.kiln_sim.power = zone4.kiln_elec.kiln_sim.power + 600
@@ -29,9 +30,8 @@ zone3.kiln_elec.kiln_sim.heat_loss = zone4.kiln_elec.kiln_sim.heat_loss - 3
 zones = [zone1, zone2, zone3, zone4]
 
 loop_delay = 20
-if zone1.kiln_elec.kiln_sim.sim_speedup is not None:
-    loop_delay = loop_delay / zone1.kiln_elec.kiln_sim.sim_speedup
-    log.info('Sim speed up factor is ' + str(zone1.kiln_elec.kiln_sim.sim_speedup))
+loop_delay = loop_delay / sim_speed_up_factor
+log.info('Sim speed up factor is ' + str(sim_speed_up_factor))
 
 broker = Server.broker
 controller = Controller.Controller(broker, zones, loop_delay)

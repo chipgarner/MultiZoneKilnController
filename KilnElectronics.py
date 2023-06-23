@@ -42,9 +42,9 @@ class Sim(KilnElectronics):
         def __init__(self):
             self.value = None
 
-    def __init__(self, name: str):
+    def __init__(self, name: str, speed_up_factor: int):
         self.heat_factor = 0
-        self.kiln_sim = KilnSimulator()
+        self.kiln_sim = KilnSimulator(speed_up_factor)
         self.sim_speedup = self.kiln_sim.sim_speedup
         self.start = time.time()  # This is needed for thr simulator speedup
         self.latest_temp = 0
