@@ -16,7 +16,7 @@ log = logging.getLogger("Controller")
 server_thread = Thread(target=Server.server, name="server", daemon=True)
 server_thread.start()
 
-sim_speed_up_factor = 1
+sim_speed_up_factor = 10
 zone1 = Zone(Sim('1', sim_speed_up_factor))
 zone2 = Zone(Sim('2', sim_speed_up_factor))
 zone3 = Zone(Sim('3', sim_speed_up_factor))
@@ -27,7 +27,7 @@ zone4.kiln_elec.kiln_sim.power = zone4.kiln_elec.kiln_sim.power + 600
 zone1.kiln_elec.kiln_sim.heat_loss = zone1.kiln_elec.kiln_sim.heat_loss + 3
 zone3.kiln_elec.kiln_sim.heat_loss = zone3.kiln_elec.kiln_sim.heat_loss - 3
 zone3.kiln_elec.kiln_sim.heat_loss = zone4.kiln_elec.kiln_sim.heat_loss - 3
-zones = [zone1, zone2, zone3, zone4]
+zones = [zone1, zone2, zone3]
 
 loop_delay = 20
 loop_delay = loop_delay / sim_speed_up_factor

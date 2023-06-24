@@ -17,7 +17,6 @@ class MessageBroker:
 
         self.original_profile = None
         self.updated_profile = None
-        self.profile_names = None
 
         self.fileshandler = FilesHandler.FilesHandler()
 
@@ -40,19 +39,14 @@ class MessageBroker:
         self.controller_callbacks['set_profile_by_name'](profile_name)
 
     def add_observer(self, observer):
-        names = self.controller_callbacks['get_profile_names']()
-
         if self.original_profile is not None:
             self.update_profile(observer, self.original_profile)
         self.observers.append(observer)
 
         if self.updated_profile is not None:
             self.update_profile_all(self.updated_profile)
-        if names is not None:
-            self.profile_names = names
-            self.update_names(names)
 
-        log.debug('Added observer with profile names: ' + str(names))
+        log.debug('Added observer.')
 
     def update_names(self, names: list):
         profile_names = {
@@ -124,9 +118,9 @@ class MessageBroker:
             try:
                 with self.lock:
                     observer.send(message)
-            except WebSocketError:
+            except WebSocketError as ex:
                 self.observers.remove(observer)
-                log.info('Observer deleted, socket error.')
+                log.info('Observer deleted, socket error: ' + str(ex))
 
     def update_tc_data(self, tc_data: list):
         thermocouple_data = { 'thermocouple_data': tc_data}

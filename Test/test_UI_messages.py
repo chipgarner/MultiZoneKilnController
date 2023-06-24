@@ -35,9 +35,7 @@ def test_UI_adds_observer_idle():
 
     broker.add_observer('me')
 
-    assert broker.u_names_called
     assert controller.controller_state.get_UI_status()['label'] == 'IDLE'
-    assert len(broker.profile_names) > 2
     assert broker.UI_message == {
             'label': 'IDLE',
             'StartStop': 'Start',
@@ -55,7 +53,6 @@ def test_choose_profile():
 
     broker.set_profile("fast")
 
-    assert len(broker.profile_names) > 2
     assert broker.UI_message == {
             'label': 'IDLE',
             'StartStop': 'Start',

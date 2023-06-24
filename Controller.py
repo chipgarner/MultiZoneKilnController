@@ -37,7 +37,6 @@ class Controller:
         broker_to_controller_callbacks = {'start_stop': self.start_stop_firing,
                                           'auto_manual': self.auto_manual,
                                           'set_heat_for_zone': self.set_heat_for_zone,
-                                          'get_profile_names': self.get_profile_names,
                                           'set_profile_by_name': self.set_profile_by_name}
         self.broker.set_controller_functions(broker_to_controller_callbacks)
 
@@ -150,6 +149,8 @@ class Controller:
                 zones_status[index]["target"] = 'Off'
                 zones_status[index]["target_slope"] = 0
                 self.last_times[index] = zones_status[index]['time_ms']
+
+            self.broker.update_names(self.profile_names)
 
         self.broker.update_UI_status(self.controller_state.get_UI_status())
         self.broker.update_zones(zones_status)

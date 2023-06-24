@@ -1,10 +1,13 @@
 import Profile
 import pytest
+import os
 
 test_profile = {"data": [[0, 100], [3600, 100], [10800, 1000], [14400, 1150], [16400, 1150], [19400, 700]], "type": "profile", "name": "fast"}
+profiles_directory = os.path.abspath(os.path.join(os.path.dirname(__file__), '.', 'TestFiles/Profiles'))
 
 def test_get_target_temperature():
     profile = Profile.Profile()
+    profile.profiles_directory = profiles_directory
     profile.load_profile_by_name("test-fast.json")
     profile.current_segment = 0
 
@@ -21,6 +24,7 @@ def test_get_target_temperature():
 
 def test_find_time_from_temperature():
     profile = Profile.Profile()
+    profile.profiles_directory = profiles_directory
     profile.load_profile_by_name("test-fast.json")
 
     time, segment = profile.find_next_time_from_temperature(500)
@@ -37,6 +41,7 @@ def test_find_time_from_temperature():
 
 def test_find_time_odd_profile():
     profile = Profile.Profile()
+    profile.profiles_directory = profiles_directory
     profile.load_profile_by_name("test-cases.json")
 
     time, segment = profile.find_next_time_from_temperature(500)
@@ -50,6 +55,7 @@ def test_find_time_odd_profile():
 
 def test_find_x_given_y_on_line_from_two_points():
     profile = Profile.Profile()
+    profile.profiles_directory = profiles_directory
     profile.load_profile_by_name("test-fast.json")
 
 
@@ -96,6 +102,7 @@ def test_save_old_profile_as_new():
 
 def test_get_target_slope():
     profile = Profile.Profile()
+    profile.profiles_directory = profiles_directory
     profile.load_profile_by_name("test-fast.json")
     profile.current_segment = 0
 
@@ -115,7 +122,7 @@ def test_get_target_slope():
 
 def test_get_profiles_list():
     profile = Profile.Profile()
-
+    profile.profiles_directory = profiles_directory
     profiles = profile.get_profiles_names()
 
     assert len(profiles) >= 3
@@ -123,6 +130,7 @@ def test_get_profiles_list():
 
 def test_delta_t_from_slope():
     profile = Profile.Profile()
+    profile.profiles_directory = profiles_directory
     profile.load_profile_by_name("fast.json")
     profile.current_segment = 1
 
@@ -149,6 +157,7 @@ def test_delta_t_from_slope():
 
 def test_delta_t_from_steep_slope():
     profile = Profile.Profile()
+    profile.profiles_directory = profiles_directory
     profile.load_profile_by_name("test-cases.json")
     profile.current_segment = 1
 
@@ -181,6 +190,7 @@ def test_delta_t_from_steep_slope():
 # 2023-05-15 07:14:36,733 DEBUG Controller: target: 500.0
 def test_delta_t_from_wrong_segment():
     profile = Profile.Profile()
+    profile.profiles_directory = profiles_directory
     profile.load_profile_by_name("test-cases.json")
     profile.current_segment = 0
 
