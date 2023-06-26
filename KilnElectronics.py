@@ -385,11 +385,14 @@ class SSR:
         return onoff
 
     def set_heat(self, heat_factor: float):
-        onoff = self.set_cycles_list(heat_factor)
-        self.on_off = onoff.copy()
+        try:
+            onoff = self.set_cycles_list(heat_factor)
+            self.on_off = onoff.copy()
 
-        ons = [x for x in onoff if x]
-        self.heat_factor = len(ons) / self.resolution
+            ons = [x for x in onoff if x]
+            self.heat_factor = len(ons) / self.resolution
+        except Exception as ex:
+            log.error('Exception in setting heat on/off: ' + str(ex))
 
 
 
