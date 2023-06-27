@@ -113,6 +113,8 @@ class MessageBroker:
         self.fileshandler.save_update(message)
         self.send_socket(message)
 
+        log.debug('Zone status sent: ' + str(message))
+
     def send_socket(self, message):
         for observer in self.observers:
             try:
