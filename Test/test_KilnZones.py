@@ -11,12 +11,12 @@ def test_init_heating():
 
     zone1.set_heat(0.1)
 
-    assert zone1.kiln_elec.heat_factor == 0.1
+    assert zone1.kiln_elec.get_heat_factor() == 0.1
 
     zones = KilnZones.KilnZones([zone1], FakeBroker())
     zones.set_heat_for_zones([0.2])
 
-    assert zones.zones[0].kiln_elec.heat_factor == 0.2
+    assert zones.zones[0].kiln_elec.get_heat_factor() == 0.2
 
 
 def test_starts_time_temps_thread():

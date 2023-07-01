@@ -55,7 +55,7 @@ def test_init_zones():
     assert not controller.controller_state.get_state()['firing']
 
     for zone in controller.zones:
-        assert zone.kiln_elec.heat_factor == 0
+        assert zone.kiln_elec.get_heat_factor() == 0
 
 
 def test_loop_calls():

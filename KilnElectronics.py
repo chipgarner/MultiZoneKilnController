@@ -43,7 +43,6 @@ class Sim(KilnElectronics):
             self.value = None
 
     def __init__(self, name: str, speed_up_factor: int):
-        self.heat_factor = 0
         self.kiln_sim = KilnSimulator(speed_up_factor)
         self.sim_speedup = self.kiln_sim.sim_speedup
         self.start = time.time()  # This is needed for thr simulator speedup
@@ -53,13 +52,12 @@ class Sim(KilnElectronics):
 
     def set_heat(self, heat_factor: float):
         self.switches.set_heat(heat_factor)
-        self.heat_factor = self.switches.get_heat_factor()
 
     def get_heat_factor(self) -> float:
         return self.switches.get_heat_factor()
 
     def get_temperature(self) -> tuple: # From the thermocouple board
-        self.kiln_sim.update_sim(self.heat_factor)
+        self.kiln_sim.update_sim(self.switches.get_heat_factor())
         error = 0
         temperature = self.kiln_sim.get_latest_temperature()
         temperature += random.gauss(mu=0, sigma=0.65)
@@ -77,7 +75,7 @@ class Sim(KilnElectronics):
         return time_ms, temperature, error
 
 class Max31855(KilnElectronics):
-    #trying old code using bitbangio, new version stops and will not recover with restart
+    #trying old code using bitbangio, both version work on '55
     def __init__(self, switches):
         log.info( "56 Running on board: " + board.board_id)
         self.switches = switches
@@ -87,13 +85,11 @@ class Max31855(KilnElectronics):
         DO = 9
         self.sensor = MAX31855(CLK, CS, DO)
 
-        self.heat_factor = 0
         self.last_temp = -32
 
 
     def set_heat(self, heat_factor: float):
         self.switches.set_heat(heat_factor)
-        self.heat_factor = heat_factor
 
     def get_heat_factor(self) -> float:
         return self.switches.get_heat_factor()
@@ -132,13 +128,11 @@ class Max31856(KilnElectronics):
         # self.sensor.averaging = 16
         # self.sensor.noise_rejection = 60
 
-        self.heat_factor = 0
         self.last_temp = -42
 
 
     def set_heat(self, heat_factor: float):
         self.switches.set_heat(heat_factor)
-        self.heat_factor = heat_factor
 
     def get_heat_factor(self) -> float:
         return self.switches.get_heat_factor()
@@ -391,7 +385,7 @@ class SSR:
 
             ons = [x for x in onoff if x]
             self.heat_factor = len(ons) / self.resolution
-        except Exception as ex:
+        except Exception as ex: # TODO This seems to happen when many errors come in on the '55
             log.error('Exception in setting heat on/off: ' + str(ex))
 
 
