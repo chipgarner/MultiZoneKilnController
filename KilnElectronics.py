@@ -15,9 +15,9 @@ from max31855 import MAX31855
 
 from KilnSimulator import KilnSimulator
 
-log_level = logging.DEBUG
-log_format = '%(asctime)s %(levelname)s %(name)s: %(message)s'
-logging.basicConfig(level=log_level, format=log_format)
+# log_level = logging.DEBUG
+# log_format = '%(asctime)s %(levelname)s %(name)s: %(message)s'
+# logging.basicConfig(level=log_level, format=log_format)
 log = logging.getLogger(__name__)
 
 # Each zone needs it's own KilnElectronics for thermocouples and switching. Diffferent zones can
@@ -42,13 +42,14 @@ class Sim(KilnElectronics):
         def __init__(self):
             self.value = None
 
-    def __init__(self, name: str, speed_up_factor: int):
+    def __init__(self, zone_number: int, speed_up_factor: int):
         self.kiln_sim = KilnSimulator(speed_up_factor)
         self.sim_speedup = self.kiln_sim.sim_speedup
+        self.zone_number = zone_number
         self.start = time.time()  # This is needed for thr simulator speedup
         self.latest_temp = 0
         heater = self.FakeHeater()
-        self.switches = SSR(heater, "SSR " + name)
+        self.switches = SSR(heater, "SSR " + str(zone_number))
 
     def set_heat(self, heat_factor: float):
         self.switches.set_heat(heat_factor)

@@ -14,10 +14,7 @@ import MessageBroker
 import os
 
 
-log_level = logging.DEBUG
-log_format = '%(asctime)s %(levelname)s %(name)s: %(message)s'
-logging.basicConfig(level=log_level, format=log_format)
-log = logging.getLogger("Server")
+log = logging.getLogger(__name__)
 
 # the decorator for cors, allow POST from another computer - not working TODO
 def enable_cors(fn):

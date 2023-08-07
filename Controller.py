@@ -1,6 +1,6 @@
 import time
 import logging
-from logging import Logger
+# from logging import Logger
 import threading
 
 import Profile
@@ -9,9 +9,8 @@ import DataFilter
 import pid
 import Slope
 
-log_level = logging.DEBUG
-log_format = '%(asctime)s %(levelname)s %(name)s: %(message)s'
-log: Logger = logging.getLogger(__name__)
+# log_level = logging.DEBUG
+log = logging.getLogger(__name__)
 
 
 class Controller:

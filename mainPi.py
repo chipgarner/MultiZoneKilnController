@@ -10,7 +10,7 @@ import logging
 from threading import Thread
 
 
-log_level = logging.DEBUG
+log_level = logging.INFO
 log_format = '%(asctime)s %(levelname)s %(name)s: %(message)s'
 logging.basicConfig(level=log_level, format=log_format)
 log = logging.getLogger("Controller")

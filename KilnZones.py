@@ -4,7 +4,6 @@ import logging
 # Supports multiple sensors for multiple zone kilns.
 # Sensors are on one thread. You can't call sensors from separate threads if they share the SPI/
 
-
 log = logging.getLogger(__name__)
 
 
@@ -41,7 +40,6 @@ class KilnZones:
             self.broker.update_tc_data(thermocouple_data)
             # log.debug('Thread: ' + threading.current_thread().name)
 
-import KilnSimulator
 class Zone:
     def __init__(self, kiln):
         self.kiln_elec = kiln

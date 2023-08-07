@@ -3,7 +3,6 @@ from scipy import stats
 from typing import Tuple
 
 log = logging.getLogger(__name__)
-log.level = logging.DEBUG
 
 class Slope:
     def __init__(self, num_zones: int):
