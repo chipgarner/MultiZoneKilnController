@@ -1,13 +1,16 @@
 import MessageBroker
 from Controller import Controller
-from KilnZones import KilnZones, Zone
+from KilnZones import Zone
 from KilnElectronics import Sim
+from KilnSimulator import  ZoneTemps
+
+zone_temps = ZoneTemps()
 
 sim_speed_up_factor = 1
-zone1 = Zone(Sim('1', sim_speed_up_factor))
-zone2 = Zone(Sim('2', sim_speed_up_factor))
-zone3 = Zone(Sim('3', sim_speed_up_factor))
-zone4 = Zone(Sim('4', sim_speed_up_factor))
+zone1 = Zone(Sim('1', sim_speed_up_factor, zone_temps))
+zone2 = Zone(Sim('2', sim_speed_up_factor, zone_temps))
+zone3 = Zone(Sim('3', sim_speed_up_factor, zone_temps))
+zone4 = Zone(Sim('4', sim_speed_up_factor, zone_temps))
 zones = [zone1, zone2, zone3, zone4]
 
 class TestBroker(MessageBroker.MessageBroker):

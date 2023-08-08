@@ -4,6 +4,7 @@ import Controller
 import Server
 from KilnZones import Zone
 from KilnElectronics import Sim
+from KilnSimulator import ZoneTemps
 import logging
 from threading import Thread
 
@@ -16,25 +17,30 @@ log = logging.getLogger(__name__)
 server_thread = Thread(target=Server.server, name="server", daemon=True)
 server_thread.start()
 
+zone_temps = ZoneTemps()
+
 sim_speed_up_factor = 100
-zone1 = Zone(Sim(1, sim_speed_up_factor))
-zone2 = Zone(Sim(2, sim_speed_up_factor))
-zone3 = Zone(Sim(3, sim_speed_up_factor))
-zone4 = Zone(Sim(4, sim_speed_up_factor))
+zone1 = Zone(Sim('Fred', sim_speed_up_factor, zone_temps))
+zone2 = Zone(Sim('George', sim_speed_up_factor, zone_temps))
+# zone3 = Zone(Sim('3', sim_speed_up_factor, zone_temps))
+# zone4 = Zone(Sim('4', sim_speed_up_factor, zone_temps))
 # zone1.kiln_elec.kiln_sim.power = zone1.kiln_elec.kiln_sim.power + 300
 # zone3.kiln_elec.kiln_sim.power = zone3.kiln_elec.kiln_sim.power - 300
 # zone4.kiln_elec.kiln_sim.power = zone4.kiln_elec.kiln_sim.power + 300
 # zone1.kiln_elec.kiln_sim.heat_loss = zone1.kiln_elec.kiln_sim.heat_loss - 2
 # zone3.kiln_elec.kiln_sim.heat_loss = zone3.kiln_elec.kiln_sim.heat_loss - 2
 # zone3.kiln_elec.kiln_sim.heat_loss = zone4.kiln_elec.kiln_sim.heat_loss + 2
-zones = [zone1, zone2,]
+zones = [zone1, zone2] #, zone3, zone4]
 
 loop_delay = 20
 loop_delay = loop_delay / sim_speed_up_factor
 log.info('Sim speed up factor is ' + str(sim_speed_up_factor))
 
+log.info('Zone temps: ' + str(zone_temps.new_temps))
+
 broker = Server.broker
 controller = Controller.Controller(broker, zones, loop_delay)
 time.sleep(0.1)
 controller.control_loop()
+
 
