@@ -22,30 +22,35 @@ class ZoneTemps:
 # Each zone has its own simulator.
 
 class KilnSimulator:
-    def __init__(self, speed_up_factor: int):
+    def __init__(self, zone_name: str, speed_up_factor: int, zone_temps: ZoneTemps):
         self.latest_temperature = 27 # Temperatures are in degrees Centigrade
         self.latest_time = time.time()
         self.sim_speedup = speed_up_factor
         log.warning('Running simulator. In case you thought otherwise.')
 
+        zone_temps.add_new_temp(zone_name, 27)
+        self.zone_temps = zone_temps
+        self.zone_name = zone_name
+
         self.t_environment = 27 # Degrees C
         self.power = 3000 # Kiln power watts
+        self.steve_b = 5.669e-8 # Stephan-Boltzmann constant
         self.heat_loss = 1.5 # Conductive plus heat lost to the environment, watts/degrees C
         self.kiln_thermal_mass_inverted = 2e-5 # c/ws, compute heating rate from power
         self.radiation = 0.5e-8 # w/K^4 radiation from elements to kiln
-        self.radiative_coupling = 0.2e-8  # w/K^4 radiation between adjacent zones
+        self.radiative_coupling = 0.4e-8  # w/K^4 radiation between adjacent zones
         self.t_elements = 27
 
-    def update_sim(self, heat_factor: float, zone_temps: dict, zone_name: str):
+    def update_sim(self, heat_factor: float):
         now = time.time()
         delta_time = (now - self.latest_time) * self.sim_speedup
-        self.latest_temperature = self.find_temperature(delta_time, heat_factor, zone_temps, zone_name)
+        self.latest_temperature = self.find_temperature(delta_time, heat_factor)
         self.latest_time = now
 
     def get_latest_temperature(self) -> float:
         return self.latest_temperature
 
-    def find_temperature(self, delta_time, heat_factor, zone_old_temps: dict, zone_name: str):
+    def find_temperature(self, delta_time, heat_factor):
         # Two lumped heat capacities kiln model. This assumes two temperatures, t-elements and t_kiln
         # Heat is lost by conduction and convection to the environement.Heat loss is proportional to T - T environement.
         # This is split between the usually higher t_elements and t_kiln. Heat is transferred from the elements (plus
@@ -64,7 +69,7 @@ class KilnSimulator:
         power_to_zone = ((self.t_elements + 273)**4 - (self.latest_temperature + 273) **4) * self.radiation\
                         - self.heat_loss * (self.latest_temperature - self.t_environment) * 3
         elements_rate = (power - power_to_zone) * self.kiln_thermal_mass_inverted * 50 # It's a guess for the elements +
-        power_to_zone = power_to_zone + self.radiative_coupling_gain(zone_old_temps, zone_name)
+        power_to_zone = power_to_zone + self.radiative_coupling_gain(self.zone_temps.get_temps(), self.zone_name)
         self.t_elements = self.t_elements + elements_rate * delta_time # TODO this is high with power off to this zone
         log.info('Elements temperature: ' + str(self.t_elements))
         # Radiant transfer to kiln. Elements thermal mass should include nearby stuff.
@@ -73,12 +78,15 @@ class KilnSimulator:
         rate = power_to_zone * self.kiln_thermal_mass_inverted
         temperature = self.latest_temperature + rate * delta_time
         log.info('Temp: ' + str(temperature))
+
+        self.update_zone_temps(temperature)
         return temperature
 
     def radiative_coupling_gain(self, zone_old_temps: dict, zone_name: str):
         coupling_power = 0
         keys = zone_old_temps.keys()
-        if len(keys) > 1:
+        num_zones = len(keys)
+        if num_zones > 1:
             temps = list(zone_old_temps.values())
             index = -1
             for i, key in enumerate(keys):
@@ -89,7 +97,19 @@ class KilnSimulator:
             if index == 0:
                 coupling_power = self.coupling(temps[index + 1], temps[index])
 
-            if index == 1:
+            elif index == 1:
+                coupling_power = self.coupling(temps[index - 1], temps[index])
+
+                if num_zones > 2:
+                    coupling_power = coupling_power + self.coupling(temps[index + 1], temps[index])
+
+            elif index == 2:
+                coupling_power = self.coupling(temps[index - 1], temps[index])
+
+                if num_zones > 3:
+                    coupling_power = coupling_power + self.coupling(temps[index + 1], temps[index])
+
+            elif index == 3: # Four zones max
                 coupling_power = self.coupling(temps[index - 1], temps[index])
 
         log.info('Coupling: ' + str(coupling_power))
@@ -98,6 +118,13 @@ class KilnSimulator:
 
     def coupling(self, t1: float, t2: float) -> float:
         return ((t1 + 273) **4 - (t2 + 273) **4) * self.radiative_coupling
+
+    # This is for radiative coupling, the heat transfer between zones
+    def update_zone_temps(self, temperature):
+        self.zone_temps.add_new_temp(self.zone_name, temperature)
+        keys = self.zone_temps.new_temps.keys()
+        if self.zone_name == list(keys)[len(keys) - 1]: # It's the last (bottom) zone
+            self.zone_temps.set_old_temps_to_new()
 
 
 #  This is for testing

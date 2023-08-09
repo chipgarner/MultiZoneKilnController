@@ -43,11 +43,8 @@ class Sim(KilnElectronics):
             self.value = None
 
     def __init__(self, zone_name: str, speed_up_factor: int, zone_temps: ZoneTemps):
-        self.kiln_sim = KilnSimulator(speed_up_factor)
+        self.kiln_sim = KilnSimulator(zone_name, speed_up_factor, zone_temps)
         self.sim_speedup = self.kiln_sim.sim_speedup
-        zone_temps.add_new_temp(zone_name, 27)
-        self.zone_temps = zone_temps
-        self.zone_name = zone_name
         self.start = time.time()  # This is needed for thr simulator speedup
         self.latest_temp = 0
         heater = self.FakeHeater()
@@ -60,7 +57,7 @@ class Sim(KilnElectronics):
         return self.switches.get_heat_factor()
 
     def get_temperature(self) -> tuple: # From the thermocouple board
-        self.kiln_sim.update_sim(self.switches.get_heat_factor(), self.zone_temps.get_temps(), self.zone_name)
+        self.kiln_sim.update_sim(self.switches.get_heat_factor())
         error = 0
         temperature = self.kiln_sim.get_latest_temperature()
         temperature += random.gauss(mu=0, sigma=0.65) # Simulated precision error
@@ -75,17 +72,8 @@ class Sim(KilnElectronics):
         time_ms = round(time_sim * 1000)  # Thingsboard etc require timestamps in milliseconds
 
         time.sleep(0.5 / self.sim_speedup)  # Real sensors take time to read
-
-        self.update_zone_temps(temperature)
-
         return time_ms, temperature, error
 
-    # This is for heat transfer between zones
-    def update_zone_temps(self, temperature):
-        self.zone_temps.add_new_temp(self.zone_name, temperature)
-        keys = self.zone_temps.new_temps.keys()
-        if self.zone_name == list(keys)[len(keys) - 1]: # It's the last (bottom) zone
-            self.zone_temps.set_old_temps_to_new()
 
 
 class Max31855(KilnElectronics):

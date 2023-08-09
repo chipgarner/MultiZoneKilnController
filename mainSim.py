@@ -24,13 +24,13 @@ zone1 = Zone(Sim('Fred', sim_speed_up_factor, zone_temps))
 zone2 = Zone(Sim('George', sim_speed_up_factor, zone_temps))
 # zone3 = Zone(Sim('3', sim_speed_up_factor, zone_temps))
 # zone4 = Zone(Sim('4', sim_speed_up_factor, zone_temps))
-# zone1.kiln_elec.kiln_sim.power = zone1.kiln_elec.kiln_sim.power + 300
+zone1.kiln_elec.kiln_sim.power = zone1.kiln_elec.kiln_sim.power + 300
 # zone3.kiln_elec.kiln_sim.power = zone3.kiln_elec.kiln_sim.power - 300
 # zone4.kiln_elec.kiln_sim.power = zone4.kiln_elec.kiln_sim.power + 300
-# zone1.kiln_elec.kiln_sim.heat_loss = zone1.kiln_elec.kiln_sim.heat_loss - 2
+zone1.kiln_elec.kiln_sim.heat_loss = zone1.kiln_elec.kiln_sim.heat_loss - 2
 # zone3.kiln_elec.kiln_sim.heat_loss = zone3.kiln_elec.kiln_sim.heat_loss - 2
 # zone3.kiln_elec.kiln_sim.heat_loss = zone4.kiln_elec.kiln_sim.heat_loss + 2
-zones = [zone1, zone2] #, zone3, zone4]
+zones = [zone1 , zone2] #, zone3, zone4]
 
 loop_delay = 20
 loop_delay = loop_delay / sim_speed_up_factor
