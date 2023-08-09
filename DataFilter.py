@@ -1,6 +1,8 @@
+import logging
 import statistics
 import sys
 
+log = logging.getLogger(__name__)
 
 def median(t_t_h: list) -> dict:
     y_list = []
@@ -10,7 +12,12 @@ def median(t_t_h: list) -> dict:
         return None
 
     median = statistics.median(y_list)
-    pstdev = statistics.pstdev(y_list)
+    try:
+        pstdev = statistics.pstdev(y_list)
+    except OverflowError as ex:
+        pstdev = 0
+        log.error(str(ex))
+
     mean = statistics.mean(y_list)
 
     return {'mean': mean, 'median': median, 'p_stand_dev': pstdev}
