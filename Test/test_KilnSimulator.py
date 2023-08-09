@@ -19,10 +19,10 @@ def test_find_temperature(caplog):
 
     assert temp == 27.0
 
-    temp = sim.find_temperature(1.0, .5)
-    temp = sim.find_temperature(1.0, .5)
-    print(caplog.text)
+    for i in range(100):
+        temp = sim.find_temperature(10.0, 1)
+        sim.latest_temperature = temp
 
-    assert temp == 27.0
+    assert round(temp) == 156
 
 
