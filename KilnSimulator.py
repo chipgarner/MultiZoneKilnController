@@ -2,7 +2,7 @@ import logging
 import time
 
 log = logging.getLogger(__name__)
-# log.level = logging.INFO
+log.level = logging.DEBUG
 
 # One instance to allow for heat transfer between zones. (Could use a singleton)
 class ZoneTemps:
@@ -33,13 +33,16 @@ class KilnSimulator:
         self.zone_name = zone_name
 
         self.t_environment = 27 # Degrees C
-        self.power = 3000 # Kiln power watts
-        self.steve_b = 5.669e-8 # Stephan-Boltzmann constant
-        self.heat_loss = 1.5 # Conductive plus heat lost to the environment, watts/degrees C
-        self.kiln_thermal_mass_inverted = 2e-5 # c/ws, compute heating rate from power
-        self.radiation = 0.5e-8 # w/K^4 radiation from elements to kiln
-        self.radiative_coupling = 0.4e-8  # w/K^4 radiation between adjacent zones
         self.t_elements = 27
+        self.power = 3000 # Kiln power watts for this zone
+        self.steve_b = 5.669e-8 # Stephan-Boltzmann constant w/m**2/K**4
+        self.area_el = 0.157 # m**2, Effective area of elements in square meters. Estimate used for conducti0n and radiation.
+        self.area_load = 0.325 # m**2, Zone heat loss area not incuding elements area, e.g. Zone one top and side wall.
+        self.area_adjacent_zones = 0.168 # m**2, Area
+        self.heat_loss = 5.0 # Conductive/convective heat loss resistance through kiln walls, watts/m**2/degrees C
+        self.heat_capacity = 850 # J/kg/degrees C, ceramic materials are similar.
+        self.elements_mass = 1 # kg, include part of the nearby bricks. (This is a guess.)
+        self.load_mass = 20 # kg, the ware and kiln shelves
 
     def update_sim(self, heat_factor: float):
         now = time.time()
@@ -52,36 +55,51 @@ class KilnSimulator:
 
     def find_temperature(self, delta_time, heat_factor):
         # Two lumped heat capacities kiln model. This assumes two temperatures, t-elements and t_kiln
-        # Heat is lost by conduction and convection to the environement.Heat loss is proportional to T - T environement.
-        # This is split between the usually higher t_elements and t_kiln. Heat is transferred from the elements (plus
-        # surrounding bricks) to the kiln by radiation. Radiation works much better at higher temperatures
-        # (temperature to the 4th power), which is why things even out at higher temperatures. Finally, the
-        # thermocouples will be at some temperature between t-elements and t_kiln. This is not inculded here as
-        # leaving it out gives a longer time delay, which is worse for control design.
+        # Heat is lost by conduction and convection to the environement.
+        # This assumes convection in the kiln is not important, it becomes much less important at higher
+        # tempertures.
 
         # Radiant heat transfer coupling between zones added 08/07/2023
 
-        pf = self.power * heat_factor
-        log.debug('Power factor watts: ' + str(pf))
-        loss = self.heat_loss * (self.t_elements - self.t_environment)
-        log.debug('Heat loss watts: ' + str(loss))
-        power = pf - loss
-        power_to_zone = ((self.t_elements + 273)**4 - (self.latest_temperature + 273) **4) * self.radiation\
-                        - self.heat_loss * (self.latest_temperature - self.t_environment) * 3
-        elements_rate = (power - power_to_zone) * self.kiln_thermal_mass_inverted * 50 # It's a guess for the elements +
-        power_to_zone = power_to_zone + self.radiative_coupling_gain(self.zone_temps.get_temps(), self.zone_name)
-        self.t_elements = self.t_elements + elements_rate * delta_time # TODO this is high with power off to this zone
+        power_in = self.power * heat_factor
+        log.debug('Power factor watts: ' + str(power_in))
+        # Heat lost from the elements direclty through the kiln walls
+        loss_elements = self.area_el * self.heat_loss * (self.t_elements - self.t_environment)
+        log.debug('Elements loss watts: ' + str(loss_elements))
+        # Assumes all the power (heat) to the load (ware plus shelves) is via thermal radiation
+        power_to_load = self.steve_b * self.area_el * ((self.t_elements + 273)**4 - (self.latest_temperature + 273) **4)
+        log.debug('Load input power watts: ' + str(power_to_load))
+        # This is from the differential equation for lumped heat capacity: q = -Cm(dT/dt). q here is the power stored in
+        # the elements.
+        delta_t_elements = (delta_time / (self.elements_mass * self.heat_capacity)) * \
+                           (power_in - loss_elements - power_to_load)
+        self.t_elements = self.t_elements + delta_t_elements
         log.info('Elements temperature: ' + str(self.t_elements))
-        # Radiant transfer to kiln. Elements thermal mass should include nearby stuff.
 
-        log.info('Zone power: ' + str(power_to_zone))
-        rate = power_to_zone * self.kiln_thermal_mass_inverted
-        temperature = self.latest_temperature + rate * delta_time
+        loss_load = self.heat_loss * self.area_load * (self.latest_temperature - self.t_environment)
+        coupling_gain = self.radiative_coupling_gain(self.zone_temps.get_temps(), self.zone_name)
+        log.debug('Coupling gain: ' + str(coupling_gain))
+        delta_t_load =  (delta_time / (self.load_mass * self.heat_capacity)) * \
+                        (power_to_load - loss_load + coupling_gain)
+        temperature = self.latest_temperature + delta_t_load
+
+        # power_to_zone = ((self.t_elements + 273)**4 - (self.latest_temperature + 273) **4) * self.radiation\
+        #                 - self.heat_loss * (self.latest_temperature - self.t_environment) * 3
+        # elements_rate = (power - power_to_zone) * self.kiln_thermal_mass_inverted * 50 # It's a guess for the elements +
+        # power_to_zone = power_to_zone + self.radiative_coupling_gain(self.zone_temps.get_temps(), self.zone_name)
+        # self.t_elements = self.t_elements + elements_rate * delta_time # TODO this is high with power off to this zone
+        # log.info('Elements temperature: ' + str(self.t_elements))
+        # # Radiant transfer to kiln. Elements thermal mass should include nearby stuff.
+        #
+        # log.info('Zone power: ' + str(power_to_zone))
+        # rate = power_to_zone * self.kiln_thermal_mass_inverted
+        # temperature = self.latest_temperature + rate * delta_time
+
         log.info('Temp: ' + str(temperature))
-
         self.update_zone_temps(temperature)
         return temperature
 
+# Heat transfer bertween adjacent Zones
     def radiative_coupling_gain(self, zone_old_temps: dict, zone_name: str):
         coupling_power = 0
         keys = zone_old_temps.keys()
@@ -117,7 +135,7 @@ class KilnSimulator:
         return coupling_power
 
     def coupling(self, t1: float, t2: float) -> float:
-        return ((t1 + 273) **4 - (t2 + 273) **4) * self.radiative_coupling
+        return self.steve_b * self.area_adjacent_zones * ((t1 + 273) **4 - (t2 + 273) **4)
 
     # This is for radiative coupling, the heat transfer between zones
     def update_zone_temps(self, temperature):
