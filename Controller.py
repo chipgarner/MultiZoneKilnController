@@ -184,7 +184,7 @@ class Controller:
                 best_time = round((t_t_h[0]['time_ms'] + t_t_h[-1]['time_ms']) / 2)
 
                 slope, stderror = self.slope.slope(index, best_time, best_temp, t_t_h[0]['heat_factor'])
-
+                if isinstance(stderror, float): stderror = round(stderror)
                 if isinstance(pstdev, float): pstdev = "{:.2f}".format(pstdev)
 
                 zones_status.append({'time_ms': best_time,

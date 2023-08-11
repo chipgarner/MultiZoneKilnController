@@ -11,26 +11,19 @@ class Slope:
         self.restart()
 
     # TODO Average heat factor is likely to become important.
-    def slope(self, index: int, best_time: float, best_temp: float, heat_factor: float) -> Tuple[float, float]:
-        self.long_smoothed_t_t_h_z[index].append({'time_ms': best_time,
+    def slope(self, zone_index: int, best_time: float, best_temp: float, heat_factor: float) -> Tuple[float, float]:
+        self.long_smoothed_t_t_h_z[zone_index].append({'time_ms': best_time,
                                                   'temperature': best_temp,
                                                   'heat_factor': heat_factor})
-        if len(self.long_smoothed_t_t_h_z[index]) > 20:
-            self.long_smoothed_t_t_h_z[index].pop(0)
+        if len(self.long_smoothed_t_t_h_z[zone_index]) > 20:
+            self.long_smoothed_t_t_h_z[zone_index].pop(0)
 
-        if len(self.long_smoothed_t_t_h_z[index]) > 1:
-            t_t_h = self.long_smoothed_t_t_h_z[index]
+        if len(self.long_smoothed_t_t_h_z[zone_index]) > 1:
+            t_t_h = self.long_smoothed_t_t_h_z[zone_index]
             slope, stderror = self.linear_regression(t_t_h)
             slope = slope * 3600 # degrees C per hour
             stderror = stderror * 3600
-            # slope = (t_t_h[-1]['temperature'] - t_t_h[0]['temperature']) / \
-            #         (t_t_h[-1]['time_ms'] - t_t_h[0]['time_ms']) * 3.6e6
-            # if len(t_t_h) > 12: # Average over nearby values
-            #     slope += (t_t_h[-3]['temperature'] - t_t_h[2]['temperature']) / \
-            #             (t_t_h[-3]['time_ms'] - t_t_h[2]['time_ms']) * 3.6e6
-            #     slope += (t_t_h[-5]['temperature'] - t_t_h[4]['temperature']) / \
-            #             (t_t_h[-5]['time_ms'] - t_t_h[4]['time_ms']) * 3.6e6
-            #     slope = slope / 3
+
         else:
             slope = 'NA'
             stderror = 'NA'
@@ -56,7 +49,7 @@ class Slope:
         for _ in range(self.num_zones):
             self.long_smoothed_t_t_h_z.append([])
 
-    def get_latest_min_temp(self) -> float:
+    def get_latest_min_temp(self) -> float: # TODO only used in tests
         min_temp = 0
         log.debug(str(self.long_smoothed_t_t_h_z[0]))
         if len(self.long_smoothed_t_t_h_z[0]) > 0:

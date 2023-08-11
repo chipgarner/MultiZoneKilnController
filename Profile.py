@@ -148,7 +148,7 @@ class Profile:
             next_point = self.data[self.current_segment + 1]
             segment_age = time_since_start - prev_point[0]
             if segment_age > 600: # Let the controller get established on the segment
-                if min_temp - prev_point[1] > 5: # Avoid divide by small number or negative time change
+                if min_temp - prev_point[1] > 5: # Avoid divide by small number or negative temp slope
                     # +2 to reduce PID induced stall on very steep segments on jump at 600 seconds
                     delta_t = self.delta_t_from_slope(prev_point, next_point, time_since_start, min_temp + 2)
                     for index, time_temp in enumerate(self.data):
