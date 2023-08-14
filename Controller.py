@@ -1,6 +1,5 @@
 import time
 import logging
-# from logging import Logger
 import threading
 
 import Profile
@@ -9,8 +8,8 @@ import DataFilter
 import pid
 import Slope
 
-# log_level = logging.DEBUG
 log = logging.getLogger(__name__)
+# log.level = logging.DEBUG
 
 
 class Controller:
@@ -103,26 +102,7 @@ class Controller:
         target = 'OFF'
 
         if self.profile.name is not None:
-            self.min_temp, time_since_start, heat_factor = \
-                self.lagging_temp_time_heat(zones_status, self.start_time_ms)
-            target = self.profile.get_target_temperature(time_since_start)
-            if type(target) is str:
-                self.controller_state.firing_finished()
-            else:
-                error = target - self.min_temp
-
-                segment_change = False
-                update = False
-                if error < 2:  # Temperature close enough or high, check segment time
-                    segment_change, update = self.profile.check_switch_segment(time_since_start)
-                if segment_change: self.slope.restart()
-
-                if error > 5:  # Too cold, move segment times so it can catch up
-                    if heat_factor > 0.99:
-                        update = self.profile.check_shift_profile(time_since_start, self.min_temp)
-                if update:  # The profile has shifted, show the shift in the UI
-                    log.debug('target: ' + str(target) + ', error: ' + str(error))
-                    self.send_updated_profile(self.profile.name, self.profile.data, self.start_time_ms)
+            target = self.__profile_checks(zones_status)
 
         if self.controller_state.get_state()['firing']:
             heats = []
@@ -159,20 +139,44 @@ class Controller:
         min_temp = 3000
         time_since_start = 0
         heat_factor = 0
+        zone_index = None
         for index, zone in enumerate(zones_status):
             if zone['temperature'] < min_temp:
                 min_temp = zone['temperature']
                 time_since_start = (zones_status[index]['time_ms'] - start_time_ms) / 1000
                 heat_factor = zone['heat_factor']
+                zone_index = index
 
-        return min_temp, time_since_start, heat_factor
+        return min_temp, time_since_start, heat_factor, zone_index
 
+    def __profile_checks(self, zones_status) -> float | str:
+        self.min_temp, time_since_start, heat_factor, zone_index = \
+            self.lagging_temp_time_heat(zones_status, self.start_time_ms)
+        target = self.profile.get_target_temperature(time_since_start)
+        if type(target) is str:
+            self.controller_state.firing_finished()
+        else:
+            error = target - self.min_temp
+
+            update = False
+            if error < 2:  # Temperature close enough or high, check segment time
+                segment_change, update = self.profile.check_switch_segment(time_since_start)
+                if segment_change: self.slope.restart()
+
+            if error > 5:  # Too cold, move segment times so it can catch up
+                if heat_factor > 0.99:
+                    update = self.profile.check_shift_profile(time_since_start, self.min_temp,
+                                                              zones_status, zone_index)
+
+            if update:  # The profile has shifted, show the shift in the UI
+                self.send_updated_profile(self.profile.name, self.profile.data, self.start_time_ms)
+
+        return target
 
     def smooth_temperatures(self, t_t_h_z: list) -> list:
         zones_status = []
-        for index, t_t_h in enumerate(t_t_h_z):
+        for zone_index, t_t_h in enumerate(t_t_h_z):
             if len(t_t_h) > 0:  # No data happens on startup
-                log.debug('Smooth temps list length: ' + str(len(t_t_h)))
                 median_result = self.data_filter.median(t_t_h)
                 if median_result is not None:
                     best_temp = median_result['median']
@@ -183,15 +187,14 @@ class Controller:
                     pstdev = 'NA'
                 best_time = round((t_t_h[0]['time_ms'] + t_t_h[-1]['time_ms']) / 2)
 
-                slope, stderror = self.slope.slope(index, best_time, best_temp, t_t_h[0]['heat_factor'])
-
+                slope, stderror = self.slope.slope(zone_index, best_time, best_temp, t_t_h[0]['heat_factor'])
                 if isinstance(pstdev, float): pstdev = "{:.2f}".format(pstdev)
 
                 zones_status.append({'time_ms': best_time,
                                      'temperature': best_temp,
                                      'heat_factor': t_t_h[0]['heat_factor'],
                                      'slope': slope,
-                                     'slope_data_length': -1,
+                                     'stderror': stderror,
                                      'pstdev': pstdev})
 
         return zones_status

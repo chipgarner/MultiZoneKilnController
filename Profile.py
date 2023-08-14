@@ -7,6 +7,7 @@ import copy
 from typing import Union, Tuple
 
 log = logging.getLogger(__name__)
+log.level = logging.DEBUG
 
 def convert_old_profile(old_profile: dict) ->  dict:
     new_segments = []
@@ -16,7 +17,6 @@ def convert_old_profile(old_profile: dict) ->  dict:
 
     return new_profile
 
-# TODO use actual (not time since start) segment in minutes (hours?0
 def save_old_profile_as_new(old_profile: dict):
     new_profile = convert_old_profile(old_profile)
     last_seg_time = 0
@@ -49,7 +49,7 @@ class Profile:
         self.data = None
         self.name = None
         self.current_segment = None
-        self.segment_start = None
+        self.last_profile_change = time.time()
 
     def load_profile_by_name(self, file: str):
         profile_path = os.path.join(self.profiles_directory, file)
@@ -141,29 +141,56 @@ class Profile:
 
         return slope
 
-    def check_shift_profile(self, time_since_start, min_temp) -> bool:
+    def check_shift_profile(self, time_since_start, min_temp, zones_status, zone_index) -> bool:
         update = False
-        if self.current_segment is not None:
-            prev_point = self.data[self.current_segment]
-            next_point = self.data[self.current_segment + 1]
-            segment_age = time_since_start - prev_point[0]
-            if segment_age > 600: # Let the controller get established on the segment
-                if min_temp - prev_point[1] > 5: # Avoid divide by small number or negative time change
-                    # +2 to reduce PID induced stall on very steep segments on jump at 600 seconds
-                    delta_t = self.delta_t_from_slope(prev_point, next_point, time_since_start, min_temp + 2)
-                    for index, time_temp in enumerate(self.data):
-                        if index > self.current_segment:
-                            time_temp[0] += delta_t
-                    update = True
-                    log.debug('delta_t: ' + str(delta_t))
-                    log.debug('min_temp: ' + str(min_temp))
+
+        if time_since_start - self.last_profile_change > 600:
+            slope = zones_status[zone_index]['slope']
+            stderror = zones_status[zone_index]['stderror']
+            t_statistic = slope / stderror
+            if t_statistic > 10: # This means the slope is reasonably accurate
+                target_slope = self.get_target_slope(time_since_start)
+                log.debug('t_statistic: ' + str(t_statistic))
+                log.debug('Slope: ' + str(slope) + ' Target slope: ' + str(target_slope))
+                if slope < target_slope: # Not catching up, reduce the target slope.
+                    if self.current_segment is not None:
+                        prev_point = self.data[self.current_segment]
+                        next_point = self.data[self.current_segment + 1]
+                        if min_temp - prev_point[1] > 5: # Avoid divide by small number or negative temp slope
+                            min_temp += 5 # Stop temperature drop from PID
+                            delta_t_prev, delta_t_next = self.delta_ts_from_slope(slope, prev_point, next_point,
+                                                                                  time_since_start, min_temp)
+                            self.data[self.current_segment][0] += delta_t_prev
+                            for index, time_temp in enumerate(self.data):
+                                if index > self.current_segment:
+                                    time_temp[0] += delta_t_next
+
+                            update = True
+                            self.last_profile_change = time_since_start
+                            log.debug('time: ' + str(time_since_start))
+                            log.debug('delta_t: ' + str(delta_t_next * 3600))
+                            log.debug('min_temp: ' + str(min_temp))
+                            log.debug('Target slope: ' + str(self.get_target_slope(time_since_start)))
         return update
 
-    def delta_t_from_slope(self, prev_point, next_point, time_since_start, min_temp):
-        delta_t = (next_point[1] - prev_point[1]) * (time_since_start - prev_point[0]) \
-        / (min_temp - prev_point[1]) + prev_point[0] - next_point[0]
+    def delta_ts_from_slope(self, desired_slope, prev_point, next_point, time_since_start, min_temp) -> Tuple[float, float]:
+        # desired_slope is the maximum achievable slope. Move the current segment start and end times to go through the
+        # current point at this slope.
+        # T = mt + b, m=slope
+        # This point: t0=time_since_start, T0=min_temp. b = T0-mt0
+        # Previous point: t1 is unknown, T1=prev_point[1]. t1=(T1-b)/m
+        # Next point: t2 is unknown, T2=next_point[1]. t2=(T2-b)/m
 
-        return delta_t
+        m = desired_slope / 3600 # Degrees C per second
+        b = min_temp - m * time_since_start
+
+        t0 = (prev_point[1] - b) / m
+        t1 = (next_point[1] - b) / m
+
+        delta_t_prev = t0 - prev_point[0]
+        delta_t_next = t1 - next_point[0]
+
+        return delta_t_prev, delta_t_next # Seconds
 
     def check_switch_segment(self, time_since_start: float) -> Tuple[bool, bool]:
         segment_change = False
@@ -174,7 +201,7 @@ class Profile:
 
                 self.current_segment = 0
                 segment_change = True
-                self.segment_start = time.time()
+                self.last_profile_change = time_since_start
                 for time_temp in self.data:
                     time_temp[0] += time_since_start
                 update = True  # Shift profile start on start of first segment
@@ -183,6 +210,6 @@ class Profile:
             if time_since_start >= self.data[self.current_segment + 1][0]:
                 self.current_segment += 1
                 segment_change = True
-                self.segment_start = time.time()
+                self.last_profile_change = time_since_start
 
         return segment_change, update

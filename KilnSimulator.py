@@ -2,7 +2,7 @@ import logging
 import time
 
 log = logging.getLogger(__name__)
-log.level = logging.DEBUG
+# log.level = logging.DEBUG
 
 # One instance to allow for heat transfer between zones. (Could use a singleton)
 class ZoneTemps:
@@ -57,7 +57,7 @@ class KilnSimulator:
         # Two lumped heat capacities kiln model. This assumes two temperatures, t-elements and t_kiln
         # Heat is lost by conduction and convection to the environement.
         # This assumes convection in the kiln is not important, it becomes much less important at higher
-        # tempertures.
+        # tempertures.an
 
         # Radiant heat transfer coupling between zones added 08/07/2023
 
@@ -74,7 +74,7 @@ class KilnSimulator:
         delta_t_elements = (delta_time / (self.elements_mass * self.heat_capacity)) * \
                            (power_in - loss_elements - power_to_load)
         self.t_elements = self.t_elements + delta_t_elements
-        log.info('Elements temperature: ' + str(self.t_elements))
+        log.debug('Elements temperature: ' + str(self.t_elements))
 
         loss_load = self.heat_loss * self.area_load * (self.latest_temperature - self.t_environment)
         coupling_gain = self.radiative_coupling_gain(self.zone_temps.get_temps(), self.zone_name)
@@ -95,7 +95,7 @@ class KilnSimulator:
         # rate = power_to_zone * self.kiln_thermal_mass_inverted
         # temperature = self.latest_temperature + rate * delta_time
 
-        log.info('Temp: ' + str(temperature))
+        log.debug('Temp: ' + str(temperature))
         self.update_zone_temps(temperature)
         return temperature
 
@@ -110,8 +110,7 @@ class KilnSimulator:
             for i, key in enumerate(keys):
                 if key == zone_name:
                     index = i
-            log.info(temps)
-            log.info(index)
+
             if index == 0:
                 coupling_power = self.coupling(temps[index + 1], temps[index])
 
@@ -130,7 +129,7 @@ class KilnSimulator:
             elif index == 3: # Four zones max
                 coupling_power = self.coupling(temps[index - 1], temps[index])
 
-        log.info('Coupling: ' + str(coupling_power))
+        log.debug('Coupling: ' + str(coupling_power))
 
         return coupling_power
 

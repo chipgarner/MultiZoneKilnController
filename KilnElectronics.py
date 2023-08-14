@@ -15,9 +15,6 @@ from max31855 import MAX31855
 
 from KilnSimulator import KilnSimulator, ZoneTemps
 
-# log_level = logging.DEBUG
-# log_format = '%(asctime)s %(levelname)s %(name)s: %(message)s'
-# logging.basicConfig(level=log_level, format=log_format)
 log = logging.getLogger(__name__)
 
 # Each zone needs it's own KilnElectronics for thermocouples and switching. Diffferent zones can

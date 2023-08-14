@@ -2,9 +2,13 @@ import logging
 import statistics
 import sys
 
+from _decimal import Decimal
+from fractions import Fraction
+from typing import Dict, Any
+
 log = logging.getLogger(__name__)
 
-def median(t_t_h: list) -> dict:
+def median(t_t_h: list) -> dict[str, float] | None:
     y_list = []
     for time_temp in t_t_h:
         y_list.append(time_temp['temperature'])
@@ -23,7 +27,7 @@ def median(t_t_h: list) -> dict:
     return {'mean': mean, 'median': median, 'p_stand_dev': pstdev}
 
 
-def linear(t_t_h: list) -> dict:
+def linear(t_t_h: list) -> dict or None:
     # Linear regression added in Python 3.10.x, not on Pi as of April 2023
     vers = sys.version_info
     major = vers[0]
@@ -40,4 +44,3 @@ def linear(t_t_h: list) -> dict:
         return {'slope': result.slope, 'intercept': result.intercept}
     else:
         return None
-
