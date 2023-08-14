@@ -1,3 +1,5 @@
+import time
+
 import Profile
 import pytest
 import os
@@ -138,10 +140,12 @@ def test_delta_t_from_slope():
     target = profile.get_target_temperature(time_since_start)
     min_temp = target - 6
     prev_point, next_point = profile.get_surrounding_points(time_since_start)
+    slope = 350
 
-    delta_t = profile.delta_t_from_slope(prev_point, next_point, time_since_start, min_temp)
+    delta_t_prev, delta_t_next = profile.delta_ts_from_slope(slope, prev_point, next_point, time_since_start, min_temp)
 
-    assert int(delta_t) == 530
+    assert int(delta_t_prev) == -138
+    assert int(delta_t_next) == 1918
 
 
     time_since_start = 7000
@@ -149,9 +153,10 @@ def test_delta_t_from_slope():
     min_temp = target - 6
     prev_point, next_point = profile.get_surrounding_points(time_since_start)
 
-    delta_t = profile.delta_t_from_slope(prev_point, next_point, time_since_start, min_temp)
+    delta_t_prev, delta_t_next = profile.delta_ts_from_slope(slope, prev_point, next_point, time_since_start, min_temp)
 
-    assert int(delta_t) == 103
+    assert int(delta_t_prev) == -909
+    assert int(delta_t_next) == 1147
 
 
 
@@ -166,11 +171,12 @@ def test_delta_t_from_steep_slope():
     min_temp = target - 6
     prev_point = profile.data[profile.current_segment]
     next_point = profile.data[profile.current_segment  + 1]
+    slope = 300
 
-    delta_t = profile.delta_t_from_slope(prev_point, next_point, time_since_start, min_temp)
+    delta_t_prev, delta_t_next = profile.delta_ts_from_slope(slope, prev_point, next_point, time_since_start, min_temp)
 
-    assert int(delta_t) == 38
-
+    assert int(delta_t_prev) == -928
+    assert int(delta_t_next) == 2072
 
     time_since_start = 4201
     target = profile.get_target_temperature(time_since_start)
@@ -178,16 +184,12 @@ def test_delta_t_from_steep_slope():
     prev_point = profile.data[profile.current_segment]
     next_point = profile.data[profile.current_segment  + 1]
 
-    delta_t = profile.delta_t_from_slope(prev_point, next_point, time_since_start, min_temp)
+    delta_t_prev, delta_t_next = profile.delta_ts_from_slope(slope, prev_point, next_point, time_since_start, min_temp)
 
-    assert int(delta_t) == 13
+    assert int(delta_t_prev) == -2927
+    assert int(delta_t_next) == 73
 
-# 2023-05-15 07:14:36,632 DEBUG Profile: delta_t: -3600.0
-# 2023-05-15 07:14:36,632 DEBUG Profile: min_temp: 199.6605512332587
-# 2023-05-15 07:14:36,632 DEBUG Controller: target: 206.35399999999981
-# 2023-05-15 07:14:36,733 DEBUG Profile: delta_t: -2.2737367544323206e-13
-# 2023-05-15 07:14:36,733 DEBUG Profile: min_temp: 200.00684420783344
-# 2023-05-15 07:14:36,733 DEBUG Controller: target: 500.0
+
 def test_delta_t_from_wrong_segment():
     profile = Profile.Profile()
     profile.profiles_directory = profiles_directory
@@ -199,7 +201,46 @@ def test_delta_t_from_wrong_segment():
     min_temp = 199.66
     prev_point = profile.data[profile.current_segment]
     next_point = profile.data[profile.current_segment  + 1]
+    slope = 250
 
-    delta_t = profile.delta_t_from_slope(prev_point, next_point, time_since_start, min_temp)
+    delta_t_prev, delta_t_next = profile.delta_ts_from_slope(slope, prev_point, next_point, time_since_start, min_temp)
 
-    assert int(delta_t) == -3600
+    assert int(delta_t_prev) == 3617
+    assert int(delta_t_next) == 17
+
+def test_shift_profile():
+    profile = Profile.Profile()
+    profile.profiles_directory = profiles_directory
+    profile.load_profile_by_name("test-cases.json")
+    profile.current_segment = 1
+
+    t1 = profile.data[1][0]
+    t2 = profile.data[2][0]
+    t4 = profile.data[4][0]
+    t6 = profile.data[6][0]
+
+    assert t2 == 4200
+
+    time_since_start = 3613
+    min_temp = 300
+    zones_status = [{'slope': 400, 'stderror': 9}]
+    zone_index = 0
+    profile.last_profile_change = time.time() - 650
+
+    update = profile.check_shift_profile(time_since_start, min_temp, zones_status, zone_index)
+
+    # 200 degrees to go at 100 degrees per hour,
+    assert update
+    assert round(profile.data[1][0]) == 2713
+    assert round(profile.data[2][0]) == 5413
+    assert  round(profile.data[4][0]) == 15613
+    assert round(profile.data[6][0]) == 20613
+
+    target_slope = profile.get_target_slope(3650)
+    assert int(target_slope) == 400
+
+    zones_status = [{'slope': 200, 'stderror': 9}]
+    profile.check_shift_profile(time_since_start, min_temp, zones_status, zone_index)
+
+    target_slope = profile.get_target_slope(3650)
+    assert int(target_slope) == 200

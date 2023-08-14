@@ -1,4 +1,6 @@
 import logging
+import math
+
 from scipy import stats
 from typing import Tuple
 
@@ -20,14 +22,22 @@ class Slope:
 
         if len(self.long_smoothed_t_t_h_z[zone_index]) > 1:
             t_t_h = self.long_smoothed_t_t_h_z[zone_index]
-            slope, stderror = self.linear_regression(t_t_h)
-            slope = slope * 3600 # degrees C per hour
-            stderror = stderror * 3600
+            slope, stderror = self.linear_r_degrees_per_hour(t_t_h)
 
         else:
             slope = 'NA'
             stderror = 'NA'
 
+        return slope, stderror
+
+    def linear_r_degrees_per_hour(self, tth: list) -> Tuple[float | str, float | str]:
+        slope, stderror = self.linear_regression(tth)
+        if math.isnan(slope):
+            slope = 'NA'
+            stderror = 'NA'
+        else:
+            slope = slope * 3600 # degrees C per hour
+            stderror = stderror * 3600
         return slope, stderror
 
     def linear_regression(self, tth: list) -> Tuple[float, float]:
