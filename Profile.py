@@ -150,8 +150,10 @@ class Profile:
             t_statistic = slope / stderror
             if t_statistic > 10: # This means the slope is reasonably accurate
                 target_slope = self.get_target_slope(time_since_start)
+
                 log.debug('t_statistic: ' + str(t_statistic))
                 log.debug('Slope: ' + str(slope) + ' Target slope: ' + str(target_slope))
+
                 if slope < target_slope: # Not catching up, reduce the target slope.
                     if self.current_segment is not None:
                         prev_point = self.data[self.current_segment]
@@ -160,13 +162,16 @@ class Profile:
                             min_temp += 5 # Stop temperature drop from PID
                             delta_t_prev, delta_t_next = self.delta_ts_from_slope(slope, prev_point, next_point,
                                                                                   time_since_start, min_temp)
-                            self.data[self.current_segment][0] += delta_t_prev
                             for index, time_temp in enumerate(self.data):
                                 if index > self.current_segment:
                                     time_temp[0] += delta_t_next
 
                             update = True
                             self.last_profile_change = time_since_start
+                            # Add a new segment (for this firing only) to the profile so it doesn't change history.
+                            self.data.insert(self.current_segment + 1, [time_since_start, min_temp])
+                            self.check_switch_segment(time_since_start + 1)
+
                             log.debug('time: ' + str(time_since_start))
                             log.debug('delta_t: ' + str(delta_t_next * 3600))
                             log.debug('min_temp: ' + str(min_temp))
