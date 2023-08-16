@@ -146,9 +146,8 @@ class Profile:
     def check_shift_profile(self, time_since_start, min_temp, zones_status, zone_index) -> bool:
         update = False
 
-        # Check for this about every 10 or 20 minutes. Don't do it on approaching the nextsegment.
-        if time_since_start - self.last_profile_change > 600 \
-                and (self.data[self.current_segment + 1][0] - time_since_start) > 600:
+        # Check for this about every 10 or 20 minutes.
+        if time_since_start - self.last_profile_change > 600:
             slope = zones_status[zone_index]['slope']
             stderror = zones_status[zone_index]['stderror']
             t_statistic = slope / stderror
