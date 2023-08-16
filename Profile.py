@@ -126,6 +126,8 @@ class Profile:
         else:
             incl = float(next_point[1] - prev_point[1]) / float(next_point[0] - prev_point[0])
             temp = prev_point[1] + (time - prev_point[0]) * incl
+
+        log.debug('Target temperature: ' + str(temp))
         return temp
 
     def get_target_slope(self, time_seconds: float) -> float:
@@ -144,7 +146,9 @@ class Profile:
     def check_shift_profile(self, time_since_start, min_temp, zones_status, zone_index) -> bool:
         update = False
 
-        if time_since_start - self.last_profile_change > 600:
+        # Check for this about every 10 or 20 minutes. Don't do it on approaching the nextsegment.
+        if time_since_start - self.last_profile_change > 600 \
+                and (self.data[self.current_segment + 1][0] - time_since_start) > 600:
             slope = zones_status[zone_index]['slope']
             stderror = zones_status[zone_index]['stderror']
             t_statistic = slope / stderror
@@ -160,7 +164,7 @@ class Profile:
                         next_point = self.data[self.current_segment + 1]
                         if min_temp - prev_point[1] > 5: # Avoid divide by small number or negative temp slope
                             min_temp += 5 # Stop temperature drop from PID
-                            delta_t_prev, delta_t_next = self.delta_ts_from_slope(slope, prev_point, next_point,
+                            _, delta_t_next = self.delta_ts_from_slope(slope, prev_point, next_point,
                                                                                   time_since_start, min_temp)
                             for index, time_temp in enumerate(self.data):
                                 if index > self.current_segment:
@@ -212,6 +216,10 @@ class Profile:
                 update = True  # Shift profile start on start of first segment
         else:
             # Require both time and temperature to swtich to the next segment
+            log.debug('Time since start: ' + str(time_since_start))
+            log.debug('Segment: ' + str(self.current_segment))
+            log.debug('Profile data: ' + str(self.data))
+
             if time_since_start >= self.data[self.current_segment + 1][0]:
                 self.current_segment += 1
                 segment_change = True

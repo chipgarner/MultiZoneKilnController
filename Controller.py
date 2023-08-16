@@ -9,7 +9,7 @@ import pid
 import Slope
 
 log = logging.getLogger(__name__)
-# log.level = logging.DEBUG
+log.level = logging.DEBUG
 
 
 class Controller:
@@ -157,6 +157,7 @@ class Controller:
             self.controller_state.firing_finished()
         else:
             error = target - self.min_temp
+            log.debug('T error: ' + str(error))
 
             update = False
             if error < 2:  # Temperature close enough or high, check segment time
