@@ -46,7 +46,7 @@ class MessageBroker:
         if self.updated_profile is not None:
             self.update_profile_all(self.updated_profile)
 
-        log.debug('Added observer.')
+        log.info('Added observer.')
 
     def update_names(self, names: list):
         profile_names = {
@@ -72,6 +72,7 @@ class MessageBroker:
             with open(path, 'r') as firing:
                 for line in firing:
                     observer.send(line)
+                    log.info('Sent profile.')
 
     # Send to all observers. Update the original profile start time on start button pressed.
     def new_profile_all(self, profile):
@@ -81,7 +82,7 @@ class MessageBroker:
             'profile': profile,
         }
         prof_json = json.dumps(prof)
-        log.debug("New " + prof_json)
+        log.info("New " + prof_json)
         self.send_socket(prof_json)
 
     # Dynamically udated profile durign firing, e.g. when temperature falls behind.
@@ -91,7 +92,7 @@ class MessageBroker:
             'profile_update': profile,
         }
         prof_json = json.dumps(prof)
-        log.debug("Update " + prof_json)
+        log.info("Update " + prof_json)
         self.send_socket(prof_json)
 
     def update_UI_status(self, UI_message: dict):

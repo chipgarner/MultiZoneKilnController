@@ -7,7 +7,7 @@ import copy
 from typing import Union, Tuple
 
 log = logging.getLogger(__name__)
-log.level = logging.DEBUG
+# log.level = logging.DEBUG
 
 def convert_old_profile(old_profile: dict) ->  dict:
     new_segments = []
@@ -175,9 +175,6 @@ class Profile:
                             self.data.insert(self.current_segment + 1, [time_since_start, min_temp])
                             self.check_switch_segment(time_since_start + 1)
 
-                            log.debug('time: ' + str(time_since_start))
-                            log.debug('delta_t: ' + str(delta_t_next * 3600))
-                            log.debug('min_temp: ' + str(min_temp))
                             log.debug('Target slope: ' + str(self.get_target_slope(time_since_start)))
         return update
 
@@ -214,14 +211,15 @@ class Profile:
                     time_temp[0] += time_since_start
                 update = True  # Shift profile start on start of first segment
         else:
-            # Require both time and temperature to swtich to the next segment
             log.debug('Time since start: ' + str(time_since_start))
-            log.debug('Segment: ' + str(self.current_segment))
-            log.debug('Profile data: ' + str(self.data))
 
+            # Require both time and temperature to swtich to the next segment
             if time_since_start >= self.data[self.current_segment + 1][0]:
                 self.current_segment += 1
                 segment_change = True
                 self.last_profile_change = time_since_start
+
+                log.info('Segment: ' + str(self.current_segment))
+                log.info('Profile data: ' + str(self.data))
 
         return segment_change, update

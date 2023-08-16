@@ -9,7 +9,7 @@ import pid
 import Slope
 
 log = logging.getLogger(__name__)
-log.level = logging.DEBUG
+# log.level = logging.DEBUG
 
 
 class Controller:
@@ -49,7 +49,7 @@ class Controller:
     def start_stop_firing(self):
         if self.controller_state.get_state()['firing']:
             self.controller_state.firing_off()
-            log.debug('Stop firing.')
+            log.info('Stop firing.')
         else:
             if self.controller_state.firing_on():
                 self.start_time_ms = time.time() * 1000  # Start or restart
@@ -59,7 +59,7 @@ class Controller:
                                          self.profile.hot_start(self.min_temp) * 1000
 
                 self.send_profile(self.profile.name, self.profile.data, self.start_time_ms)
-                log.debug('Start firing.')
+                log.info('Start firing.')
                 self.send_updated_profile(self.profile.name, self.profile.data, self.start_time_ms)
         self.slope.restart()
         self.broker.update_UI_status(self.controller_state.get_UI_status())
@@ -73,8 +73,10 @@ class Controller:
     def auto_manual(self):
         if not self.controller_state.get_state()['manual']:
             self.controller_state.manual_on()
+            log.info('Manual on.')
         else:
             self.controller_state.manual_off()
+            log.info('Manual off')
         self.broker.update_UI_status(self.controller_state.get_UI_status())
 
     def get_profile_names(self) -> list:
@@ -93,7 +95,6 @@ class Controller:
         self.__zero_heat_zones()
         while True:
             self.loop_calls()
-            log.debug('Thread: ' + threading.current_thread().name)
             time.sleep(self.loop_delay)
 
     def loop_calls(self):
@@ -155,9 +156,10 @@ class Controller:
         target = self.profile.get_target_temperature(time_since_start)
         if type(target) is str:
             self.controller_state.firing_finished()
+            log.info('Firing finished.')
         else:
             error = target - self.min_temp
-            log.debug('T error: ' + str(error))
+            log.info('T error: ' + str(error))
 
             update = False
             if error < 2:  # Temperature close enough or high, check segment time
