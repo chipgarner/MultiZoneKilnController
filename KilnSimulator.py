@@ -83,18 +83,6 @@ class KilnSimulator:
                         (power_to_load - loss_load + coupling_gain)
         temperature = self.latest_temperature + delta_t_load
 
-        # power_to_zone = ((self.t_elements + 273)**4 - (self.latest_temperature + 273) **4) * self.radiation\
-        #                 - self.heat_loss * (self.latest_temperature - self.t_environment) * 3
-        # elements_rate = (power - power_to_zone) * self.kiln_thermal_mass_inverted * 50 # It's a guess for the elements +
-        # power_to_zone = power_to_zone + self.radiative_coupling_gain(self.zone_temps.get_temps(), self.zone_name)
-        # self.t_elements = self.t_elements + elements_rate * delta_time # TODO this is high with power off to this zone
-        # log.info('Elements temperature: ' + str(self.t_elements))
-        # # Radiant transfer to kiln. Elements thermal mass should include nearby stuff.
-        #
-        # log.info('Zone power: ' + str(power_to_zone))
-        # rate = power_to_zone * self.kiln_thermal_mass_inverted
-        # temperature = self.latest_temperature + rate * delta_time
-
         log.debug('Temp: ' + str(temperature))
         self.update_zone_temps(temperature)
         return temperature
