@@ -159,7 +159,7 @@ class Controller:
             log.info('Firing finished.')
         else:
             error = target - self.min_temp
-            log.info('T error: ' + str(error))
+            log.info('Target: ' + str(target) + 'T error: ' + str(error))
 
             update = False
             if error < 2:  # Temperature close enough or high, check segment time
