@@ -9,7 +9,7 @@ import pid
 import Slope
 
 log = logging.getLogger(__name__)
-# log.level = logging.DEBUG
+log.level = logging.DEBUG
 
 
 class Controller:
@@ -35,16 +35,19 @@ class Controller:
         broker_to_controller_callbacks = {'start_stop': self.start_stop_firing,
                                           'auto_manual': self.auto_manual,
                                           'set_heat_for_zone': self.set_heat_for_zone,
-                                          'set_profile_by_name': self.set_profile_by_name}
+                                          'set_profile_by_name': self.set_profile_by_name,
+                                          'add_observer': self.add_observer}
         self.broker.set_controller_functions(broker_to_controller_callbacks)
 
         self.profile_names = self.get_profile_names()
-        self.controller_state = ControllerState()
-        self.broker.update_UI_status(self.controller_state.get_UI_status())
+        self.controller_state = ControllerState(self.broker.update_UI_status)
 
         self.min_temp = 0
 
         log.info('Controller initialized.')
+
+    def add_observer(self):
+        self.controller_state.update_ui(self.controller_state.get_UI_status())
 
     def start_stop_firing(self):
         if self.controller_state.get_state()['firing']:
@@ -62,7 +65,6 @@ class Controller:
                 log.info('Start firing.')
                 self.send_updated_profile(self.profile.name, self.profile.data, self.start_time_ms)
         self.slope.restart()
-        self.broker.update_UI_status(self.controller_state.get_UI_status())
 
     def send_profile(self, name: str, data: list, start_ms: float):
         self.broker.new_profile_all(Profile.convert_old_profile_ms(name, data, start_ms))
@@ -77,7 +79,6 @@ class Controller:
         else:
             self.controller_state.manual_off()
             log.info('Manual off')
-        self.broker.update_UI_status(self.controller_state.get_UI_status())
 
     def get_profile_names(self) -> list:
         return self.profile.get_profiles_names()
@@ -90,6 +91,7 @@ class Controller:
             if self.start_time_ms is None:
                 self.start_time_ms = time.time() * 1000
             self.send_updated_profile(self.profile.name, self.profile.data, self.start_time_ms)
+            log.debug('Name: ' + name + ' Profile: ' + self.profile.name)
 
     def control_loop(self):
         self.__zero_heat_zones()
@@ -132,7 +134,6 @@ class Controller:
 
             self.broker.update_names(self.profile_names)
 
-        self.broker.update_UI_status(self.controller_state.get_UI_status())
         self.broker.update_zones(zones_status)
 
     @staticmethod
@@ -159,7 +160,7 @@ class Controller:
             log.info('Firing finished.')
         else:
             error = target - self.min_temp
-            log.info('Target: ' + str(target) + 'T error: ' + str(error))
+            log.info('Target: ' + str(target) + ' Temperature error: ' + str(error))
 
             update = False
             if error < 2:  # Temperature close enough or high, check segment time
@@ -232,10 +233,12 @@ class Controller:
 
 
 # This class limits the possible states to the ones we want. For example, don't start the firing without
-# first choosing a profile. All the logic is in one place, instead of repeating logic on the fornt end.
+# first choosing a profile. All the logic is in one place, instead of repeating logic on the front end.
+# Updates the UI on any stat changes
 class ControllerState:
-    def __init__(self):
+    def __init__(self, update_ui):
         self.__controller_state = {'firing': False, 'profile_chosen': False, 'manual': False}
+        self.update_ui = update_ui
 
         # This avoids repeating logic on the front end.
         self.__UI_status = {
@@ -247,6 +250,8 @@ class ControllerState:
             'ProfileName': 'None',
             'ProfileSelectDisabled': False,
         }
+
+        self.update_ui(self.get_UI_status())
 
     def get_UI_status(self):
         return self.__UI_status
@@ -267,6 +272,8 @@ class ControllerState:
             self.__UI_status['ProfileSelectDisabled'] = True
 
             worked = True
+
+            self.update_ui(self.get_UI_status())
         return worked
 
     def firing_finished(self):
@@ -274,6 +281,8 @@ class ControllerState:
         self.__UI_status['label'] = 'Done'
         self.__UI_status['StartStopDisabled'] = True
         self.__UI_status['ProfileSelectDisabled'] = True
+
+        self.update_ui(self.get_UI_status())
 
     def firing_off(self) -> bool:
         self.__controller_state['firing'] = False
@@ -284,6 +293,8 @@ class ControllerState:
         self.__UI_status['Manual'] = False
         self.__UI_status['ManualDisabled'] = True
         self.__UI_status['ProfileSelectDisabled'] = False
+
+        self.update_ui(self.get_UI_status())
 
         return True
 
@@ -301,6 +312,8 @@ class ControllerState:
             self.__UI_status['ProfileSelectDisabled'] = False
 
             worked = True
+
+            self.update_ui(self.get_UI_status())
         return worked
 
     def manual_on(self) -> bool:
@@ -316,6 +329,8 @@ class ControllerState:
             self.__UI_status['ProfileSelectDisabled'] = True
 
             worked = True
+
+            self.update_ui(self.get_UI_status())
         return worked
 
     def manual_off(self) -> bool:
@@ -327,5 +342,7 @@ class ControllerState:
         self.__UI_status['Manual'] = False
         self.__UI_status['ManualDisabled'] = False
         self.__UI_status['ProfileSelectDisabled'] = True
+
+        self.update_ui(self.get_UI_status())
 
         return True

@@ -4,33 +4,10 @@ from KilnZones import KilnZones, Zone
 from KilnElectronics import Sim
 from KilnSimulator import ZoneTemps
 import os
+from Fakes import FakeBroker
 
 profiles_directory = os.path.abspath(os.path.join(os.path.dirname(__file__), '.', 'TestFiles/Profiles'))
 
-class FakeBroker:
-    def __init__(self):
-        self.update_UI_calls = 0
-        self.update_calls = 0
-        self.update_names_calls = 0
-        self.start = None
-        self.stop = None
-
-    def update_UI_status(self, state: dict):
-        self.update_UI_calls += 1
-    def update_zones(self, zones: list):
-        self.update_calls += 1
-    def update_names(self, zones: list):
-        self.update_names_calls += 1
-    def set_controller_functions(self, broker_to_controller_callbacks: dict):
-        self.start = broker_to_controller_callbacks['start_stop']
-        self.stop = self.start
-    def update_tc_data(self, tc_data: list):
-        pass
-
-    def update_profile_all(self, profile):
-        pass
-    def new_profile_all(self, profile):
-        pass
 
 zone_temps = ZoneTemps()
 
@@ -68,11 +45,10 @@ def test_loop_calls():
 
     controller.loop_calls()
 
-    assert broker.update_UI_calls == 2
+    assert broker.update_UI_calls == 1
     assert broker.update_calls == 1
     assert broker.update_names_calls == 1
-    assert broker.start is not None
-    assert broker.stop is not None
+    assert broker.controller_callbacks is not None
 
 def test_modes():
     controller = Controller(FakeBroker(), zones, 10)

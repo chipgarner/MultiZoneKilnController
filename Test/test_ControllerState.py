@@ -1,7 +1,8 @@
 from Controller import ControllerState
+from Fakes import TestBroker
 
 def test_firing_on():
-    c_state = ControllerState()
+    c_state = ControllerState(TestBroker().update_UI_status)
 
     assert not c_state.firing_on()
 
@@ -19,7 +20,7 @@ def test_firing_on():
     assert state['firing']
 
 def test_cant_choose_profile_while_firing():
-    c_state = ControllerState()
+    c_state = ControllerState(TestBroker().update_UI_status)
     assert c_state.choosing_profile('This')
     c_state.firing_on()
 
@@ -32,7 +33,7 @@ def test_cant_choose_profile_while_firing():
     assert not state['firing']
 
 def test_cant_switch_manual_unless_firing():
-    c_state = ControllerState()
+    c_state = ControllerState(TestBroker().update_UI_status)
     assert c_state.choosing_profile('That')
 
     assert not c_state.manual_on()
