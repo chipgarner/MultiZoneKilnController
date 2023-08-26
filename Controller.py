@@ -151,7 +151,7 @@ class Controller:
 
         return min_temp, time_since_start, heat_factor, zone_index
 
-    def __profile_checks(self, zones_status) -> float | str:
+    def __profile_checks(self, zones_status) -> float or str:
         self.min_temp, time_since_start, heat_factor, zone_index = \
             self.lagging_temp_time_heat(zones_status, self.start_time_ms)
         target = self.profile.get_target_temperature(time_since_start)
