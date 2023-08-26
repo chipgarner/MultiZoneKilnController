@@ -2,7 +2,7 @@ import time
 import pytest
 import KilnZones
 import threading
-from test_controller import FakeBroker
+from Fakes import FakeBroker
 from KilnElectronics import Sim
 from KilnSimulator import ZoneTemps
 

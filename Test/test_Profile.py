@@ -225,22 +225,24 @@ def test_shift_profile():
     min_temp = 300
     zones_status = [{'slope': 400, 'stderror': 9}]
     zone_index = 0
-    profile.last_profile_change = time.time() - 650
+    profile.last_profile_change = time_since_start - 650
 
     update = profile.check_shift_profile(time_since_start, min_temp, zones_status, zone_index)
 
     # 200 degrees to go at 100 degrees per hour,
     assert update
-    assert round(profile.data[1][0]) == 2713
-    assert round(profile.data[2][0]) == 5413
-    assert  round(profile.data[4][0]) == 15613
-    assert round(profile.data[6][0]) == 20613
+    assert round(profile.data[2][0]) == 3613
+    assert round(profile.data[3][0]) == 5368
+    assert  round(profile.data[4][0]) == 11968
+    assert round(profile.data[7][0]) == 20568
 
     target_slope = profile.get_target_slope(3650)
     assert int(target_slope) == 400
+    profile.last_profile_change = time_since_start - 650
+    min_temp = 299
 
     zones_status = [{'slope': 200, 'stderror': 9}]
     profile.check_shift_profile(time_since_start, min_temp, zones_status, zone_index)
 
     target_slope = profile.get_target_slope(3650)
-    assert int(target_slope) == 200
+    assert int(target_slope) == 400

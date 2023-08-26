@@ -1,4 +1,4 @@
-import MessageBroker
+from Fakes import FakeBroker
 from Controller import Controller
 from KilnZones import Zone
 from KilnElectronics import Sim
@@ -13,27 +13,9 @@ zone3 = Zone(Sim('3', sim_speed_up_factor, zone_temps))
 zone4 = Zone(Sim('4', sim_speed_up_factor, zone_temps))
 zones = [zone1, zone2, zone3, zone4]
 
-class TestBroker(MessageBroker.MessageBroker):
-    def __init__(self):
-        self.u_names_called = False
-        self.UI_message = None
-        MessageBroker.MessageBroker.__init__(self)
-
-    def update_names(self, names: list):
-        self.u_names_called = True
-
-    def update_UI_status(self, UI_message: dict):
-        self.UI_message = UI_message
-
-    def new_profile_all(self, profile):
-        pass
-
-    def update_profile_all(self, profile):
-        pass
-
 
 def test_UI_adds_observer_idle():
-    broker = TestBroker()
+    broker = FakeBroker()
     controller = Controller(broker, zones, 10)
 
     broker.add_observer('me')
@@ -50,7 +32,7 @@ def test_UI_adds_observer_idle():
         }
 
 def test_choose_profile():
-    broker = TestBroker()
+    broker = FakeBroker()
     controller = Controller(broker, zones, 10)
     broker.add_observer('me')
 

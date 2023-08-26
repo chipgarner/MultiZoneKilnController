@@ -46,6 +46,7 @@ class MessageBroker:
         if self.updated_profile is not None:
             self.update_profile_all(self.updated_profile)
 
+        self.controller_callbacks['add_observer']()
         log.info('Added observer.')
 
     def update_names(self, names: list):

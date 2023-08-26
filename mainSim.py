@@ -19,7 +19,7 @@ server_thread.start()
 
 zone_temps = ZoneTemps()
 
-sim_speed_up_factor = 100
+sim_speed_up_factor = 1
 zone1 = Zone(Sim('Fred', sim_speed_up_factor, zone_temps))
 zone2 = Zone(Sim('George', sim_speed_up_factor, zone_temps))
 # zone3 = Zone(Sim('3', sim_speed_up_factor, zone_temps))
