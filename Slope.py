@@ -30,7 +30,7 @@ class Slope:
 
         return slope, stderror
 
-    def linear_r_degrees_per_hour(self, tth: list) -> Tuple[float | str, float | str]:
+    def linear_r_degrees_per_hour(self, tth: list) -> Tuple[float or str, float or str]:
         slope, stderror = self.linear_regression(tth)
         if math.isnan(slope):
             slope = 'NA'

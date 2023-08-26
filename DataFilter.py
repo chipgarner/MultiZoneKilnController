@@ -8,7 +8,7 @@ from typing import Dict, Any
 
 log = logging.getLogger(__name__)
 
-def median(t_t_h: list) -> dict[str, float] | None:
+def median(t_t_h: list) -> dict[str, float] or None:
     y_list = []
     for time_temp in t_t_h:
         y_list.append(time_temp['temperature'])
