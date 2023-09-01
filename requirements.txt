@@ -2,5 +2,7 @@ pytest==7.2.1
 paho-mqtt==1.6.1
 websockets==10.4
 gevent==22.10.2
+gevent-websocket
 bottle==0.12.24
 scipy==1.10.1
+adafruit-blinka

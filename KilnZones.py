@@ -42,7 +42,7 @@ class KilnZones:
 
 class Zone:
     def __init__(self, kiln):
-        self.kiln_elec = kiln
+        self.kiln_elec = kiln # This is the thermocouple and heater switch (e.g. SSR) for this zone.
         self.times_temps_heat = []
 
     def get_times_temps_heat(self) -> list:
