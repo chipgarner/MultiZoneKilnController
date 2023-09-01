@@ -10,14 +10,15 @@ import adafruit_max31856
 import board
 import busio
 import digitalio
-from max31856 import MAX31856
-from max31855 import MAX31855
+# from max31856 import MAX31856
+# from max31855 import MAX31855
 
 from KilnSimulator import KilnSimulator, ZoneTemps
 
 log = logging.getLogger(__name__)
 
-# Each zone needs it's own KilnElectronics for thermocouples and switching. Diffferent zones can
+
+# Each zone needs its own KilnElectronics for thermocouples and switching. Different zones can
 # have different hardware if needed. Power and any other sensors should also go here.
 
 class KilnElectronics(ABC):
@@ -33,6 +34,7 @@ class KilnElectronics(ABC):
     @abstractmethod
     def get_temperature(self) -> tuple:
         pass
+
 
 class Sim(KilnElectronics):
     class FakeHeater:
@@ -53,13 +55,13 @@ class Sim(KilnElectronics):
     def get_heat_factor(self) -> float:
         return self.switches.get_heat_factor()
 
-    def get_temperature(self) -> tuple: # From the thermocouple board
+    def get_temperature(self) -> tuple:  # From the thermocouple board
         self.kiln_sim.update_sim(self.switches.get_heat_factor())
         error = 0
         temperature = self.kiln_sim.get_latest_temperature()
-        temperature += random.gauss(mu=0, sigma=0.65) # Simulated precision error
+        temperature += random.gauss(mu=0, sigma=0.65)  # Simulated precision error
 
-        # Record a simulated thermocouple read error (no temp returned)                                and use the latest good temperature
+        # Record a simulated thermocouple read error (no temp returned) and use the latest good temperature
         if random.choice([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]) == 1:
             error = 1
             temperature = self.latest_temp
@@ -72,170 +74,168 @@ class Sim(KilnElectronics):
         return time_ms, temperature, error
 
 
-
-class Max31855(KilnElectronics):
-    #trying old code using bitbangio, both version work on '55
-    def __init__(self, switches):
-        log.info( "56 Running on board: " + board.board_id)
-        self.switches = switches
-        # SCK D11, MOSI D10, MISO D9
-        CLK = 11
-        CS = 5
-        DO = 9
-        self.sensor = MAX31855(CLK, CS, DO)
-
-        self.last_temp = -32
-
-
-    def set_heat(self, heat_factor: float):
-        self.switches.set_heat(heat_factor)
-
-    def get_heat_factor(self) -> float:
-        return self.switches.get_heat_factor()
-
-    def get_temperature(self) -> tuple:
-        error = False
-
-        try:
-            temp = self.sensor.readTempC()
-            data = self.sensor.readState()
-            for key, value in data.items():
-                if value:
-                    log.error('MAX31855 error: ' + key)
-                    temp = self.last_temp
-                    error = True
-        except RuntimeError as ex:
-            log.error('31855 read error: ' + str(ex))
-            temp = self.last_temp
-            error = True
-
-        self.last_temp = temp
-        time_ms = round(time.time() * 1000)
-        # log.debug(str(time_ms) + '. ' + str(temp) + ', ' + str(error) )
-        time.sleep(1)
-        return time_ms, temp, error
-
-class Max31856(KilnElectronics):
-    #trying old code using bitbangio, new version stops and will not recover with restart
-    def __init__(self, switches):
-        log.info( "56 Running on board: " + board.board_id)
-        self.switches = switches
-        # SCK D11, MOSI D10, MISO D9
-        software_spi = {"clk": 11, "cs": 6, "do": 9, "di": 10}
-        self.sensor = MAX31856(software_spi=software_spi, tc_type=MAX31856.MAX31856_K_TYPE)
-
-        # self.sensor.averaging = 16
-        # self.sensor.noise_rejection = 60
-
-        self.last_temp = -42
-
-
-    def set_heat(self, heat_factor: float):
-        self.switches.set_heat(heat_factor)
-
-    def get_heat_factor(self) -> float:
-        return self.switches.get_heat_factor()
-
-    def get_temperature(self) -> tuple:
-        error = False
-
-        try:
-            temp = self.sensor.read_temp_c()
-            data = self.sensor.read_fault_register()
-            noConnection = (data & 0x00000001) != 0
-            unknownError = (data & 0xfe) != 0
-            if noConnection or unknownError:
-                    log.error('31856 no connection or unknown.')
-                    temp = self.last_temp
-                    error = True
-        except RuntimeError as ex:
-            log.error('31856 read error: ' + str(ex))
-            temp = self.last_temp
-            error = True
-
-        self.last_temp = temp
-        time_ms = round(time.time() * 1000)
-        # log.debug(str(time_ms) + '. ' + str(temp) + ', ' + str(error) )
-        return time_ms, temp, error
-
-# class Max31856Halts(KilnElectronics):
-#     # My 56 quits and blocks the thread, does not recover on restart.
+# class Max31855(KilnElectronics):
+#     #trying old code using bitbangio, both version work on '55
 #     def __init__(self, switches):
 #         log.info( "56 Running on board: " + board.board_id)
 #         self.switches = switches
 #         # SCK D11, MOSI D10, MISO D9
-#         self.spi = busio.SPI(board.SCK, MOSI=board.MOSI, MISO=board.MISO)  # MOSI to SDI, Miso to SDO
-#         self.cs1 = digitalio.DigitalInOut(board.D6)
+#         CLK = 11
+#         CS = 5
+#         DO = 9
+#         self.sensor = MAX31855(CLK, CS, DO)
 #
-#         self.sensor = adafruit_max31856.MAX31856(self.spi, self.cs1)
-#         self.sensor.averaging = 16
-#         self.sensor.noise_rejection = 60
-#
-#         self.heat_factor = 0
+#         self.last_temp = -32
 #
 #
 #     def set_heat(self, heat_factor: float):
 #         self.switches.set_heat(heat_factor)
-#         self.heat_factor = heat_factor
 #
 #     def get_heat_factor(self) -> float:
 #         return self.switches.get_heat_factor()
 #
 #     def get_temperature(self) -> tuple:
 #         error = False
-#         temp = self.sensor.temperature
-#         # log.debug("56 temperature: " + str(temp))
 #
-#         for k, v in self.sensor.fault.items():
-#             if v:
-#                 log.error('Temp1 31856 fault: ' + str(k))
-#                 error = True
-#
-#         time_ms = round(time.time() * 1000)
-#         return time_ms, temp, error
-#
-# class Max31855(KilnElectronics):
-#     def __init__(self, switches):
-#         log.info( "55 running on board: " + board.board_id)
-#         self.switches = switches
-#         self.spi = busio.SPI(board.SCK, MOSI=board.MOSI, MISO=board.MISO) # MOSI is not used on 31855
-#         self.cs1 = digitalio.DigitalInOut(board.D5)
-#
-#         self.sensor = adafruit_max31855.MAX31855(self.spi, self.cs1)
-#
-#         self.last_temp = 0
-#         self.heat_factor = 0
-#
-#
-#     def set_heat(self, heat_factor: float):
-#         self.switches.set_heat(heat_factor)
-#         self.heat_factor = heat_factor
-#
-#     def get_heat_factor(self) -> float:
-#         return self.switches.get_heat_factor()
-#
-#     def get_temperature(self) -> tuple:
-#         error = False
 #         try:
-#             temp = self.sensor.temperature_NIST
-#             log.debug("55 temperature: " + str(temp))
-#             self.last_temp = temp
+#             temp = self.sensor.readTempC()
+#             data = self.sensor.readState()
+#             for key, value in data.items():
+#                 if value:
+#                     log.error('MAX31855 error: ' + key)
+#                     temp = self.last_temp
+#                     error = True
 #         except RuntimeError as ex:
-#             log.error('31855 read temperature crash: ' + str(ex))
+#             log.error('31855 read error: ' + str(ex))
 #             temp = self.last_temp
 #             error = True
 #
 #         self.last_temp = temp
-#
-#         time.sleep(1)
-#
 #         time_ms = round(time.time() * 1000)
+#         # log.debug(str(time_ms) + '. ' + str(temp) + ', ' + str(error) )
+#         time.sleep(1)
 #         return time_ms, temp, error
+#
+# class Max31856(KilnElectronics):
+#     #trying old code using bitbangio, new version stops and will not recover with restart
+#     def __init__(self, switches):
+#         log.info( "56 Running on board: " + board.board_id)
+#         self.switches = switches
+#         # SCK D11, MOSI D10, MISO D9
+#         software_spi = {"clk": 11, "cs": 6, "do": 9, "di": 10}
+#         self.sensor = MAX31856(software_spi=software_spi, tc_type=MAX31856.MAX31856_K_TYPE)
+#
+#         # self.sensor.averaging = 16
+#         # self.sensor.noise_rejection = 60
+#
+#         self.last_temp = -42
+#
+#
+#     def set_heat(self, heat_factor: float):
+#         self.switches.set_heat(heat_factor)
+#
+#     def get_heat_factor(self) -> float:
+#         return self.switches.get_heat_factor()
+#
+#     def get_temperature(self) -> tuple:
+#         error = False
+#
+#         try:
+#             temp = self.sensor.read_temp_c()
+#             data = self.sensor.read_fault_register()
+#             noConnection = (data & 0x00000001) != 0
+#             unknownError = (data & 0xfe) != 0
+#             if noConnection or unknownError:
+#                     log.error('31856 no connection or unknown.')
+#                     temp = self.last_temp
+#                     error = True
+#         except RuntimeError as ex:
+#             log.error('31856 read error: ' + str(ex))
+#             temp = self.last_temp
+#             error = True
+#
+#         self.last_temp = temp
+#         time_ms = round(time.time() * 1000)
+#         # log.debug(str(time_ms) + '. ' + str(temp) + ', ' + str(error) )
+#         return time_ms, temp, error
+
+class Max31856(KilnElectronics):
+    #     # My 56 quits and blocks the thread, does not recover on restart.
+    def __init__(self, switches):
+        log.info("56 Running on board: " + board.board_id)
+        self.switches = switches
+        # SCK D11, MOSI D10, MISO D9
+        self.spi = busio.SPI(board.SCK, MOSI=board.MOSI, MISO=board.MISO)  # MOSI to SDI, Miso to SDO
+        self.cs1 = digitalio.DigitalInOut(board.D6)
+
+        self.sensor = adafruit_max31856.MAX31856(self.spi, self.cs1)
+        self.sensor.averaging = 16
+        self.sensor.noise_rejection = 60
+
+        self.heat_factor = 0
+
+    def set_heat(self, heat_factor: float):
+        self.switches.set_heat(heat_factor)
+        self.heat_factor = heat_factor
+
+    def get_heat_factor(self) -> float:
+        return self.switches.get_heat_factor()
+
+    def get_temperature(self) -> tuple:
+        error = False
+        temp = self.sensor.temperature
+        # log.debug("56 temperature: " + str(temp))
+
+        for k, v in self.sensor.fault.items():
+            if v:
+                log.error('Temp1 31856 fault: ' + str(k))
+                error = True
+
+        time_ms = round(time.time() * 1000)
+        return time_ms, temp, error
+
+
+class Max31855(KilnElectronics):
+    def __init__(self, switches):
+        log.info("55 running on board: " + board.board_id)
+        self.switches = switches
+        self.spi = busio.SPI(board.SCK, MOSI=board.MOSI, MISO=board.MISO)  # MOSI is not used on 31855
+        self.cs1 = digitalio.DigitalInOut(board.D5)
+
+        self.sensor = adafruit_max31855.MAX31855(self.spi, self.cs1)
+
+        self.last_temp = 0
+        self.heat_factor = 0
+
+    def set_heat(self, heat_factor: float):
+        self.switches.set_heat(heat_factor)
+        self.heat_factor = heat_factor
+
+    def get_heat_factor(self) -> float:
+        return self.switches.get_heat_factor()
+
+    def get_temperature(self) -> tuple:
+        error = False
+        try:
+            temp = self.sensor.temperature_NIST
+            log.debug("55 temperature: " + str(temp))
+            self.last_temp = temp
+        except RuntimeError as ex:
+            log.error('31855 read temperature crash: ' + str(ex))
+            temp = self.last_temp
+            error = True
+
+        self.last_temp = temp
+
+        time_ms = round(time.time() * 1000)
+        return time_ms, temp, error
+
 
 class SSR:
     # heater = digitalio.DigitalInOut(config.gpio_heat)
     # heater.direction = digitalio.Direction.OUTPUT
-    def __init__(self, heater, pin_name: str): # Heater has the CircuitPython GPIO: heater = digitalio.DigitalInOut(GPIO)
+    def __init__(self, heater,
+                 pin_name: str):  # Heater has the CircuitPython GPIO: heater = digitalio.DigitalInOut(GPIO)
         self.heat_factor = 0
         self.resolution = 20
         self.on_off = []
@@ -259,7 +259,7 @@ class SSR:
         return self.heat_factor
 
     def __heater_loop(self):
-        cycle_time = 0.1 # Depends on the SSR, many will work at 10 Hertz
+        cycle_time = 0.1  # Depends on the SSR, many will work at 10 Hertz
         while self.running:
             # log.debug('Thread: ' + threading.current_thread().name)
             onoff = self.on_off.copy()
@@ -275,13 +275,14 @@ class SSR:
         return cycles_on, cycles_off
 
     def set_cycles_list(self, heat_factor: float) -> list:
-        #TODO there must be a simpler way to do this. It spreads out the on off cycles nicely over 20 steps
-        # It seems way to complicated, and code is repeated as it is symetric around 50%
+        # TODO there must be a simpler way to do this. It spreads out the on off cycles nicely over 20 steps
+        # It seems way to complicated, and code is repeated as it is symmetric around 50%
         onoff = []
         cycles_on, cycles_off = self.cycles_on_off(heat_factor)
         for i in range(self.resolution):
             onoff.append(False)
-        if cycles_on == 0: return onoff
+        if cycles_on == 0:
+            return onoff
         if cycles_off == 0:
             for i in range(self.resolution):
                 onoff[i] = True
@@ -384,8 +385,5 @@ class SSR:
 
             ons = [x for x in onoff if x]
             self.heat_factor = len(ons) / self.resolution
-        except Exception as ex: # TODO This seems to happen when many errors come in on the '55
+        except Exception as ex:  # TODO This seems to happen when many errors come in on the '55
             log.error('Exception in setting heat on/off: ' + str(ex))
-
-
-
