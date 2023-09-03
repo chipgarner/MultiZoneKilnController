@@ -94,8 +94,12 @@ class Max31856(KilnElectronics):
 
     def get_temperature(self) -> tuple:
         error = False
+
+        # This bypasses wait for oneshot as it sometimes hangs forever.
+        self.sensor.initiate_one_shot_measurement()
+        time.sleep(1)
         temp = self.sensor.unpack_temperature()
-        # log.debug("56 temperature: " + str(temp))
+        log.debug("56 temperature: " + str(temp))
 
         for k, v in self.sensor.fault.items():
             if v:
