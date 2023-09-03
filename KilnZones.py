@@ -1,5 +1,6 @@
 import threading
 import logging
+import time
 
 # Supports multiple sensors for multiple zone kilns.
 # Sensors are on one thread. You can't call sensors from separate threads if they share the SPI/
@@ -38,6 +39,7 @@ class KilnZones:
 
             # Data is sent to front end on every update, around once per second.
             self.broker.update_tc_data(thermocouple_data)
+            time.sleep(1)
             # log.debug('Thread: ' + threading.current_thread().name)
 
 class Zone:
