@@ -40,9 +40,15 @@ FET wiring: https://elinux.org/RPi_GPIO_Interface_Circuits
 
 Set up the Pi: https://raspberrytips.com/raspberry-pi-wifi-setup/
 
+Install the latest version of Raspberry Pi OS. (Bullseye or later will work.). Earlier versions may work but you will need **Python 3.9 or greater**.
+
 sudo apt update
+sudo apt upgrade
+
+These two may be installed already:
 sudo apt install git-all
 sudo apt install python3-pip
+
 sudo pip3 install --upgrade setuptools
 
 git clone https://github.com/chipgarner/KilnControls.git
@@ -50,24 +56,17 @@ Navigate to KilnControls dirctory.
 sudo pip3 install -r requirements.txt
 
 sudo apt install python3-scipy
-sudo pip3 install gevent-websocket
 
-git clone https://github.com/adafruit/Adafruit_Python_GPIO.git
-cd Adafruit_Python_GPIO
-sudo python setup.py inst
-
-install circuit
-python, https://learn.adafruit.com/circuitpython-on-raspberrypi-linux/installing-circuitpython-on-raspberry-pi
-cd ~
-
-[//]: # (sudo pip3 install --upgrade adafruit-python-shell)
-
-[//]: # (wget https://raw.githubusercontent.com/adafruit/Raspberry-Pi-Installer-Scripts/master/raspi-blinka.py)
+**install circuit python:**
+See https://learn.adafruit.com/circuitpython-on-raspberrypi-linux/installing-circuitpython-on-raspberry-pi
+sudo pip3 install --upgrade adafruit-python-shell
+wget https://raw.githubusercontent.com/adafruit/Raspberry-Pi-Installer-Scripts/master/raspi-blinka.py
 sudo python3 raspi-blinka.py
-pip3 install adafruit-circuitpython-max31855
-pip3 install adafruit-circuitpython-max31856
+sudo apt autoremove
 
-mkdir Firings
+reboot
 
 You should now be able to run the simulator:
 python3 mainSim.py
+And/or the main program:
+python3 mainPi.py

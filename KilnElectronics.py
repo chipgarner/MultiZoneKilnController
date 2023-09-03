@@ -10,13 +10,10 @@ import adafruit_max31856
 import board
 import busio
 import digitalio
-# from max31856 import MAX31856
-# from max31855 import MAX31855
 
 from KilnSimulator import KilnSimulator, ZoneTemps
 
 log = logging.getLogger(__name__)
-
 
 # Each zone needs its own KilnElectronics for thermocouples and switching. Different zones can
 # have different hardware if needed. Power and any other sensors should also go here.
@@ -73,92 +70,6 @@ class Sim(KilnElectronics):
         time.sleep(0.5 / self.sim_speedup)  # Real sensors take time to read
         return time_ms, temperature, error
 
-
-# class Max31855(KilnElectronics):
-#     #trying old code using bitbangio, both version work on '55
-#     def __init__(self, switches):
-#         log.info( "56 Running on board: " + board.board_id)
-#         self.switches = switches
-#         # SCK D11, MOSI D10, MISO D9
-#         CLK = 11
-#         CS = 5
-#         DO = 9
-#         self.sensor = MAX31855(CLK, CS, DO)
-#
-#         self.last_temp = -32
-#
-#
-#     def set_heat(self, heat_factor: float):
-#         self.switches.set_heat(heat_factor)
-#
-#     def get_heat_factor(self) -> float:
-#         return self.switches.get_heat_factor()
-#
-#     def get_temperature(self) -> tuple:
-#         error = False
-#
-#         try:
-#             temp = self.sensor.readTempC()
-#             data = self.sensor.readState()
-#             for key, value in data.items():
-#                 if value:
-#                     log.error('MAX31855 error: ' + key)
-#                     temp = self.last_temp
-#                     error = True
-#         except RuntimeError as ex:
-#             log.error('31855 read error: ' + str(ex))
-#             temp = self.last_temp
-#             error = True
-#
-#         self.last_temp = temp
-#         time_ms = round(time.time() * 1000)
-#         # log.debug(str(time_ms) + '. ' + str(temp) + ', ' + str(error) )
-#         time.sleep(1)
-#         return time_ms, temp, error
-#
-# class Max31856(KilnElectronics):
-#     #trying old code using bitbangio, new version stops and will not recover with restart
-#     def __init__(self, switches):
-#         log.info( "56 Running on board: " + board.board_id)
-#         self.switches = switches
-#         # SCK D11, MOSI D10, MISO D9
-#         software_spi = {"clk": 11, "cs": 6, "do": 9, "di": 10}
-#         self.sensor = MAX31856(software_spi=software_spi, tc_type=MAX31856.MAX31856_K_TYPE)
-#
-#         # self.sensor.averaging = 16
-#         # self.sensor.noise_rejection = 60
-#
-#         self.last_temp = -42
-#
-#
-#     def set_heat(self, heat_factor: float):
-#         self.switches.set_heat(heat_factor)
-#
-#     def get_heat_factor(self) -> float:
-#         return self.switches.get_heat_factor()
-#
-#     def get_temperature(self) -> tuple:
-#         error = False
-#
-#         try:
-#             temp = self.sensor.read_temp_c()
-#             data = self.sensor.read_fault_register()
-#             noConnection = (data & 0x00000001) != 0
-#             unknownError = (data & 0xfe) != 0
-#             if noConnection or unknownError:
-#                     log.error('31856 no connection or unknown.')
-#                     temp = self.last_temp
-#                     error = True
-#         except RuntimeError as ex:
-#             log.error('31856 read error: ' + str(ex))
-#             temp = self.last_temp
-#             error = True
-#
-#         self.last_temp = temp
-#         time_ms = round(time.time() * 1000)
-#         # log.debug(str(time_ms) + '. ' + str(temp) + ', ' + str(error) )
-#         return time_ms, temp, error
-
 class Max31856(KilnElectronics):
     #     # My 56 quits and blocks the thread, does not recover on restart.
     def __init__(self, switches):
@@ -183,7 +94,7 @@ class Max31856(KilnElectronics):
 
     def get_temperature(self) -> tuple:
         error = False
-        temp = self.sensor.temperature
+        temp = self.sensor.unpack_temperature()
         # log.debug("56 temperature: " + str(temp))
 
         for k, v in self.sensor.fault.items():
