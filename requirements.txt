@@ -4,5 +4,6 @@ websockets==10.4
 gevent==22.10.2
 gevent-websocket
 bottle==0.12.24
-scipy==1.10.1
 adafruit-blinka
+adafruit-circuitpython-max31855
+adafruit-circuitpython-max31856

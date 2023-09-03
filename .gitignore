@@ -9,9 +9,7 @@ __pycache__/
 thumbs.db
 .idea/*
 venv/*
-Firings/*
+Firings/*.json
 NewProfiles/*
 Notifiers/MQTT/Secrets.py
 *.svg
-
-
