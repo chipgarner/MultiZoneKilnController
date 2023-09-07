@@ -42,7 +42,9 @@ class FilesHandler:
 
         if files is not None:
             files.sort()
-            path = os.path.join(self.firings_directory, files[-1])
+
+            # files[-2] skips the .txt file and gets the most recent firing file.
+            path = os.path.join(self.firings_directory, files[-2])
             line = self.get_last_line(path)
             if line is not None and line != 'null':
                 line = json.loads(line)

@@ -60,6 +60,9 @@ def test_modes():
     controller.profile.profiles_directory = profiles_directory
     controller.set_profile_by_name('test-fast')
 
+    controller.auto_manual() # Can't switch to manual if not firing
+    assert not controller.controller_state.get_state()['manual']
+
     controller.start_stop_firing()
     assert controller.controller_state.get_state()['firing']
 
