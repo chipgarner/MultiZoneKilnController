@@ -156,8 +156,9 @@ class Controller:
             self.lagging_temp_time_heat(zones_status, self.start_time_ms)
         target = self.profile.get_target_temperature(time_since_start)
         if type(target) is str:
-            self.controller_state.firing_finished()
-            log.info('Firing finished.')
+            if self.controller_state.get_state()['firing']: # Only finish once.
+                self.controller_state.firing_finished()
+                log.info('Firing finished.')
         else:
             error = target - self.min_temp
             log.info('Target: ' + str(target) + ' Temperature error: ' + str(error))
