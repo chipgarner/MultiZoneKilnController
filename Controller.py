@@ -16,7 +16,7 @@ class Controller:
     def __init__(self, broker, zones, loop_delay):
         self.profile = Profile.Profile()
         # self.pid = Pid.PID()
-        self.pid = pid.PID(20, 0.01, 2, setpoint=27, sample_time=None, output_limits=(0, 100))
+        self.pid = pid.PID(20, 0.01, 200, setpoint=27, sample_time=None, output_limits=(0, 100))
 
         self.loop_delay = loop_delay
 
