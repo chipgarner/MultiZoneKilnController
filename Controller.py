@@ -16,7 +16,7 @@ class Controller:
     def __init__(self, broker, zones, loop_delay):
         self.profile = Profile.Profile()
         # self.pid = Pid.PID()
-        self.pid = pid.PID(20, 0.01, 2, setpoint=27, sample_time=None, output_limits=(0, 100))
+        self.pid = pid.PID(20, 0.01, 200, setpoint=27, sample_time=None, output_limits=(0, 100))
 
         self.loop_delay = loop_delay
 
@@ -164,7 +164,7 @@ class Controller:
             log.info('Target: ' + str(target) + ' Temperature error: ' + str(error))
 
             update = False
-            if error < 2:  # Temperature close enough or high, check segment time
+            if error < 0:  # Temperature close enough or high, check segment time
                 segment_change, update = self.profile.check_switch_segment(time_since_start)
                 if segment_change: self.slope.restart()
 

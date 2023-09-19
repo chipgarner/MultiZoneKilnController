@@ -19,19 +19,19 @@ server_thread.start()
 
 zone_temps = ZoneTemps()
 
-sim_speed_up_factor = 1
+sim_speed_up_factor = 100
 zone1 = Zone(Sim('Fred', sim_speed_up_factor, zone_temps))
 zone2 = Zone(Sim('George', sim_speed_up_factor, zone_temps))
 # zone3 = Zone(Sim('3', sim_speed_up_factor, zone_temps))
 # zone4 = Zone(Sim('4', sim_speed_up_factor, zone_temps))
-zone1.kiln_elec.kiln_sim.power = zone1.kiln_elec.kiln_sim.power + 300
+zone1.kiln_elec.kiln_sim.power = zone1.kiln_elec.kiln_sim.power - 300
 # zone3.kiln_elec.kiln_sim.power = zone3.kiln_elec.kiln_sim.power - 300
 # zone4.kiln_elec.kiln_sim.power = zone4.kiln_elec.kiln_sim.power + 300
-zone1.kiln_elec.kiln_sim.heat_loss = zone1.kiln_elec.kiln_sim.heat_loss - 0.4
+zone1.kiln_elec.kiln_sim.heat_loss = zone1.kiln_elec.kiln_sim.heat_loss + 0.4
 # zone3.kiln_elec.kiln_sim.heat_loss = zone3.kiln_elec.kiln_sim.heat_loss - 0.4
 # zone3.kiln_elec.kiln_sim.heat_loss = zone4.kiln_elec.kiln_sim.heat_loss + 0.4
 # Middle zones don't have a lid or floor.
-zone2.kiln_elec.kiln_sim.area_load = 0.157
+# zone2.kiln_elec.kiln_sim.area_load = 0.157
 # zone3.kiln_elec.kiln_sim.area_load = 0.157
 #
 zones = [zone1, zone2]
