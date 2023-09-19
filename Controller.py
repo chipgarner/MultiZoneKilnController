@@ -164,7 +164,7 @@ class Controller:
             log.info('Target: ' + str(target) + ' Temperature error: ' + str(error))
 
             update = False
-            if error < 2:  # Temperature close enough or high, check segment time
+            if error < 0:  # Temperature close enough or high, check segment time
                 segment_change, update = self.profile.check_switch_segment(time_since_start)
                 if segment_change: self.slope.restart()
 
