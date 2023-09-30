@@ -99,6 +99,7 @@ class Max31856(KilnElectronics):
         self.sensor.initiate_one_shot_measurement()
         time.sleep(1)
         temp = self.sensor.unpack_temperature()
+        temp = temp -5 #TODO Offset for my test kiln
         log.debug("56 temperature: " + str(temp))
 
         for k, v in self.sensor.fault.items():
