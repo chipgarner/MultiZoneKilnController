@@ -40,14 +40,18 @@ FET wiring: https://elinux.org/RPi_GPIO_Interface_Circuits
 
 Set up the Pi: https://raspberrytips.com/raspberry-pi-wifi-setup/
 
+For developers, the following setup instructions also work on Ubuntu. The simulator runs on ubuntu and is very useful for modifiying and testing code. 
+
 Install the latest version of Raspberry Pi OS. These istructions assume Bookworm or later. Bookworm includes Python 3.11.2. Earlier versions may work but you will
 need **Python 3.9 or greater**, and may also need to install git and pip and upgrade setuptools. (Bookworm comes with these.)
 
     sudo apt update
     sudo apt upgrade
 
+Get the project:
 
-git clone https://github.com/chipgarner/MultiZoneKilnController.git
+    git clone https://github.com/chipgarner/MultiZoneKilnController.git
+
 Navigate to KilnControls directory:
 
     cd Multi*
@@ -57,9 +61,27 @@ Create a virtual environment:
     python -m venv --system-site-packages env
     source env/bin/activate
 
-sudo pip install -r requirements.txt
+Install dependencies:
 
-sudo apt install python3-scipy
+    pip install -r requirements.txt
+
+    sudo apt install python3-scipy
+
+If everything has gone as planned the simulator should now run:
+
+    python mainSim.py
+You should see something like this:
+2023-11-04 10:33:00,758 WARNING KilnSimulator: Running simulator. In case you thought otherwise.
+2023-11-04 10:33:00,768 INFO Server: listening on 0.0.0.0:8081
+2023-11-04 10:33:00,771 WARNING KilnSimulator: Running simulator. In case you thought otherwise.
+2023-11-04 10:33:00,774 INFO __main__: Sim speed up factor is 100
+2023-11-04 10:33:00,774 INFO __main__: Zone temps: {'Fred': 27, 'George': 27}
+2023-11-04 10:33:00,777 INFO KilnZones: KilnZones running using 2 zones.
+2023-11-04 10:33:00,781 INFO Controller: Controller initialized.
+
+If you have the front end running you can interact with the simulator. See https://github.com/chipgarner/MultiZoneFrontEnd
+
+
 
 **install circuit python:**
 See https://learn.adafruit.com/circuitpython-on-raspberrypi-linux/installing-circuitpython-on-raspberry-pi
@@ -70,7 +92,5 @@ sudo apt autoremove
 
 reboot
 
-You should now be able to run the simulator:
-python3 mainSim.py
-And/or the main program:
+You should now be able to run r the main program:
 python3 mainPi.py
