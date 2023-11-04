@@ -96,10 +96,10 @@ class Controller:
     def control_loop(self):
         self.__zero_heat_zones()
         while True:
-            self.loop_calls()
+            self.update_loop()
             time.sleep(self.loop_delay)
 
-    def loop_calls(self):
+    def update_loop(self):
         tthz = self.kiln_zones.get_times_temps_heating_for_zones()
         zones_status = self.smooth_temperatures(tthz)
         target = 'OFF'
@@ -161,7 +161,7 @@ class Controller:
                 log.info('Firing finished.')
         else:
             error = target - self.min_temp
-            log.info('Target: ' + str(target) + ' Temperature error: ' + str(error))
+            log.info('Target: ' + str(target) + ' Temperature difference: ' + str(error))
 
             update = False
             if error < 0:  # Temperature close enough or high, check segment time

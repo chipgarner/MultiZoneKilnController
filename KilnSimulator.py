@@ -57,7 +57,7 @@ class KilnSimulator:
         # Two lumped heat capacities kiln model. This assumes two temperatures, t-elements and t_kiln
         # Heat is lost by conduction and convection to the environement.
         # This assumes convection in the kiln is not important, it becomes much less important at higher
-        # tempertures.an
+        # tempertures.
 
         # Radiant heat transfer coupling between zones added 08/07/2023
 
@@ -87,7 +87,7 @@ class KilnSimulator:
         self.update_zone_temps(temperature)
         return temperature
 
-# Heat transfer bertween adjacent Zones
+# Heat transfer between adjacent Zones
     def radiative_coupling_gain(self, zone_old_temps: dict, zone_name: str):
         coupling_power = 0
         keys = zone_old_temps.keys()

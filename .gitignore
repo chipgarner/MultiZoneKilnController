@@ -13,3 +13,4 @@ Firings/*.json
 NewProfiles/*
 Notifiers/MQTT/Secrets.py
 *.svg
+RealFirings
