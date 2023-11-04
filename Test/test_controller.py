@@ -43,7 +43,7 @@ def test_loop_calls():
     controller = Controller(broker, zones, 10)
     controller.start_time_ms = 0
 
-    controller.loop_calls()
+    controller.update_loop()
 
     assert broker.update_UI_calls == 1
     assert broker.update_calls == 1

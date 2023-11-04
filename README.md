@@ -40,20 +40,24 @@ FET wiring: https://elinux.org/RPi_GPIO_Interface_Circuits
 
 Set up the Pi: https://raspberrytips.com/raspberry-pi-wifi-setup/
 
-Install the latest version of Raspberry Pi OS. (Bullseye or later will work.). Earlier versions may work but you will need **Python 3.9 or greater**.
+Install the latest version of Raspberry Pi OS. These istructions assume Bookworm or later. Bookworm includes Python 3.11.2. Earlier versions may work but you will
+need **Python 3.9 or greater**, and may also need to install git and pip and upgrade setuptools. (Bookworm comes with these.)
 
-sudo apt update
-sudo apt upgrade
+    sudo apt update
+    sudo apt upgrade
 
-These two may be installed already:
-sudo apt install git-all
-sudo apt install python3-pip
 
-sudo pip3 install --upgrade setuptools
+git clone https://github.com/chipgarner/MultiZoneKilnController.git
+Navigate to KilnControls directory:
 
-git clone https://github.com/chipgarner/KilnControls.git
-Navigate to KilnControls dirctory.
-sudo pip3 install -r requirements.txt
+    cd Multi*
+
+Create a virtual environment:
+
+    python -m venv --system-site-packages env
+    source env/bin/activate
+
+sudo pip install -r requirements.txt
 
 sudo apt install python3-scipy
 
