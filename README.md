@@ -95,3 +95,10 @@ You also now be able to run the main program:
 
     python mainPi.py
 If you have one or more temperature sensors and thermocouples connected you should see the temperatures listes about once a second.
+
+If you aare not familiar with python virtual environments (https://docs.python.org/3/library/venv.html) note that you 
+must have the environment activated to run the program. Enter the following when inside the program directory:
+
+    source env/bin/activate
+
+Just enter deactivate if you need to exit the environment.

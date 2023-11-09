@@ -20,7 +20,7 @@ def test_this():
     slope_instance = Slope.Slope(4)
 
     slope = slope_instance.slope(0, 0, 100, 0)
-    assert slope == ('NA', 'NA')
+    assert slope == ('NA', 'NA', None)
 
     slope = slope_instance.slope(0, 1, 100, 0)
     assert slope[0] == 0.0
@@ -33,10 +33,10 @@ def test_index():
     slope_instance = Slope.Slope(4)
 
     slope = slope_instance.slope(3, 0, 100, 0)
-    assert slope == ('NA', 'NA')
+    assert slope == ('NA', 'NA', None)
 
     slope = slope_instance.slope(3, 1, 100, 0)
-    assert slope == (0.0, 0.0)
+    assert slope == (0.0, 0.0, 100.0)
 
     slope = slope_instance.slope(3, 100, 101, 0)
     assert int(slope[0]) == 36178
@@ -57,7 +57,7 @@ def test_restart():
     assert len(slope_instance.long_smoothed_t_t_h_z[3]) == 0
 
     slope = slope_instance.slope(3, 0, 100, 0)
-    assert slope == ('NA', 'NA')
+    assert slope == ('NA', 'NA', None)
     assert len(slope_instance.long_smoothed_t_t_h_z[3]) == 1
 
 
@@ -91,9 +91,10 @@ def test_regression():
     slope = slope_instance.slope(3, 100, 101, 0)
     assert int(slope[0]) == 36178
 
-    slope, stderror = slope_instance.linear_regression(slope_instance.long_smoothed_t_t_h_z[3])
+    slope, stderror, final_temp = slope_instance.linear_regression(slope_instance.long_smoothed_t_t_h_z[3])
     # Degrees C per second
 
     assert int(slope * 3600) == 36178
     assert int(stderror * 3600) == 314
+    assert round(final_temp, 4) == 100.9999
 

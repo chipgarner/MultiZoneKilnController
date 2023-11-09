@@ -192,15 +192,20 @@ class Controller:
                     pstdev = 'NA'
                 best_time = round((t_t_h[0]['time_ms'] + t_t_h[-1]['time_ms']) / 2)
 
-                slope, stderror = self.slope.slope(zone_index, best_time, best_temp, t_t_h[0]['heat_factor'])
+                slope, stderror, final_temp = self.slope.slope(zone_index, best_time, best_temp, t_t_h[0]['heat_factor'])
+                # slope, stderror, final_temp = self.slope.linear_r_degrees_per_hour(t_t_h)
+                # best_time = t_t_h[-1]['time_ms']
+                # if final_temp is not None:
+                #     best_temp = final_temp
                 if isinstance(pstdev, float): pstdev = "{:.2f}".format(pstdev)
+                if isinstance(stderror, float): stderror = "{:.2f}".format(stderror)
 
                 zones_status.append({'time_ms': best_time,
                                      'temperature': best_temp,
                                      'heat_factor': t_t_h[0]['heat_factor'],
                                      'slope': slope,
                                      'stderror': stderror,
-                                     'pstdev': pstdev})
+                                     'pstdev': stderror})
 
         return zones_status
 
