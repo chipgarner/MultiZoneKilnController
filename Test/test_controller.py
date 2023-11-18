@@ -88,3 +88,8 @@ def test_profile_selected_sends_list():
     message = controller.get_profile_names()
 
     assert type(message) is list
+
+
+def test_update_heat():
+    controller = Controller(FakeBroker(), zones, 10)
+    controller.__update_heat()

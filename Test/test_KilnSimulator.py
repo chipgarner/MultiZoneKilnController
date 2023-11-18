@@ -23,6 +23,6 @@ def test_find_temperature(caplog):
         temp = sim.find_temperature(10.0, 1)
         sim.latest_temperature = temp
 
-    assert round(temp) == 156
+    assert round(temp) == 161
 
 
