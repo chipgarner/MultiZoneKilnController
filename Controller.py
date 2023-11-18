@@ -103,6 +103,7 @@ class Controller:
 
     def update_loop(self):
         tthz = self.kiln_zones.get_times_temps_heating_for_zones()
+        print(tthz)
         zones_status = self.smooth_temperatures(tthz)
         target = 'OFF'
 
@@ -205,7 +206,7 @@ class Controller:
                 zones_status.append({'time_ms': best_time,
                                      'temperature': best_temp,
                                      'curve_data': curve_data,
-                                     'heat_factor': t_t_h[0]['heat_factor'],
+                                     'heat_factor': t_t_h[-1]['heat_factor'],
                                      'slope': slope,
                                      'curvature': curvature,
                                      'stderror': curvature,
