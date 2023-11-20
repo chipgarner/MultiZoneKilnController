@@ -20,45 +20,38 @@ def test_this():
     slope_instance = Slope.Slope(4)
 
     slope = slope_instance.slope(0, 0, 100, 0)
-    assert slope == (None, None, None, None)
+    assert slope == (None, None, None)
 
+    slope_instance.slope(0, 1, 100, 0)
+    slope_instance.slope(0, 1, 100, 0)
+    slope_instance.slope(0, 1, 100, 0)
     slope = slope_instance.slope(0, 1, 100, 0)
-    assert slope[0] == 0.0
+    assert abs(slope[0]) < 0.001
 
-    slope = slope_instance.slope(0, 100, 101, 0)
-    assert int(slope[0]) == 36178
+    slope = slope_instance.slope(0, 10, 101, 0)
+    assert int(slope[0]) == 262
 
 
 def test_index():
     slope_instance = Slope.Slope(4)
 
     slope = slope_instance.slope(3, 0, 100, 0)
-    assert slope == (None, None, None, None)
+    assert slope == (None, None, None)
+    slope = slope_instance.slope(3, 0, 100, 0)
+    assert slope == (None, None, None)
+    slope = slope_instance.slope(3, 0, 100, 0)
+    assert slope == (None, None, None)
+    slope = slope_instance.slope(3, 0, 100, 0)
+    assert slope == (None, None, None)
 
     slope = slope_instance.slope(3, 1, 100, 0)
-    assert slope == (0.0, 0.0, 100.0)
+    assert slope[0] < -0.523
+    assert slope[1] < -1047
+    assert type(slope[2]) is list
 
     slope = slope_instance.slope(3, 100, 101, 0)
-    assert int(slope[0]) == 36178
-    assert int(slope[1]) == 314
-
-
-def test_restart():
-    slope_instance = Slope.Slope(4)
-
-    slope = slope_instance.slope(3, 0, 100, 0)
-    slope = slope_instance.slope(3, 1, 100, 0)
-    slope = slope_instance.slope(3, 100, 101, 0)
-    assert int(slope[0]) == 36178
-
-    assert len(slope_instance.long_smoothed_t_t_h_z[3]) == 3
-
-    slope_instance.restart()
-    assert len(slope_instance.long_smoothed_t_t_h_z[3]) == 0
-
-    slope = slope_instance.slope(3, 0, 100, 0)
-    assert slope == (None, None, None, None)
-    assert len(slope_instance.long_smoothed_t_t_h_z[3]) == 1
+    assert int(slope[0]) == 14
+    assert int(slope[1]) == -41
 
 
 def test_get_latest_min_temp():
@@ -82,19 +75,4 @@ def test_get_latest_min_temp():
     min_temp = slope.get_latest_min_temp()
     assert min_temp == 101
 
-
-def test_regression():
-    slope_instance = Slope.Slope(4)
-
-    slope = slope_instance.slope(3, 0, 100, 0)
-    slope = slope_instance.slope(3, 1, 100, 0)
-    slope = slope_instance.slope(3, 100, 101, 0)
-    assert int(slope[0]) == 36178
-
-    slope, stderror, final_temp = slope_instance.linear_regression(slope_instance.long_smoothed_t_t_h_z[3])
-    # Degrees C per second
-
-    assert int(slope * 3600) == 36178
-    assert int(stderror * 3600) == 314
-    assert round(final_temp, 4) == 100.9999
 

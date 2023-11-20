@@ -11,61 +11,30 @@ class Slope:
     def __init__(self, num_zones: int):
         self.long_smoothed_t_t_h_z = None
         self.num_zones = num_zones
-        self.restart()
+
+        self.long_smoothed_t_t_h_z = []
+        for _ in range(self.num_zones):
+            self.long_smoothed_t_t_h_z.append([])
 
     # TODO Average heat factor is likely to become important.
     def slope(self, zone_index: int, best_time: float, best_temp: float, heat_factor: float) \
-            -> Tuple[float, float, float, list]:
+            -> Tuple[float, float, list]:
         self.long_smoothed_t_t_h_z[zone_index].append({'time_ms': best_time,
                                                   'temperature': best_temp,
                                                   'heat_factor': heat_factor})
         if len(self.long_smoothed_t_t_h_z[zone_index]) > 30:
             self.long_smoothed_t_t_h_z[zone_index].pop(0)
 
-        # if len(self.long_smoothed_t_t_h_z[zone_index]) > 1:
-        #     t_t_h = self.long_smoothed_t_t_h_z[zone_index]
-        #     slope, stderror, final_temp = self.linear_r_degrees_per_hour(t_t_h)
-        #
-        # else:
-        #     slope = 'NA'
-        #     stderror = 'NA'
-        #     final_temp = None
-
         if len(self.long_smoothed_t_t_h_z[zone_index]) > 4:
             slope, curvature, curve_data = self.cubic_curve_fit(self.long_smoothed_t_t_h_z[zone_index])
-            stderror = 0.0
 
         else:
             slope = None
-            stderror = None
             curve_data = None
             curvature = None
-        stderror = curvature
-        return slope, curvature, stderror, curve_data
 
-    def linear_r_degrees_per_hour(self, tth: list) -> Tuple[float or str, float or str, float]:
-        slope, stderror, final_temp = self.linear_regression(tth)
-        if slope is not None:
-            slope = slope * 3600 # degrees C per hour
-            stderror = stderror * 3600
-        return slope, stderror, final_temp
+        return slope, curvature, curve_data
 
-    def linear_regression(self, tth: list) -> Tuple[float, float, float]:
-        times = []
-        temps = []
-        t_initial = tth[0]['time_ms'] / 1000  #Normalize time since epoch, seconds
-        for tt in tth:
-            times.append(tt['time_ms'] / 1000 - t_initial)
-            temps.append(tt['temperature'])
-        result = stats.linregress(times, temps)
-        # slope, intercept, rvalue, pvalue, stderr, intercept_stderr
-
-        if math.isnan(result.slope):
-            final_temp = None
-        else:
-            final_temp = result.slope * times[-1] + result.intercept
-
-        return result.slope, result.stderr, final_temp # Values in degrees C per second, degrees C
 
     def cubic_curve_fit(self, tth: list):
         def cubic_poly(x, a, b, c, d, e) -> Tuple[float, float, list]:
@@ -97,12 +66,6 @@ class Slope:
             curve_data.append({'time_ms': curve_times_ms, 'temperature': curve_temp})
 
         return end_slope, curvature, curve_data
-
-    def restart(self):
-        log.debug('Slope restart called.')
-        self.long_smoothed_t_t_h_z = []
-        for _ in range(self.num_zones):
-            self.long_smoothed_t_t_h_z.append([])
 
     def get_latest_min_temp(self) -> float: # TODO only used in tests
         min_temp = 0

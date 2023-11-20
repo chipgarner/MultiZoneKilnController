@@ -16,12 +16,41 @@ def test_get_target_temperature():
     temperature = profile.get_target_temperature(3000)
     assert int(temperature) == 200
 
+    # This is a future temperature, segment is 0
     temperature = profile.get_target_temperature(6004)
-    assert temperature == 200 # Segment is stil 0, can't go above 200
+    assert temperature == 801.0
 
     profile.current_segment = 1
     temperature = profile.get_target_temperature(6004)
     assert temperature == 801.0
+
+
+def test_get_target_temperature_future():
+    profile = Profile.Profile()
+    profile.profiles_directory = profiles_directory
+    profile.load_profile_by_name("test-fast.json")
+    profile.current_segment = len(profile.data) - 3 # 2nd to last segment
+
+    temperature = profile.get_target_temperature(19000) # This is a future time, in the next segment.
+    assert round(temperature) == 2250 # Temperture is decreasiing in this segment, reutn the max.
+
+
+def test_get_target_past_the_end():
+    profile = Profile.Profile()
+    profile.profiles_directory = profiles_directory
+    profile.load_profile_by_name("test-fast.json")
+    profile.current_segment = 0
+
+# Past the max time but not on the last segment. Maybe it should throw an error.
+# Returns the max of the last two temperatures
+    temperature = profile.get_target_temperature(19401)
+    assert temperature == 2250
+
+    profile.current_segment = len(profile.data) - 2
+
+# On the last segment, return the final temperature
+    temperature = profile.get_target_temperature(19401)
+    assert temperature == 700
 
 
 def test_find_time_from_temperature():
@@ -140,9 +169,9 @@ def test_delta_t_from_slope():
     target = profile.get_target_temperature(time_since_start)
     min_temp = target - 6
     prev_point, next_point = profile.get_surrounding_points(time_since_start)
-    slope = 350
+    slope = 350 / 3600
 
-    delta_t_prev, delta_t_next = profile.delta_ts_from_slope(slope, prev_point, next_point, time_since_start, min_temp)
+    delta_t_prev, delta_t_next = profile.delta_t_from_slope(slope, prev_point, next_point, time_since_start, min_temp)
 
     assert int(delta_t_prev) == -138
     assert int(delta_t_next) == 1918
@@ -153,7 +182,7 @@ def test_delta_t_from_slope():
     min_temp = target - 6
     prev_point, next_point = profile.get_surrounding_points(time_since_start)
 
-    delta_t_prev, delta_t_next = profile.delta_ts_from_slope(slope, prev_point, next_point, time_since_start, min_temp)
+    delta_t_prev, delta_t_next = profile.delta_t_from_slope(slope, prev_point, next_point, time_since_start, min_temp)
 
     assert int(delta_t_prev) == -909
     assert int(delta_t_next) == 1147
@@ -171,9 +200,9 @@ def test_delta_t_from_steep_slope():
     min_temp = target - 6
     prev_point = profile.data[profile.current_segment]
     next_point = profile.data[profile.current_segment  + 1]
-    slope = 300
+    slope = 300 / 3600
 
-    delta_t_prev, delta_t_next = profile.delta_ts_from_slope(slope, prev_point, next_point, time_since_start, min_temp)
+    delta_t_prev, delta_t_next = profile.delta_t_from_slope(slope, prev_point, next_point, time_since_start, min_temp)
 
     assert int(delta_t_prev) == -928
     assert int(delta_t_next) == 2072
@@ -184,7 +213,7 @@ def test_delta_t_from_steep_slope():
     prev_point = profile.data[profile.current_segment]
     next_point = profile.data[profile.current_segment  + 1]
 
-    delta_t_prev, delta_t_next = profile.delta_ts_from_slope(slope, prev_point, next_point, time_since_start, min_temp)
+    delta_t_prev, delta_t_next = profile.delta_t_from_slope(slope, prev_point, next_point, time_since_start, min_temp)
 
     assert int(delta_t_prev) == -2927
     assert int(delta_t_next) == 73
@@ -201,9 +230,9 @@ def test_delta_t_from_wrong_segment():
     min_temp = 199.66
     prev_point = profile.data[profile.current_segment]
     next_point = profile.data[profile.current_segment  + 1]
-    slope = 250
+    slope = 250 / 3600
 
-    delta_t_prev, delta_t_next = profile.delta_ts_from_slope(slope, prev_point, next_point, time_since_start, min_temp)
+    delta_t_prev, delta_t_next = profile.delta_t_from_slope(slope, prev_point, next_point, time_since_start, min_temp)
 
     assert int(delta_t_prev) == 3617
     assert int(delta_t_next) == 17
@@ -223,7 +252,7 @@ def test_shift_profile():
 
     time_since_start = 3613
     min_temp = 300
-    zones_status = [{'slope': 400, 'stderror': 9}]
+    zones_status = [{'slope': 400 / 3600, 'stderror': 9}]
     zone_index = 0
     profile.last_profile_change = time_since_start - 650
 
