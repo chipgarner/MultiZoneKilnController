@@ -230,36 +230,29 @@ class Controller:
             return heat
         self.skipped[index] = 0
 
-        future = 540  # seconds
+        future = 360  # seconds
         future_temp = self.profile.get_target_temperature(future +
-                                                          (zones_status[index]['time_ms'] - self.start_time_ms) / 1000)
+                                                          (zones_status[index]['time_ms'] - self.start_time_ms) / 1000,
+                                                          future=True)
         if not isinstance(future_temp, str):
             temp = zones_status[index]['temperature']
             future_temp_error = future_temp - temp
             future_slope = future_temp_error / future  # This is the slope we need to hit the target temperature in future seconds
             slope_error = future_slope - zones_status[index]['slope']
 
-            print('Last Heat: ' + str(heat))
-            print('temp: ' + str(temp))
-            print('Future temp: ' + str(future_temp))
-            print('Future temp at this slope: ' + str(zones_status[index]['slope'] * future + temp))
-            print('Slope error: ' + str(slope_error))
-            print('Future slope: ' + str(future_slope))
-            print('slope: ' + str(zones_status[index]['slope']))
-            print('Curvature: ' + str(zones_status[index]['curvature']))
-
-            # if abs(slope_error) > 0.001:
-            mcp = 17000
-            hA = 1.6
-            zone_power = 3000
+            mcp = self.zones[index].mCp
+            hA = self.zones[index].hA
+            zone_power = self.zones[index].power
             delta_power = mcp * slope_error + hA * future_temp_error  # In watts
             heat = heat + delta_power / zone_power
             if heat > 1.0: heat = 1.0
             if heat < 0.0: heat = 0.0
 
-            print('Heating power: ' + str(mcp * slope_error))
-            print('Leakage power: ' + str(hA * future_temp_error))
-            print('Updated heat: ' + str(heat))
+            log.debug('temp: ' + str(temp))
+            log.debug('Future temp: ' + str(future_temp))
+            log.debug('Future temp at this slope: ' + str(zones_status[index]['slope'] * future + temp))
+            log.debug('Last Heat: ' + str(heat))
+            log.debug('Updated heat: ' + str(heat))
 
         return heat
 

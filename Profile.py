@@ -129,27 +129,30 @@ class Profile:
 
         return cooling
 
-
-
-    def get_target_temperature(self, time: float) -> Union[float, str]:
+    def get_target_temperature(self, time: float, future=False) -> Union[float, str]:
+        if self.current_segment is None:
+            return self.data[0][1]
         if time > self.get_duration(): # Return the final temperature
             if self.current_segment != len(self.data) - 2: # Return the max of the last two, this is not the current segment
                 return max(self.data[len(self.data) -1][1], self.data[len(self.data) -2][1])
             return self.data[len(self.data) -1][1]
-        if self.current_segment is None:
-            return self.data[0][1]
 
         prev_point, next_point = self.get_surrounding_points(time)
 
         if time > next_point[0]:  # Looking ahead in time into the next segment
-            temp = next_point[1]
-            prev_point = next_point
-            next_point = self.data[self.current_segment + 2] # This has to exist if the time is within the duration.
-            if next_point[1] - prev_point[1] > 0:  # Only if the next segment is heating.
-                incl = float(next_point[1] - prev_point[1]) / float(next_point[0] - prev_point[0])
-                temp = prev_point[1] + (time - prev_point[0]) * incl
-            else: # Next segment is cooling or flat. Use the hottest temperature
-                temp = prev_point[1]
+            if future:
+                next_point_plus = self.data[self.current_segment + 2] # This has to exist if the time is within the duration.
+                if next_point_plus[1] - next_point[1] >= 0:  # Only if the next segment is heating or flat.
+                    incl = float(next_point_plus[1] - next_point[1]) / float(next_point_plus[0] - next_point[0])
+                    temp = next_point[1] + (time - next_point[0]) * incl
+                else: # Next segment is cooling.
+                    if next_point[1] > prev_point[1]: # this is a temperature peak. Extropolate to avoid a delay. (Causing an overshoot.)
+                        incl = float(next_point[1] - prev_point[1]) / float(next_point[0] - prev_point[0])
+                        temp = prev_point[1] + (time - prev_point[0]) * incl
+                    else: # Use the hottest temp in the next segment so it switches segments
+                        temp = next_point[1]
+            else:
+                temp = next_point[1]
         else:
             incl = float(next_point[1] - prev_point[1]) / float(next_point[0] - prev_point[0])
             temp = prev_point[1] + (time - prev_point[0]) * incl

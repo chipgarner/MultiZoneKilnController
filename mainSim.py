@@ -20,8 +20,8 @@ server_thread.start()
 zone_temps = ZoneTemps()
 
 sim_speed_up_factor = 100
-zone1 = Zone(Sim('Fred', sim_speed_up_factor, zone_temps))
-zone2 = Zone(Sim('George', sim_speed_up_factor, zone_temps))
+zone1 = Zone(Sim('Fred', sim_speed_up_factor, zone_temps), 3000, 20, 0.457)
+zone2 = Zone(Sim('George', sim_speed_up_factor, zone_temps), 3000, 20, 0.457)
 # zone3 = Zone(Sim('3', sim_speed_up_factor, zone_temps))
 # zone4 = Zone(Sim('4', sim_speed_up_factor, zone_temps))
 zone1.kiln_elec.kiln_sim.power = zone1.kiln_elec.kiln_sim.power - 400
