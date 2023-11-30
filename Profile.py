@@ -8,8 +8,7 @@ from typing import Union, Tuple
 
 log = logging.getLogger(__name__)
 
-
-# log.level = logging.DEBUG
+log.level = logging.DEBUG
 
 def convert_old_profile(old_profile: dict) -> dict:
     new_segments = []
@@ -53,7 +52,7 @@ class Profile:
         self.data = None
         self.name = None
         self.current_segment = None
-        self.last_profile_change = time.time()
+        self.last_profile_change = 0
 
     def load_profile_by_name(self, file: str):
         profile_path = os.path.join(self.profiles_directory, file)
@@ -105,7 +104,10 @@ class Profile:
     def hot_start(self, temperature: float) -> float:
         t_time, segment = self.find_next_time_from_temperature(temperature)
         self.current_segment = segment
-        self.segment_start = time.time() - self.data[segment][0]
+        self.segment_start = time.time() / 1000 - self.data[segment][0]
+        print('t_time: ' + str(t_time))
+        print('segment: ' + str(segment))
+        print('segment_start: ' + str(self.segment_start))
         return t_time
 
     def get_surrounding_points(self, time):
@@ -173,8 +175,14 @@ class Profile:
 
         return slope
 
+    def set_last_profile_change(self, change_time: float):
+        self.last_profile_change = change_time
+
     def check_shift_profile(self, time_since_start, min_temp, zones_status, zone_index) -> bool:
         update = False
+        print(time_since_start)
+        print(self.last_profile_change)
+        print(str(time_since_start - self.last_profile_change))
 
         # Check for this about every 10 or 20 minutes.
         if time_since_start - self.last_profile_change > 600:
@@ -182,6 +190,7 @@ class Profile:
             if not isinstance(slope, str):
                 target_slope = self.get_target_slope(time_since_start)
                 log.debug('Slope: ' + str(slope) + ' Target slope: ' + str(target_slope))
+                print('Checking profile.')
 
                 if slope < target_slope:  # Not catching up, reduce the target slope.
                     if self.current_segment is not None:

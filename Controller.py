@@ -27,8 +27,10 @@ class Controller:
         self.slope = Slope.Slope(len(zones))
 
         self.last_times = []
+        self.last_heat = []
         for _ in zones:
             self.last_times.append(0)
+            self.last_heat.append(0)
 
         self.broker = broker
         broker_to_controller_callbacks = {'start_stop': self.start_stop_firing,
@@ -51,16 +53,21 @@ class Controller:
         self.controller_state.update_ui(self.controller_state.get_UI_status())
 
     def start_stop_firing(self):
+        print('start/stop called')
         if self.controller_state.get_state()['firing']:
             self.controller_state.firing_off()
             log.info('Stop firing.')
         else:
             if self.controller_state.firing_on():
+                print('Min temp: ' + str(self.min_temp))
                 self.start_time_ms = time.time() * 1000  # Start or restart
 
                 if self.min_temp > 60:  # Hot start
                     self.start_time_ms = self.start_time_ms - \
                                          self.profile.hot_start(self.min_temp) * 1000
+
+                    # TODO config dstuff, this e[ends on the lenght of the sope data + 300 give it a litlle extra time to stabalize the slope - long enough to include the slope data
+                    self.profile.set_last_profile_change(time.time() - self.start_time_ms / 1000 + 300)
 
                 self.send_profile(self.profile.name, self.profile.data, self.start_time_ms)
                 log.info('Start firing.')
@@ -96,6 +103,7 @@ class Controller:
 
     def control_loop(self):
         self.__zero_heat_zones()
+        time.sleep(1) # Let other threads start
         while True:
             self.update_loop()
             time.sleep(self.loop_delay)
@@ -124,6 +132,7 @@ class Controller:
             if not self.controller_state.get_state()['manual']:
                 self.kiln_zones.set_heat_for_zones(heats)
         else:
+            self.min_temp = tthz[0][0]['temperature']  # Needed for hot start
             self.kiln_zones.all_heat_off()
             for index, zone in enumerate(zones_status):
                 zones_status[index]["target"] = 'Off'
@@ -230,7 +239,7 @@ class Controller:
             return heat
         self.skipped[index] = 0
 
-        future = 360  # seconds
+        future = 540  # seconds
         future_temp = self.profile.get_target_temperature(future +
                                                           (zones_status[index]['time_ms'] - self.start_time_ms) / 1000,
                                                           future=True)
@@ -244,16 +253,19 @@ class Controller:
             hA = self.zones[index].hA
             zone_power = self.zones[index].power
             delta_power = mcp * slope_error + hA * future_temp_error  # In watts
-            heat = heat + delta_power / zone_power
+            heat = self.last_heat[index] + delta_power / zone_power
             if heat > 1.0: heat = 1.0
             if heat < 0.0: heat = 0.0
 
+            log.debug('******************************************************************')
             log.debug('temp: ' + str(temp))
             log.debug('Future temp: ' + str(future_temp))
             log.debug('Future temp at this slope: ' + str(zones_status[index]['slope'] * future + temp))
-            log.debug('Last Heat: ' + str(heat))
+            log.debug('Last Heat: ' + str(self.last_heat[index]))
             log.debug('Updated heat: ' + str(heat))
+            log.debug('delta_power: ' + str(delta_power) + ' delta_leakage: ' + str(hA * future_temp_error))
 
+        self.last_heat[index] = heat
         return heat
 
     def set_heat_for_zone(self, heat, zone):
@@ -303,6 +315,7 @@ class ControllerState:
             worked = True
 
             self.update_ui(self.get_UI_status())
+        print(worked)
         return worked
 
     def firing_finished(self):

@@ -23,7 +23,7 @@ class ZoneTemps:
 
 class KilnSimulator:
     def __init__(self, zone_name: str, speed_up_factor: int, zone_temps: ZoneTemps):
-        self.latest_temperature = 27 # Temperatures are in degrees Centigrade
+        self.latest_temperature = 1100 # Temperatures are in degrees Centigrade
         self.latest_time = time.time()
         self.sim_speedup = speed_up_factor
         log.warning('Running simulator. In case you thought otherwise.')
