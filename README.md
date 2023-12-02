@@ -94,7 +94,7 @@ If you have the front end running you can interact with the simulator. See https
 You also now be able to run the main program:
 
     python mainPi.py
-If you have one or more temperature sensors and thermocouples connected you should see the temperatures listes about once a second.
+If you have one or more temperature sensors and thermocouples connected you should see the temperatures listed about once a second.
 
 If you aare not familiar with python virtual environments (https://docs.python.org/3/library/venv.html) note that you 
 must have the environment activated to run the program. Enter the following when inside the program directory:

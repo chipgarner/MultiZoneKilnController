@@ -22,8 +22,8 @@ htop = digitalio.DigitalInOut(board.D17) # These are the GPIO pins the heaters a
 htop.direction = digitalio.Direction.OUTPUT
 hbottom = digitalio.DigitalInOut(board.D27)
 hbottom.direction = digitalio.Direction.OUTPUT
-zone1 = Zone(Max31855(SSR(htop, 'D17')))
-zone2 = Zone(Max31856(SSR(hbottom, 'D27')))
+zone1 = Zone(Max31855(SSR(htop, 'D17')), 2500, 15,  0.37)
+zone2 = Zone(Max31856(SSR(hbottom, 'D27')), 2500, 15,  0.37)
 zones = [zone1, zone2]
 
 loop_delay = 20
