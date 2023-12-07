@@ -40,12 +40,18 @@ else:
     def publish_results(temp):
         pass
 
+last_temp = 0
 
 while True:
     sensor1.initiate_one_shot_measurement()
     time.sleep(1)
     temp1 = sensor1.unpack_temperature()
     temp1_cj = sensor1.unpack_reference_temperature()
+
+    if last_temp == temp1:
+        logging.error('Identical temperatures !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
+
+    temp1 = last_temp
 
     for k, v in sensor1.fault.items():
         if v:
@@ -57,4 +63,3 @@ while True:
 
     publish_results(temp1)
 
-    time.sleep(5)
