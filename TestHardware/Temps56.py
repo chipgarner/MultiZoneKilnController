@@ -51,7 +51,7 @@ while True:
     if last_temp == temp1:
         logging.error('Identical temperatures !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
 
-    temp1 = last_temp
+    last_temp = temp1
 
     for k, v in sensor1.fault.items():
         if v:
