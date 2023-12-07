@@ -42,8 +42,10 @@ else:
 
 
 while True:
-    temp1 = sensor1.temperature
-    temp1_cj = sensor1.reference_temperature
+    sensor1.initiate_one_shot_measurement()
+    time.sleep(1)
+    temp1 = sensor1.unpack_temperature()
+    temp1_cj = sensor1.unpack_reference_temperature()
 
     for k, v in sensor1.fault.items():
         if v:
