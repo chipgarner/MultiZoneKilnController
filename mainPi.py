@@ -13,7 +13,7 @@ from threading import Thread
 log_level = logging.DEBUG
 log_format = '%(asctime)s %(levelname)s %(name)s: %(message)s'
 logging.basicConfig(level=log_level, format=log_format)
-log = logging.getLogger("Controller")
+log = logging.getLogger("MultiController")
 
 server_thread = Thread(target=Server.server, name="server", daemon=True)
 server_thread.start()
