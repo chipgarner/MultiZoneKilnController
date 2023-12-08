@@ -41,6 +41,7 @@ else:
         pass
 
 last_temp = 0
+last_change = time.time()
 
 while True:
     sensor1.initiate_one_shot_measurement()
@@ -49,7 +50,12 @@ while True:
     temp1_cj = sensor1.unpack_reference_temperature()
 
     if last_temp == temp1:
-        logging.error('Identical temperatures !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
+        delay = time.time() - last_change
+        if delay > 1:
+            logging.error('No new temps for: ' + str(delay) + ' Seconds !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
+        logging.error('Identical temperatures *******************************')
+    else:
+        last_change = time.time()
 
     last_temp = temp1
 
