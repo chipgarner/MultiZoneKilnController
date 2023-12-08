@@ -7,7 +7,7 @@ import busio
 import digitalio
 import adafruit_max31856
 
-logging.basicConfig(level=logging.INFO, format='%(asctime)s %(levelname)s %(name)s: %(message)s')
+logging.basicConfig(level=logging.WARNING, format='%(asctime)s %(levelname)s %(name)s: %(message)s')
 logging.info('MAX31865 temperatures')
 
 spi = busio.SPI(board.SCK, MOSI=board.MOSI, MISO=board.MISO)
@@ -51,9 +51,8 @@ while True:
 
     if last_temp == temp1:
         delay = time.time() - last_change
-        if delay > 1:
+        if delay > 10:
             logging.error('No new temps for: ' + str(delay) + ' Seconds !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
-        logging.error('Identical temperatures *******************************')
     else:
         last_change = time.time()
 
