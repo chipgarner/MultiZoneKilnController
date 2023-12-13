@@ -34,11 +34,20 @@ Heat transfer in a real kiln is much more complicated than this model, it is an 
 features in order to allow experimenting with control methods. The biggest weakness is that the control system only
 measures the temperatures of the thermocouples and assumes this temperature is the same as the ware in the eintire zone.
 
-## Notes and setup
+## Hardware Setup
 
 FET wiring: https://elinux.org/RPi_GPIO_Interface_Circuits
 
+## Software Setup
+
+The software should run on a variety of boards that will run Circuit Python. I have tested this on the Raspberry Pi 3B.
+
 Set up the Pi: https://raspberrytips.com/raspberry-pi-wifi-setup/
+
+Enable SPI:
+
+    sudo raspi-config
+Select Interface Options. Select SPI, click Yes, seleft and click Finish.
 
 For developers, the following setup instructions also work on Ubuntu. The simulator runs on ubuntu and is very useful for modifiying and testing code. 
 
@@ -71,6 +80,7 @@ If everything has gone as planned the simulator should now run:
 
     python mainSim.py
 You should see something like this:
+
 2023-11-04 10:33:00,758 WARNING KilnSimulator: Running simulator. In case you thought otherwise.
 2023-11-04 10:33:00,768 INFO Server: listening on 0.0.0.0:8081
 2023-11-04 10:33:00,771 WARNING KilnSimulator: Running simulator. In case you thought otherwise.
@@ -81,16 +91,7 @@ You should see something like this:
 
 If you have the front end running you can interact with the simulator. See https://github.com/chipgarner/MultiZoneFrontEnd
 
+You also now be able to run the main program:
 
-
-**install circuit python:**
-See https://learn.adafruit.com/circuitpython-on-raspberrypi-linux/installing-circuitpython-on-raspberry-pi
-sudo pip3 install --upgrade adafruit-python-shell
-wget https://raw.githubusercontent.com/adafruit/Raspberry-Pi-Installer-Scripts/master/raspi-blinka.py
-sudo python3 raspi-blinka.py
-sudo apt autoremove
-
-reboot
-
-You should now be able to run r the main program:
-python3 mainPi.py
+    python mainPi.py
+If you have one or more temperature sensors and thermocouples connected you should see the temperatures listes about once a second.
