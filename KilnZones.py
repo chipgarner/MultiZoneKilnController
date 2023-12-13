@@ -40,12 +40,20 @@ class KilnZones:
             # Data is sent to front end on every update, around once per second.
             self.broker.update_tc_data(thermocouple_data)
             # time.sleep(1) Not needed as delay is in 31856 in KilnElectronics
-            # log.debug('Thread: ' + threading.current_thread().name)
+            log.debug('Thread: ' + threading.current_thread().name)
 
 class Zone:
-    def __init__(self, kiln):
+    def __init__(self, kiln, power, mass, area):
         self.kiln_elec = kiln # This is the thermocouple and heater switch (e.g. SSR) for this zone.
         self.times_temps_heat = []
+
+        # power, Max electric power input for this zone (watts)
+        # mass, Estimate of the mass of the ware and shelves (kg)
+        # area, Area of heat escape, the walls, and top or bottom if relevant for this zone. (square meters)
+
+        self.power = power
+        self.mCp = mass * 850 # Mass times heat capacity of the ware and shelves. 850 J/Kg/C is a good estimatre for ceramics.
+        self.hA = area * 3.5 # Heat loss through the walls of the kiln. 3.5 w/m^2/C
 
     def get_times_temps_heat(self) -> list:
         t_t_h = self.times_temps_heat

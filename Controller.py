@@ -1,6 +1,5 @@
 import time
 import logging
-import threading
 
 import Profile
 from KilnZones import KilnZones
@@ -28,8 +27,10 @@ class Controller:
         self.slope = Slope.Slope(len(zones))
 
         self.last_times = []
+        self.last_heat = []
         for _ in zones:
             self.last_times.append(0)
+            self.last_heat.append(0)
 
         self.broker = broker
         broker_to_controller_callbacks = {'start_stop': self.start_stop_firing,
@@ -44,27 +45,34 @@ class Controller:
 
         self.min_temp = 0
 
+        self.skipped = [0, 0, 0, 0]
+
         log.info('Controller initialized.')
 
     def add_observer(self):
         self.controller_state.update_ui(self.controller_state.get_UI_status())
 
     def start_stop_firing(self):
+        print('start/stop called')
         if self.controller_state.get_state()['firing']:
             self.controller_state.firing_off()
             log.info('Stop firing.')
         else:
             if self.controller_state.firing_on():
+                print('Min temp: ' + str(self.min_temp))
                 self.start_time_ms = time.time() * 1000  # Start or restart
 
-                if self.min_temp > 60: # Hot start
+                if self.min_temp > 60:  # Hot start
                     self.start_time_ms = self.start_time_ms - \
                                          self.profile.hot_start(self.min_temp) * 1000
+
+                    # TODO config dstuff, this e[ends on the lenght of the sope data + 300 give it a litlle extra time to stabalize the slope - long enough to include the slope data
+                    self.profile.set_last_profile_change(time.time() - self.start_time_ms / 1000 + 300)
 
                 self.send_profile(self.profile.name, self.profile.data, self.start_time_ms)
                 log.info('Start firing.')
                 self.send_updated_profile(self.profile.name, self.profile.data, self.start_time_ms)
-        self.slope.restart()
+        # self.slope.restart()
 
     def send_profile(self, name: str, data: list, start_ms: float):
         self.broker.new_profile_all(Profile.convert_old_profile_ms(name, data, start_ms))
@@ -95,6 +103,7 @@ class Controller:
 
     def control_loop(self):
         self.__zero_heat_zones()
+        time.sleep(1) # Let other threads start
         while True:
             self.update_loop()
             time.sleep(self.loop_delay)
@@ -102,12 +111,9 @@ class Controller:
     def update_loop(self):
         tthz = self.kiln_zones.get_times_temps_heating_for_zones()
         zones_status = self.smooth_temperatures(tthz)
-        target = 'OFF'
-
-        if self.profile.name is not None:
-            target = self.__profile_checks(zones_status)
 
         if self.controller_state.get_state()['firing']:
+            target = self.__profile_checks(zones_status)
             heats = []
             for index, zone in enumerate(tthz):
                 zones_status[index]["target"] = target
@@ -118,14 +124,15 @@ class Controller:
                 self.last_times[index] = zones_status[index]['time_ms']
 
                 heat = self.__update_heat(target,
-                                          zones_status[index]['temperature'],
-                                          zones_status[index]['heat_factor'],
+                                          zones_status,
+                                          index,
                                           delta_t)
                 heats.append(heat)
 
             if not self.controller_state.get_state()['manual']:
                 self.kiln_zones.set_heat_for_zones(heats)
         else:
+            self.min_temp = tthz[0][0]['temperature']  # Needed for hot start
             self.kiln_zones.all_heat_off()
             for index, zone in enumerate(zones_status):
                 zones_status[index]["target"] = 'Off'
@@ -155,19 +162,24 @@ class Controller:
         self.min_temp, time_since_start, heat_factor, zone_index = \
             self.lagging_temp_time_heat(zones_status, self.start_time_ms)
         target = self.profile.get_target_temperature(time_since_start)
-        if type(target) is str:
-            if self.controller_state.get_state()['firing']: # Only finish once.
-                self.controller_state.firing_finished()
-                log.info('Firing finished.')
+
+        if self.profile.is_segment_cooling():
+            error = self.min_temp - target
         else:
             error = target - self.min_temp
-            log.info('Target: ' + str(target) + ' Temperature difference: ' + str(error))
+        log.info('Target: ' + str(target) + ' Temperature difference: ' + str(error))
 
-            update = False
-            if error < 0:  # Temperature close enough or high, check segment time
-                segment_change, update = self.profile.check_switch_segment(time_since_start)
-                if segment_change: self.slope.restart()
+        update = False
+        firing_finished = False
+        if error < 0.5:  # Temperature close enough or high, check segment time
+            segment_change, update, firing_finished = self.profile.check_switch_segment(time_since_start)
 
+        if firing_finished:
+            if self.controller_state.get_state()['firing']:  # Only finish once.
+                self.controller_state.firing_finished()
+                target = "Done"
+                log.info('Firing finished.')
+        else:
             if error > 5:  # Too cold, move segment times so it can catch up
                 if heat_factor > 0.99:
                     update = self.profile.check_shift_profile(time_since_start, self.min_temp,
@@ -192,15 +204,23 @@ class Controller:
                     pstdev = 'NA'
                 best_time = round((t_t_h[0]['time_ms'] + t_t_h[-1]['time_ms']) / 2)
 
-                slope, stderror = self.slope.slope(zone_index, best_time, best_temp, t_t_h[0]['heat_factor'])
+                slope, curvature, curve_data = self.slope.slope(zone_index, best_time, best_temp,
+                                                                t_t_h[0]['heat_factor'])
+                # slope, stderror, final_temp = self.slope.linear_r_degrees_per_hour(t_t_h)
+                # best_time = t_t_h[-1]['time_ms']
+                # if final_temp is not None:
+                #     best_temp = final_temp
                 if isinstance(pstdev, float): pstdev = "{:.2f}".format(pstdev)
+                # if isinstance(stderror, float): stderror = "{:.2f}".format(stderror)
 
                 zones_status.append({'time_ms': best_time,
                                      'temperature': best_temp,
-                                     'heat_factor': t_t_h[0]['heat_factor'],
+                                     'curve_data': curve_data,
+                                     'heat_factor': t_t_h[-1]['heat_factor'],
                                      'slope': slope,
-                                     'stderror': stderror,
-                                     'pstdev': pstdev})
+                                     'curvature': curvature,
+                                     'stderror': curvature,
+                                     'pstdev': curvature})
 
         return zones_status
 
@@ -210,22 +230,42 @@ class Controller:
             heats.append(0)
         self.kiln_zones.set_heat_for_zones(heats)
 
-    def __update_heat(self, target: float, temp: float, last_heat: float, delta_tm: float) -> float:
+    def __update_heat(self, target: float, zones_status: list, index: int, delta_tm: float) -> float:
+        heat = zones_status[index]['heat_factor']
 
-        # heat = last_heat
-        # error = target - temp
-        # if abs(error) > 1.0:
-        #     heat = error * 0.2
-        # else:
-        #     delta_heat = error * 0.001
-        #     heat = heat + delta_heat
-        #
-        # if heat > 1.0: heat = 1.0
-        # if heat < 0.0: heat = 0.0
+        self.skipped[index] += 1
+        print(self.skipped[index])
+        if self.skipped[index] < 9:
+            return heat
+        self.skipped[index] = 0
 
-        self.pid.setpoint = target
-        heat = self.pid(temp, dt=delta_tm) / 100
+        future = 540  # seconds
+        future_temp = self.profile.get_target_temperature(future +
+                                                          (zones_status[index]['time_ms'] - self.start_time_ms) / 1000,
+                                                          future=True)
+        if not isinstance(future_temp, str):
+            temp = zones_status[index]['temperature']
+            future_temp_error = future_temp - temp
+            future_slope = future_temp_error / future  # This is the slope we need to hit the target temperature in future seconds
+            slope_error = future_slope - zones_status[index]['slope']
 
+            mcp = self.zones[index].mCp
+            hA = self.zones[index].hA
+            zone_power = self.zones[index].power
+            delta_power = mcp * slope_error + hA * future_temp_error  # In watts
+            heat = self.last_heat[index] + delta_power / zone_power
+            if heat > 1.0: heat = 1.0
+            if heat < 0.0: heat = 0.0
+
+            log.debug('******************************************************************')
+            log.debug('temp: ' + str(temp))
+            log.debug('Future temp: ' + str(future_temp))
+            log.debug('Future temp at this slope: ' + str(zones_status[index]['slope'] * future + temp))
+            log.debug('Last Heat: ' + str(self.last_heat[index]))
+            log.debug('Updated heat: ' + str(heat))
+            log.debug('delta_power: ' + str(delta_power) + ' delta_leakage: ' + str(hA * future_temp_error))
+
+        self.last_heat[index] = heat
         return heat
 
     def set_heat_for_zone(self, heat, zone):
@@ -275,6 +315,7 @@ class ControllerState:
             worked = True
 
             self.update_ui(self.get_UI_status())
+        print(worked)
         return worked
 
     def firing_finished(self):
