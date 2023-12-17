@@ -7,6 +7,7 @@ from Notifiers.MQTT import check_internet
 class Publisher:
     def __init__(self, access):
         self.logger = logging.getLogger(__name__)
+        self.logger.level = logging.DEBUG
 
         self.access = access
 
