@@ -145,4 +145,4 @@ class MessageBroker:
 
             message = {name: temperature}
             time_stamped_message = {'ts': time, 'values': message}
-            self.pub.send_message(time_stamped_message)
+            self.pub.send_message(str(time_stamped_message))
