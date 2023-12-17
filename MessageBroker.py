@@ -133,6 +133,7 @@ class MessageBroker:
         thermocouple_data = { 'thermocouple_data': tc_data}
         message = json.dumps(thermocouple_data)
         self.send_socket(message)
+        self.publish_mqtt(message)
 
     def publish_mqtt(self, tc_data: list):
         for i, tc in tc_data:
