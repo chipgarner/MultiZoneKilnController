@@ -40,10 +40,11 @@ class KilnZones:
             # Data is sent to front end on every update, around once per second.
             self.broker.update_tc_data(thermocouple_data)
             # time.sleep(1) Not needed as delay is in 31856 in KilnElectronics
+
             log.debug('Thread: ' + threading.current_thread().name)
 
 class Zone:
-    def __init__(self, kiln, power, mass, area):
+    def __init__(self, kiln, power=1500, mass=10, area=0.37):
         self.kiln_elec = kiln # This is the thermocouple and heater switch (e.g. SSR) for this zone.
         self.times_temps_heat = []
 

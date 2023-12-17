@@ -1,13 +1,10 @@
 import logging
 import time
-from Notifiers import Notifier
-
 import paho.mqtt.client as mqtt
-
 from Notifiers.MQTT import check_internet
 
 
-class Publisher():
+class Publisher:
     def __init__(self, access):
         self.logger = logging.getLogger(__name__)
 
@@ -34,7 +31,6 @@ class Publisher():
             self.logger.error('Publisher could not connect. ' + str(ex))
 
         self.mqtt_client.loop_start()
-        self.logger.debug('Client loop started')
 
     def getserial(self):
         # Extract Raspberry Pi serial number from "cpuinfo" file
@@ -52,7 +48,7 @@ class Publisher():
 
         return cpu_serial
 
-    def send_time_stamped_message(self, a_message: str) -> bool:
+    def send_message(self, a_message):
         return self.publish(a_message)
 
     def check_connection(self, rc):
@@ -81,9 +77,8 @@ class Publisher():
             return True
 
     def publish(self, a_message):
-        self.logger.debug('Publishing on mqtt, message: ' + a_message)
         infot = self.mqtt_client.publish('v1/devices/me/telemetry', a_message, qos=1)
-        self.logger.debug('Paho info before checks =: ' + str(infot))
+        self.logger.debug('Paho info before =: ' + str(infot))
 
         if self.check_connection(infot.rc):
             try:

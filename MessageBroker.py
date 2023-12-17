@@ -2,6 +2,8 @@ import logging
 import json
 import threading
 import FilesHandler
+from Notifiers.MQTT import publisher
+from Notifiers.MQTT.Secrets import KILN
 
 from geventwebsocket import WebSocketError
 
@@ -19,6 +21,7 @@ class MessageBroker:
         self.updated_profile = None
 
         self.fileshandler = FilesHandler.FilesHandler()
+        self. pub = publisher.Publisher(KILN)
 
         self.lock = threading.Lock()
 
@@ -130,3 +133,16 @@ class MessageBroker:
         thermocouple_data = { 'thermocouple_data': tc_data}
         message = json.dumps(thermocouple_data)
         self.send_socket(message)
+
+    def publish_mqtt(self, tc_data: list):
+        for i, tc in tc_data:
+            if i == 0: #TODO this needs to come from the zones info
+                name = 'Top 55 NIST'
+            else:
+                name = 'Bottom 56'
+            time = tc['time_ms']
+            temperature = tc['temperature']
+
+            message = {name: temperature}
+            time_stamped_message = {'ts': time, message}
+            self.pub.send_message(time_stamped_message)

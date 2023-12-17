@@ -83,7 +83,7 @@ class Max31856(KilnElectronics):
         self.sensor.averaging = 16
         self.sensor.noise_rejection = 60
 
-        self.heat_factor = 0
+        self.heat_factor = 0 # TODO not used?
 
     def set_heat(self, heat_factor: float):
         self.switches.set_heat(heat_factor)
