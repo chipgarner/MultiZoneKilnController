@@ -133,7 +133,7 @@ class MessageBroker:
         thermocouple_data = { 'thermocouple_data': tc_data}
         message = json.dumps(thermocouple_data)
         self.send_socket(message)
-        self.publish_mqtt(message)
+        self.publish_mqtt(tc_data)
 
     def publish_mqtt(self, tc_data: list):
         for i, tc in tc_data:
@@ -147,3 +147,4 @@ class MessageBroker:
             message = {name: temperature}
             time_stamped_message = {'ts': time, 'values': message}
             self.pub.send_message(str(time_stamped_message))
+            print(str(message))
