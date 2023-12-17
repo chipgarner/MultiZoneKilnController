@@ -136,7 +136,7 @@ class MessageBroker:
         self.publish_mqtt(tc_data)
 
     def publish_mqtt(self, tc_data: list):
-        for i, tc in tc_data:
+        for i, tc in enumerate(tc_data):
             if i == 0: #TODO this needs to come from the zones info
                 name = 'Top 55 NIST'
             else:
