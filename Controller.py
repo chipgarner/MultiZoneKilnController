@@ -103,7 +103,7 @@ class Controller:
 
     def control_loop(self):
         self.__zero_heat_zones()
-        time.sleep(3) # Let other threads start
+        time.sleep(1) # Let other threads start
         while True:
             self.update_loop()
             time.sleep(self.loop_delay)

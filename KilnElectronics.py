@@ -140,7 +140,7 @@ class Max31855(KilnElectronics):
             temp = self.sensor.temperature_NIST
             delta_t = temp - self.sensor.temperature
             log.info('NIST delta_T = ' + str(delta_t))
-            log.info('55 board temperatur: ' + self.sensor.reference_temperature)
+            log.info('55 board temperature: ' + str(self.sensor.reference_temperature))
             log.debug("55 temperature: " + str(temp))
             self.last_temp = temp
         except RuntimeError as ex:
