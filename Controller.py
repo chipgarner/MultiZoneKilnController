@@ -132,7 +132,11 @@ class Controller:
             if not self.controller_state.get_state()['manual']:
                 self.kiln_zones.set_heat_for_zones(heats)
         else:
-            self.min_temp = tthz[0][0]['temperature']  # Needed for hot start
+            if len(tthz[0]) > 0:
+                self.min_temp = tthz[0][0]['temperature']  # Needed for hot start
+            else: # Zones are not initialized yet
+                self.min_temp = 20
+                log.warning('Control loop started befroe initializing Zones.')
             self.kiln_zones.all_heat_off()
             for index, zone in enumerate(zones_status):
                 zones_status[index]["target"] = 'Off'

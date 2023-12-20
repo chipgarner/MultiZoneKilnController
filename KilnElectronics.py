@@ -103,7 +103,6 @@ class Max31856(KilnElectronics):
         self.sensor.initiate_one_shot_measurement()
         time.sleep(1)
         temp = self.sensor.unpack_temperature()
-        temp = temp -5 #TODO Offset for my test kiln
         log.debug("56 temperature: " + str(temp))
 
         for k, v in self.sensor.fault.items():
@@ -137,8 +136,8 @@ class Max31855(KilnElectronics):
     def get_temperature(self) -> tuple:
         error = False
         try:
-            temp = self.sensor.temperature_NIST
-            delta_t = temp - self.sensor.temperature
+            temp = self.sensor.temperature
+            delta_t = self.sensor.temperature_NIST - temp
             log.info('NIST delta_T = ' + str(delta_t))
             log.info('55 board temperature: ' + str(self.sensor.reference_temperature))
             log.debug("55 temperature: " + str(temp))

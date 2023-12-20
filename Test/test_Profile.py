@@ -17,7 +17,7 @@ def test_get_target_temperature():
     assert int(temperature) == 200
 
     # This is a future temperature, segment is 0
-    temperature = profile.get_target_temperature(6004)
+    temperature = profile.get_target_temperature(6004, future= True)
     assert temperature == 801.0
 
     profile.current_segment = 1
@@ -31,7 +31,7 @@ def test_get_target_temperature_future():
     profile.load_profile_by_name("test-fast.json")
     profile.current_segment = len(profile.data) - 3 # 2nd to last segment
 
-    temperature = profile.get_target_temperature(19000) # This is a future time, in the next segment.
+    temperature = profile.get_target_temperature(19000, future=True) # This is a future time, in the next segment.
     assert round(temperature) == 2250 # Temperture is decreasiing in this segment, reutn the max.
 
 
