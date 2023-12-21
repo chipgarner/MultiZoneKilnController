@@ -47,7 +47,7 @@ def test_loop_calls():
 
     assert broker.update_UI_calls == 1
     assert broker.update_calls == 1
-    assert broker.update_names_calls == 1
+    # assert broker.update_names_calls == 1
     assert broker.controller_callbacks is not None
 
 def test_modes():

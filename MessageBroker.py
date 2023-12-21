@@ -108,9 +108,6 @@ class MessageBroker:
         log.debug('Status sent: ' + message)
 
     def update_zones(self, zones_status_array: list):
-        # self.update_thingsboard(times_temps_heats_for_zones) SIMULATOR SPEEDUP to 1 !!!= TODO fix mqtt
-        # self.db.send_time_stamped_message(tthz) TODO
-
         zones = {
             'zones_status_array': zones_status_array,
         }

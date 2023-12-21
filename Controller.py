@@ -32,6 +32,8 @@ class Controller:
             self.last_times.append(0)
             self.last_heat.append(0)
 
+        self.profile_names = self.get_profile_names()
+
         self.broker = broker
         broker_to_controller_callbacks = {'start_stop': self.start_stop_firing,
                                           'auto_manual': self.auto_manual,
@@ -40,7 +42,6 @@ class Controller:
                                           'add_observer': self.add_observer}
         self.broker.set_controller_functions(broker_to_controller_callbacks)
 
-        self.profile_names = self.get_profile_names()
         self.controller_state = ControllerState(self.broker.update_UI_status)
 
         self.min_temp = 0
@@ -50,6 +51,7 @@ class Controller:
         log.info('Controller initialized.')
 
     def add_observer(self):
+        self.broker.update_names(self.profile_names)
         self.controller_state.update_ui(self.controller_state.get_UI_status())
 
     def start_stop_firing(self):
@@ -136,14 +138,12 @@ class Controller:
                 self.min_temp = tthz[0][0]['temperature']  # Needed for hot start
             else: # Zones are not initialized yet
                 self.min_temp = 20
-                log.warning('Control loop started befroe initializing Zones.')
+                log.warning('Control loop started before initializing Zones.')
             self.kiln_zones.all_heat_off()
             for index, zone in enumerate(zones_status):
                 zones_status[index]["target"] = 'Off'
                 zones_status[index]["target_slope"] = 0
                 self.last_times[index] = zones_status[index]['time_ms']
-
-            self.broker.update_names(self.profile_names)
 
         self.broker.update_zones(zones_status)
 
