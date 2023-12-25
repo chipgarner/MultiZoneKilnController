@@ -9,10 +9,6 @@ import logging
 from threading import Thread
 import config
 
-
-log_level = config.LOG_LEVEL
-log_format = '%(asctime)s %(levelname)s %(name)s: %(message)s'
-logging.basicConfig(level=log_level, format=log_format)
 log = logging.getLogger(__name__)
 
 server_thread = Thread(target=Server.server, name="server", daemon=True)

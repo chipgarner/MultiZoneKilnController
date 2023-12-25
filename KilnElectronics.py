@@ -49,7 +49,7 @@ class Electronics(KilnElectronics):
         return self.power_controller.get_heat_factor()
 
     def set_heat(self, heat_factor: float):
-        return self.power_controller.get_heat_factor(heat_factor)
+        return self.power_controller.set_heat_factor(heat_factor)
 
 
 class FakeHeater:
@@ -165,7 +165,7 @@ class SSR:
         self.set_heat_off()
 
         if isinstance(digitalout_pin, FakeHeater):
-            self.heater = digitalout_pin #  We are simulating
+            self.heater = digitalout_pin #  We are simulating or testing
         else:
             heater = digitalio.DigitalInOut(digitalout_pin)
             heater.direction = digitalio.Direction.OUTPUT
