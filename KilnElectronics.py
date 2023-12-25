@@ -49,7 +49,7 @@ class Electronics(KilnElectronics):
         return self.power_controller.get_heat_factor()
 
     def set_heat(self, heat_factor: float):
-        return self.power_controller.set_heat_factor(heat_factor)
+        return self.power_controller.set_heat(heat_factor)
 
 
 class FakeHeater:
