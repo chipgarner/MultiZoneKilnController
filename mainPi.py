@@ -1,16 +1,14 @@
 import time
-
-import board
-import digitalio
 import Controller
 import Server
 from KilnZones import Zone
-from KilnElectronics import Max31856, Max31855, SSR
 import logging
 from threading import Thread
+import config
+from KilnElectronics import Electronics
 
 
-log_level = logging.INFO
+log_level = config.LOG_LEVEL
 log_format = '%(asctime)s %(levelname)s %(name)s: %(message)s'
 logging.basicConfig(level=log_level, format=log_format)
 log = logging.getLogger("MultiController")
@@ -18,17 +16,25 @@ log = logging.getLogger("MultiController")
 server_thread = Thread(target=Server.server, name="server", daemon=True)
 server_thread.start()
 
-htop = digitalio.DigitalInOut(board.D17) # These are the GPIO pins the heaters are soldered to.
-htop.direction = digitalio.Direction.OUTPUT
-hbottom = digitalio.DigitalInOut(board.D27)
-hbottom.direction = digitalio.Direction.OUTPUT
-zone1 = Zone(Max31855(SSR(htop, 'D17')), 2500, 10,  0.37)
-zone2 = Zone(Max31856(SSR(hbottom, 'D27')), 2500, 10,  0.37)
-zones = [zone1, zone2]
-
-loop_delay = 20
+zones = []
+if config.zone1 is not None:
+    kiln_elec = Electronics(config.zone1['temperture_sensor'], config.zone1['power_controller'])
+    zone1 = Zone(kiln_elec, 2500, 10,  0.37)
+    zones.append(zone1)
+if config.zone2 is not None:
+    kiln_elec = Electronics(config.zone2['temperture_sensor'], config.zone2['power_controller'])
+    zone2 = Zone(kiln_elec, 2500, 10,  0.37)
+    zones.append(zone2)
+if config.zone3 is not None:
+    kiln_elec = Electronics(config.zone3['temperture_sensor'], config.zone3['power_controller'])
+    zone3 = Zone(kiln_elec, 2500, 10,  0.37)
+    zones.append(zone3)
+if config.zone4 is not None:
+    kiln_elec = Electronics(config.zone4['temperture_sensor'], config.zone4['power_controller'])
+    zone4 = Zone(kiln_elec, 2500, 10,  0.37)
+    zones.append(zone4)
 
 broker = Server.broker
-controller = Controller.Controller(broker, zones, loop_delay)
+controller = Controller.Controller(broker, zones, config.loop_delay)
 time.sleep(0.1)
 controller.control_loop()

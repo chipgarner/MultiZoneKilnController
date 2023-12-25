@@ -2,11 +2,8 @@ import logging
 import statistics
 import sys
 
-from _decimal import Decimal
-from fractions import Fraction
-from typing import Dict, Any
-
 log = logging.getLogger(__name__)
+
 
 def median(t_t_h: list) -> dict[str, float] or None:
     y_list = []

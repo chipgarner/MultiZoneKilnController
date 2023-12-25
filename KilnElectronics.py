@@ -12,8 +12,11 @@ import busio
 import digitalio
 
 from KilnSimulator import KilnSimulator, ZoneTemps
+if not hasattr(board, 'pin'):
+    board.pin = 'simulating'
 
 log = logging.getLogger(__name__)
+
 
 # Each zone needs its own KilnElectronics for thermocouples and switching. Different zones can
 # have different hardware if needed. Power and any other sensors should also go here.
@@ -25,6 +28,7 @@ class KilnElectronics(ABC):
         # E.g. on one second, off on second for a heat_factor of  0.5.
         pass
 
+    @abstractmethod
     def get_heat_factor(self) -> float:
         pass
 
@@ -33,18 +37,34 @@ class KilnElectronics(ABC):
         pass
 
 
-class Sim(KilnElectronics):
-    class FakeHeater:
-        def __init__(self):
-            self.value = None
+class Electronics(KilnElectronics):
+    def __init__(self, temperature_sensor, power_controller):
+        self.temperature_sensor = temperature_sensor
+        self.power_controller = power_controller
 
+    def get_temperature(self) -> tuple:
+        return self.temperature_sensor.get_temperature()
+
+    def get_heat_factor(self) -> float:
+        return self.power_controller.get_heat_factor()
+
+    def set_heat(self, heat_factor: float):
+        return self.power_controller.get_heat_factor(heat_factor)
+
+
+class FakeHeater:
+    def __init__(self):
+        self.value = None
+
+
+class Sim(KilnElectronics):
     def __init__(self, zone_name: str, speed_up_factor: int, zone_temps: ZoneTemps):
         self.kiln_sim = KilnSimulator(zone_name, speed_up_factor, zone_temps)
         self.sim_speedup = self.kiln_sim.sim_speedup
         self.start = time.time()  # This is needed for thr simulator speedup
         self.latest_temp = 0
-        heater = self.FakeHeater()
-        self.switches = SSR(heater, "SSR " + str(zone_name))
+        heater = FakeHeater()
+        self.switches = SSR(heater)
 
     def set_heat(self, heat_factor: float):
         self.switches.set_heat(heat_factor)
@@ -70,68 +90,17 @@ class Sim(KilnElectronics):
         time.sleep(0.5 / self.sim_speedup)  # Real sensors take time to read
         return time_ms, temperature, error
 
-class Max31856(KilnElectronics):
-    #     # My 56 quits and blocks the thread, does not recover on restart.
-    def __init__(self, switches):
-        log.info("56 Running on board: " + board.board_id)
-        self.switches = switches
-        # SCK D11, MOSI D10, MISO D9
-        self.spi = busio.SPI(board.SCK, MOSI=board.MOSI, MISO=board.MISO)  # MOSI to SDI, Miso to SDO
-        self.cs1 = digitalio.DigitalInOut(board.D6)
 
-        self.sensor = adafruit_max31856.MAX31856(self.spi, self.cs1)
-        self.sensor.averaging = 16
-        self.sensor.noise_rejection = 60
-
-        self.heat_factor = 0 # TODO not used?
-
-    def set_heat(self, heat_factor: float):
-        self.switches.set_heat(heat_factor)
-        self.heat_factor = heat_factor
-
-    def get_heat_factor(self) -> float:
-        return self.switches.get_heat_factor()
-
-    def get_temperature(self) -> tuple:
-        error = False
-
-        # This bypasses wait for oneshot as it sometimes hangs forever.
-        # It avoids waiting forever in the while loop in _wait_for_oneshot() but just returns the old temperature
-        # when (apparently the same) error occur. This fixes itself after a while at leasst in some cases.
-        # Can easily go 20 hours with no errors. It may always recover if you wait long enough. Restarts do
-        # not seen to help
-        self.sensor.initiate_one_shot_measurement()
-        time.sleep(1)
-        temp = self.sensor.unpack_temperature()
-        log.debug("56 temperature: " + str(temp))
-
-        for k, v in self.sensor.fault.items():
-            if v:
-                log.error('Temp1 31856 fault: ' + str(k))
-                error = True
-
-        time_ms = round(time.time() * 1000)
-        return time_ms, temp, error
-
-
-class Max31855(KilnElectronics):
-    def __init__(self, switches):
+class Max31855:
+    def __init__(self, digitalinout_pin):
         log.info("55 running on board: " + board.board_id)
-        self.switches = switches
         self.spi = busio.SPI(board.SCK, MOSI=board.MOSI, MISO=board.MISO)  # MOSI is not used on 31855
-        self.cs1 = digitalio.DigitalInOut(board.D5)
+        self.cs1 = digitalio.DigitalInOut(digitalinout_pin)
 
         self.sensor = adafruit_max31855.MAX31855(self.spi, self.cs1)
 
         self.last_temp = 0
         self.heat_factor = 0
-
-    def set_heat(self, heat_factor: float):
-        self.switches.set_heat(heat_factor)
-        self.heat_factor = heat_factor
-
-    def get_heat_factor(self) -> float:
-        return self.switches.get_heat_factor()
 
     def get_temperature(self) -> tuple:
         error = False
@@ -152,21 +121,58 @@ class Max31855(KilnElectronics):
         time_ms = round(time.time() * 1000)
         return time_ms, temp, error
 
+class Max31856:
+    #     # My 56 quits and blocks the thread, does not recover on restart.
+    def __init__(self, digitalinout_pin):
+        log.info("56 Running on board: " + board.board_id)
+        # SCK D11, MOSI D10, MISO D9
+        self.spi = busio.SPI(board.SCK, MOSI=board.MOSI, MISO=board.MISO)  # MOSI to SDI, Miso to SDO
+        self.cs1 = digitalio.DigitalInOut(digitalinout_pin)
+
+        self.sensor = adafruit_max31856.MAX31856(self.spi, self.cs1)
+        self.sensor.averaging = 16
+        self.sensor.noise_rejection = 60
+
+        self.heat_factor = 0  # TODO not used?
+
+    def get_temperature(self) -> tuple:
+        error = False
+
+        # This bypasses wait for oneshot as it sometimes hangs forever.
+        # It avoids waiting forever in the while loop in _wait_for_oneshot() but just returns the old temperature
+        # when (apparently the same) error occur. This fixes itself after a while at leasst in some cases.
+        # Can easily go 20 hours with no errors. It may always recover if you wait long enough. Restarts do
+        # not seem to help
+        self.sensor.initiate_one_shot_measurement()
+        time.sleep(1)
+        temp = self.sensor.unpack_temperature()
+        log.debug("56 temperature: " + str(temp))
+
+        for k, v in self.sensor.fault.items():
+            if v:
+                log.error('Temp1 31856 fault: ' + str(k))
+                error = True
+
+        time_ms = round(time.time() * 1000)
+        return time_ms, temp, error
+
 
 class SSR:
-    # heater = digitalio.DigitalInOut(config.gpio_heat)
-    # heater.direction = digitalio.Direction.OUTPUT
-    def __init__(self, heater,
-                 pin_name: str):  # Heater has the CircuitPython GPIO: heater = digitalio.DigitalInOut(GPIO)
+    def __init__(self, digitalout_pin):  # This is the GPIO on/off pin soldered to the SSR
         self.heat_factor = 0
         self.resolution = 20
         self.on_off = []
         self.set_heat_off()
 
-        self.heater = heater
-        thread_name = 'SSR pin ' + pin_name
-        thread = threading.Thread(target=self.__heater_loop, name=thread_name, daemon=True)
+        if isinstance(digitalout_pin, FakeHeater):
+            self.heater = digitalout_pin #  We are simulating
+        else:
+            heater = digitalio.DigitalInOut(digitalout_pin)
+            heater.direction = digitalio.Direction.OUTPUT
+            self.heater = heater
 
+        thread_name = 'SSR pin ' + str(digitalout_pin)
+        thread = threading.Thread(target=self.__heater_loop, name=thread_name, daemon=True)
         self.running = True
         thread.start()
 

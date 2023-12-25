@@ -126,11 +126,12 @@ class MessageBroker:
                 self.observers.remove(observer)
                 log.info('Observer deleted, socket error: ' + str(ex))
 
-    def update_tc_data(self, tc_data: list):
+    def update_tc_data(self, tc_data: list, mqtt=False):
         thermocouple_data = { 'thermocouple_data': tc_data}
         message = json.dumps(thermocouple_data)
         self.send_socket(message)
-        self.publish_mqtt(tc_data)
+        if mqtt:
+            self.publish_mqtt(tc_data)  # TODO Config? - Control how often
 
     def publish_mqtt(self, tc_data: list):
         for i, tc in enumerate(tc_data):

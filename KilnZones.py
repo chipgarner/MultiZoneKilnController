@@ -1,6 +1,5 @@
 import threading
 import logging
-import time
 
 # Supports multiple sensors for multiple zone kilns.
 # Sensors are on one thread. You can't call sensors from separate threads if they share the SPI/
@@ -38,14 +37,14 @@ class KilnZones:
                 thermocouple_data.append(zone.update_time_temperature())
 
             # Data is sent to front end on every update, around once per second.
-            self.broker.update_tc_data(thermocouple_data)
+            self.broker.update_tc_data(thermocouple_data)  # TODO mqtt in a config?
             # time.sleep(1) Not needed as delay is in 31856 in KilnElectronics
 
             log.debug('Thread: ' + threading.current_thread().name)
 
 class Zone:
-    def __init__(self, kiln, power=1500, mass=10, area=0.37):
-        self.kiln_elec = kiln # This is the thermocouple and heater switch (e.g. SSR) for this zone.
+    def __init__(self, kiln_electronics, power=1500, mass=10, area=0.37):
+        self.kiln_elec = kiln_electronics
         self.times_temps_heat = []
 
         # power, Max electric power input for this zone (watts)

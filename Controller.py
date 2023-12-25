@@ -8,7 +8,7 @@ import pid
 import Slope
 
 log = logging.getLogger(__name__)
-log.level = logging.DEBUG
+# log.level = logging.DEBUG
 
 
 class Controller:
@@ -68,13 +68,13 @@ class Controller:
                     self.start_time_ms = self.start_time_ms - \
                                          self.profile.hot_start(self.min_temp) * 1000
 
-                    # TODO config dstuff, this e[ends on the lenght of the sope data + 300 give it a litlle extra time to stabalize the slope - long enough to include the slope data
+                    # TODO config stuff, this ends on the lengyh of the sope data + 300 give it a litlle extra time
+                    #  to stabalize the slope - long enough to include the slope data
                     self.profile.set_last_profile_change(time.time() - self.start_time_ms / 1000 + 300)
 
                 self.send_profile(self.profile.name, self.profile.data, self.start_time_ms)
                 log.info('Start firing.')
                 self.send_updated_profile(self.profile.name, self.profile.data, self.start_time_ms)
-        # self.slope.restart()
 
     def send_profile(self, name: str, data: list, start_ms: float):
         self.broker.new_profile_all(Profile.convert_old_profile_ms(name, data, start_ms))
@@ -105,7 +105,7 @@ class Controller:
 
     def control_loop(self):
         self.__zero_heat_zones()
-        time.sleep(1) # Let other threads start
+        time.sleep(1)  # Let other threads start
         while True:
             self.update_loop()
             time.sleep(self.loop_delay)
@@ -115,37 +115,48 @@ class Controller:
         zones_status = self.smooth_temperatures(tthz)
 
         if self.controller_state.get_state()['firing']:
-            target = self.__profile_checks(zones_status)
-            heats = []
-            for index, zone in enumerate(tthz):
-                zones_status[index]["target"] = target
-                zones_status[index]["target_slope"] = self.profile.get_target_slope(
-                    (zones_status[index]['time_ms'] - self.start_time_ms) / 1000)
-
-                delta_t = (zones_status[index]['time_ms'] - self.last_times[index]) / 1000
-                self.last_times[index] = zones_status[index]['time_ms']
-
-                heat = self.__update_heat(target,
-                                          zones_status,
-                                          index,
-                                          delta_t)
-                heats.append(heat)
-
+            heats = self.__compute_heats_for_zones(zones_status, tthz)
             if not self.controller_state.get_state()['manual']:
                 self.kiln_zones.set_heat_for_zones(heats)
         else:
-            if len(tthz[0]) > 0:
-                self.min_temp = tthz[0][0]['temperature']  # Needed for hot start
-            else: # Zones are not initialized yet
-                self.min_temp = 20
-                log.warning('Control loop started before initializing Zones.')
-            self.kiln_zones.all_heat_off()
-            for index, zone in enumerate(zones_status):
-                zones_status[index]["target"] = 'Off'
-                zones_status[index]["target_slope"] = 0
-                self.last_times[index] = zones_status[index]['time_ms']
+            zones_status = self.__status_off(zones_status, tthz)
 
         self.broker.update_zones(zones_status)
+
+    def __compute_heats_for_zones(self, zones_status: list, tthz: list) -> list:
+        target = self.__profile_checks(zones_status)
+        heats = []
+        for index, zone in enumerate(tthz):
+            zones_status[index]["target"] = target
+            zones_status[index]["target_slope"] = self.profile.get_target_slope(
+                (zones_status[index]['time_ms'] - self.start_time_ms) / 1000)
+
+            delta_t = (zones_status[index]['time_ms'] - self.last_times[index]) / 1000
+            self.last_times[index] = zones_status[index]['time_ms']
+
+            # heat = self.__update_heat(target,
+            #                           zones_status,
+            #                           index,
+            #                           delta_t)
+            heat = self.update_heat_pid(target,
+                                          zones_status[index]['temperature'],
+                                          delta_t)
+            heats.append(heat)
+        return heats
+
+    def __status_off(self, zones_status: list, tthz: list) -> list:
+        if len(tthz[0]) > 0:
+            self.min_temp = tthz[0][0]['temperature']  # Needed for hot start
+        else:  # Zones are not initialized yet
+            self.min_temp = 20
+            log.warning('Control loop started before initializing Zones.')
+        self.kiln_zones.all_heat_off()
+        for index, zone in enumerate(zones_status):
+            zones_status[index]["target"] = 'Off'
+            zones_status[index]["target_slope"] = 0
+            self.last_times[index] = zones_status[index]['time_ms']
+
+        return zones_status
 
     @staticmethod
     def lagging_temp_time_heat(zones_status, start_time_ms):
@@ -234,6 +245,16 @@ class Controller:
             heats.append(0)
         self.kiln_zones.set_heat_for_zones(heats)
 
+    def update_heat_pid(self, target: float, temp: float,  delta_tm: float) -> float:
+
+        if type(target) is not str:
+            self.pid.setpoint = target
+            heat = self.pid(temp, dt=delta_tm) / 100
+        else:
+            heat = 0
+
+        return heat
+
     def __update_heat(self, target: float, zones_status: list, index: int, delta_tm: float) -> float:
         heat = zones_status[index]['heat_factor']
 
@@ -258,8 +279,10 @@ class Controller:
             zone_power = self.zones[index].power
             delta_power = mcp * slope_error + hA * future_temp_error  # In watts
             heat = self.last_heat[index] + delta_power / zone_power
-            if heat > 1.0: heat = 1.0
-            if heat < 0.0: heat = 0.0
+            if heat > 1.0:
+                heat = 1.0
+            if heat < 0.0:
+                heat = 0.0
 
             log.debug('******************************************************************')
             log.debug('temp: ' + str(temp))

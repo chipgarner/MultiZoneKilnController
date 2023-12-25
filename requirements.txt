@@ -1,7 +1,7 @@
 pytest>=7.2.1
 paho-mqtt>=1.6.1
 websockets>=10.4
-gevent>=22.10.2
+gevent>=23.9.0
 gevent-websocket>=0.10.1
 bottle>=0.12.24
 scipy>=1.10.1
