@@ -23,7 +23,7 @@ log = logging.getLogger(__name__)
 
 class KilnElectronics(ABC):
     @abstractmethod
-    def set_heat(self, heat_factor: float):
+    def set_heat_factor(self, heat_factor: float):
         # This needs to set the switches timing to achieve the heat_factor.
         # E.g. on one second, off on second for a heat_factor of  0.5.
         pass
@@ -48,8 +48,8 @@ class Electronics(KilnElectronics):
     def get_heat_factor(self) -> float:
         return self.power_controller.get_heat_factor()
 
-    def set_heat(self, heat_factor: float):
-        return self.power_controller.set_heat(heat_factor)
+    def set_heat_factor(self, heat_factor: float):
+        return self.power_controller.set_heat_factor(heat_factor)
 
 
 class FakeHeater:
@@ -66,8 +66,8 @@ class Sim(KilnElectronics):
         heater = FakeHeater()
         self.switches = SSR(heater)
 
-    def set_heat(self, heat_factor: float):
-        self.switches.set_heat(heat_factor)
+    def set_heat_factor(self, heat_factor: float):
+        self.switches.set_heat_factor(heat_factor)
 
     def get_heat_factor(self) -> float:
         return self.switches.get_heat_factor()
@@ -306,7 +306,7 @@ class SSR:
 
         return onoff
 
-    def set_heat(self, heat_factor: float):
+    def set_heat_factor(self, heat_factor: float):
         try:
             onoff = self.set_cycles_list(heat_factor)
             self.on_off = onoff.copy()

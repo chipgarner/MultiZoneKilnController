@@ -28,7 +28,7 @@ def test_cycles_on_off():
     for i in range(1, 100):
         heat_factor = i / 100
         cycles_on, cycles_off = ssr.cycles_on_off(heat_factor)
-        ssr.set_heat(heat_factor)
+        ssr.set_heat_factor(heat_factor)
         hf = ssr.get_heat_factor()
         error = heat_factor - hf
         assert len(ssr.on_off) == ssr.resolution
@@ -37,13 +37,13 @@ def test_cycles_on_off():
 def test_full_on_full_off():
     ssr = SSR(FakeHeater())
 
-    ssr.set_heat(0)
+    ssr.set_heat_factor(0)
     hf = ssr.get_heat_factor()
 
     assert hf == 0
     assert len(ssr.on_off) == 20
 
-    ssr.set_heat(1)
+    ssr.set_heat_factor(1)
     hf = ssr.get_heat_factor()
 
     assert hf == 1
@@ -52,13 +52,13 @@ def test_full_on_full_off():
 def test_more():
     ssr = SSR(FakeHeater())
 
-    ssr.set_heat(0.13)
+    ssr.set_heat_factor(0.13)
     hf = ssr.get_heat_factor()
 
     assert hf == 0.15
     assert len(ssr.on_off) == 20
 
-    ssr.set_heat(0.63)
+    ssr.set_heat_factor(0.63)
     hf = ssr.get_heat_factor()
 
     assert hf == 0.65
@@ -72,16 +72,16 @@ def test_set_cycles_list():
     ons = [x for x in onoff if x]
     assert len(ons) == 6
 
-    ssr.set_heat(0.3)
+    ssr.set_heat_factor(0.3)
     assert ssr.heat_factor == 0.3
     onoff = ssr.set_cycles_list(0.2)
     assert onoff == [True, False, False, False, False, True, False, False, False, False, True, False, False, False,
                      False, True, False, False, False, False]
 
-    ssr.set_heat(0.38)
+    ssr.set_heat_factor(0.38)
     assert ssr.heat_factor == 0.4
 
-    ssr.set_heat(0.23)
+    ssr.set_heat_factor(0.23)
     assert ssr.heat_factor == 0.25
     onoff = ssr.set_cycles_list(0.23)
     assert onoff == [True, False, False, False, True, False, False, False, True, False, False, False, True, False,
@@ -90,11 +90,11 @@ def test_set_cycles_list():
     onoff = ssr.set_cycles_list(0.42)
     assert onoff == [True, False, False, True, False, True, False, False, True, False, True, False, False, True, False, True, False, False, True, False]
 
-    ssr.set_heat(0.51)
+    ssr.set_heat_factor(0.51)
     assert ssr.heat_factor == 0.5
     onoff = ssr.set_cycles_list(0.5)
     assert onoff == [True, False, True, False, True, False, True, False, True, False, True, False, True, False, True,
                      False, True, False, True, False]
 
-    ssr.set_heat(0.53)
+    ssr.set_heat_factor(0.53)
     assert ssr.heat_factor == 0.55

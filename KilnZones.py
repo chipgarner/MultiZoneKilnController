@@ -24,11 +24,11 @@ class KilnZones:
 
     def all_heat_off(self):
         for zone in self.zones:
-            zone.set_heat(0)
+            zone.set_heat_factor(0)
 
     def set_heat_for_zones(self, heat_for_zones: list):
         for i, zone in enumerate(self.zones):
-            zone.set_heat(heat_for_zones[i])
+            zone.set_heat_factor(heat_for_zones[i])
 
     def __sensors_loop(self):
         while True:
@@ -60,11 +60,11 @@ class Zone:
         self.times_temps_heat = []
         return t_t_h
 
-    def set_heat(self, heat_factor: float):
+    def set_heat_factor(self, heat_factor: float):
         if heat_factor > 1.0 or heat_factor < 0:
             log.error('Heat factor must be from zero through one. heat_factor: ' + str(heat_factor))
             raise ValueError
-        self.kiln_elec.set_heat(heat_factor)
+        self.kiln_elec.set_heat_factor(heat_factor)
 
     def update_time_temperature(self) -> dict:
         time_ms, temp, error = self.kiln_elec.get_temperature()

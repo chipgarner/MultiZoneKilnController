@@ -11,7 +11,7 @@ zone_temps = ZoneTemps()
 def test_init_heating():
     zone1 = KilnZones.Zone(Sim('Test', 1, zone_temps))
 
-    zone1.set_heat(0.1)
+    zone1.set_heat_factor(0.1)
 
     assert zone1.kiln_elec.get_heat_factor() == 0.1
 
@@ -35,7 +35,7 @@ def test_starts_time_temps_thread():
 
 def test_updates_times_temperatures():
     zone1 = KilnZones.Zone(Sim('Test', 1, zone_temps))
-    zone1.set_heat(0.7)
+    zone1.set_heat_factor(0.7)
     KilnZones.KilnZones([zone1], FakeBroker())
     time.sleep(1)  # Let the zones thread start and TC read
 
@@ -55,5 +55,5 @@ def test_bad_heat_factor_throws():
     zone1 = KilnZones.Zone(Sim('Test', 1, zone_temps))
 
     with pytest.raises(ValueError):
-        zone1.set_heat(1.09)
+        zone1.set_heat_factor(1.09)
 

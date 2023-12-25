@@ -297,7 +297,7 @@ class Controller:
 
     def set_heat_for_zone(self, heat, zone):
         if self.controller_state.get_state()['manual']:
-            self.kiln_zones.zones[zone - 1].set_heat(heat / 100)
+            self.kiln_zones.zones[zone - 1].set_heat_factor(heat / 100)
 
 
 # This class limits the possible states to the ones we want. For example, don't start the firing without
