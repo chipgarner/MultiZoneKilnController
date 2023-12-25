@@ -4,7 +4,7 @@ from KilnSimulator import ZoneTemps
 
 LOG_LEVEL = 'INFO'
 
-simulating = True
+simulating = False
 
 if simulating:
     zone_temps = ZoneTemps()
