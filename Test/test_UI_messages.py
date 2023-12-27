@@ -20,7 +20,7 @@ def test_UI_adds_observer_idle():
 
     broker.add_observer('me')
 
-    assert controller.controller_state.get_UI_status()['label'] == 'IDLE'
+    assert controller.controller_state.get_UI_status_dict()['label'] == 'IDLE'
     assert broker.UI_message == {
             'label': 'IDLE',
             'StartStop': 'Start',

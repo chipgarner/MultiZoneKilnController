@@ -32,7 +32,7 @@ def test_init_zones():
     controller = Controller(FakeBroker(), zones, 10)
 
     assert type(controller.kiln_zones) == KilnZones
-    assert not controller.controller_state.get_state()['firing']
+    assert not controller.controller_state.get_state().firing
 
     for zone in controller.zones:
         assert zone.kiln_elec.get_heat_factor() == 0
@@ -52,26 +52,26 @@ def test_loop_calls():
 
 def test_modes():
     controller = Controller(FakeBroker(), zones, 10)
-    assert not controller.controller_state.get_state()['firing']
+    assert not controller.controller_state.get_state().firing
 
     controller.start_stop_firing()
-    assert not controller.controller_state.get_state()['firing'] # Can't strt if profile is not set
+    assert not controller.controller_state.get_state().firing # Can't strt if profile is not set
 
     controller.profile.profiles_directory = profiles_directory
     controller.set_profile_by_name('test-fast')
 
     controller.auto_manual() # Can't switch to manual if not firing
-    assert not controller.controller_state.get_state()['manual']
+    assert not controller.controller_state.get_state().manual
 
     controller.start_stop_firing()
-    assert controller.controller_state.get_state()['firing']
+    assert controller.controller_state.get_state().firing
 
-    assert not controller.controller_state.get_state()['manual']
+    assert not controller.controller_state.get_state().manual
     controller.auto_manual()
-    assert controller.controller_state.get_state()['manual']
+    assert controller.controller_state.get_state().manual
 
     controller.auto_manual()
-    assert  not controller.controller_state.get_state()['manual']
+    assert  not controller.controller_state.get_state().manual
 
 def test_no_profile_selected_sends_list():
     controller = Controller(FakeBroker(), zones, 10)
