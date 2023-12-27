@@ -28,5 +28,4 @@ else:
         log.error('No valid blinka board found, simulating is False. ')
         raise (err)
 
-
 loop_delay = 20

@@ -14,7 +14,6 @@ log = logging.getLogger(__name__)
 class Controller:
     def __init__(self, broker, zones, loop_delay):
         self.profile = Profile.Profile()
-        # self.pid = Pid.PID()
         self.pid = pid.PID(20, 0.01, 200, setpoint=27, sample_time=None, output_limits=(0, 100))
 
         self.loop_delay = loop_delay
@@ -61,7 +60,6 @@ class Controller:
             log.info('Stop firing.')
         else:
             if self.controller_state.firing_on():
-                print('Min temp: ' + str(self.min_temp))
                 self.start_time_ms = time.time() * 1000  # Start or restart
 
                 if self.min_temp > 60:  # Hot start
@@ -134,13 +132,13 @@ class Controller:
             delta_t = (zones_status[index]['time_ms'] - self.last_times[index]) / 1000
             self.last_times[index] = zones_status[index]['time_ms']
 
-            # heat = self.__update_heat(target,
-            #                           zones_status,
-            #                           index,
-            #                           delta_t)
-            heat = self.update_heat_pid(target,
-                                          zones_status[index]['temperature'],
-                                          delta_t)
+            heat = self.__update_heat(target,
+                                      zones_status,
+                                      index,
+                                      delta_t)
+            # heat = self.update_heat_pid(target,
+            #                               zones_status[index]['temperature'],
+            #                               delta_t)
             heats.append(heat)
         return heats
 
