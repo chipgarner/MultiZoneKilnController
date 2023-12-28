@@ -1,4 +1,4 @@
-from Controller import ControllerState
+from ControllerState import ControllerState
 from Fakes import TestBroker
 
 def test_firing_on():
