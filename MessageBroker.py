@@ -8,7 +8,7 @@ from Notifiers.MQTT.Secrets import KILN
 from geventwebsocket import WebSocketError
 
 log = logging.getLogger(__name__)
-log.level = logging.DEBUG
+# log.level = logging.DEBUG
 
 
 class MessageBroker:
