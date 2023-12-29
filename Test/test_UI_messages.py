@@ -16,7 +16,7 @@ zones = [zone1, zone2, zone3, zone4]
 
 def test_UI_adds_observer_idle():
     broker = FakeBroker()
-    controller = Controller(broker, zones, 10)
+    controller = Controller(broker, zones)
 
     broker.add_observer('me')
 
@@ -33,7 +33,7 @@ def test_UI_adds_observer_idle():
 
 def test_choose_profile():
     broker = FakeBroker()
-    controller = Controller(broker, zones, 10)
+    controller = Controller(broker, zones)
     broker.add_observer('me')
 
     broker.set_profile("fast")

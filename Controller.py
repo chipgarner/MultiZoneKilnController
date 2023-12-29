@@ -13,46 +13,21 @@ log = logging.getLogger(__name__)
 
 
 class Controller:
-    def __init__(self, broker, zones, loop_delay):
-        self.profile = Profile.Profile()
-        self.pid = pid.PID(20, 0.01, 200, setpoint=27, sample_time=None, output_limits=(0, 100))
-
-        self.loop_delay = loop_delay
-
-        self.zones = zones
-        self.data_filter = DataFilter
-        self.start_time_ms = None
-
-        self.kiln_zones = KilnZones(zones, broker)
-        self.slope = Slope.Slope(len(zones))
-
-        self.last_times = []
-        self.last_heat = []
-        for _ in zones:
-            self.last_times.append(0)
-            self.last_heat.append(0)
-
-        self.profile_names = self.get_profile_names()
-
-        self.broker = broker
+    def __init__(self, broker, zones):
         broker_to_controller_callbacks = {'start_stop': self.start_stop_firing,
                                           'auto_manual': self.auto_manual,
                                           'set_heat_for_zone': self.set_heat_for_zone,
                                           'set_profile_by_name': self.set_profile_by_name,
                                           'add_observer': self.add_observer}
-        self.broker.set_controller_functions(broker_to_controller_callbacks)
+        broker.set_controller_functions(broker_to_controller_callbacks)
 
-        self.controller_state = ControllerState.ControllerState(self.broker.update_UI_status)
-
-        self.min_temp = 0
-
-        self.skipped = [0, 0, 0, 0]
+        self.controller_state = ControllerState.ControllerState(broker.update_UI_status)
+        self.control_loop = ControlLoop(zones, broker, self.controller_state)
 
         log.info('Controller initialized.')
 
     def add_observer(self):
-        self.broker.update_names(self.profile_names)
-        self.controller_state.update_ui(self.controller_state.get_UI_status_dict())
+        self.control_loop.add_observer()
 
     def start_stop_firing(self):
         print('start/stop called')
@@ -61,25 +36,8 @@ class Controller:
             log.info('Stop firing.')
         else:
             if self.controller_state.firing_on():
-                self.start_time_ms = time.time() * 1000  # Start or restart
+                self.control_loop.start_firing()
 
-                if self.min_temp > 60:  # Hot start
-                    self.start_time_ms = self.start_time_ms - \
-                                         self.profile.hot_start(self.min_temp) * 1000
-
-                    # TODO config stuff, this ends on the lengyh of the sope data + 300 give it a litlle extra time
-                    #  to stabalize the slope - long enough to include the slope data
-                    self.profile.set_last_profile_change(time.time() - self.start_time_ms / 1000 + 300)
-
-                self.send_profile(self.profile.name, self.profile.data, self.start_time_ms)
-                log.info('Start firing.')
-                self.send_updated_profile(self.profile.name, self.profile.data, self.start_time_ms)
-
-    def send_profile(self, name: str, data: list, start_ms: float):
-        self.broker.new_profile_all(Profile.convert_old_profile_ms(name, data, start_ms))
-
-    def send_updated_profile(self, name: str, data: list, start_ms: float):
-        self.broker.update_profile_all(Profile.convert_old_profile_ms(name, data, start_ms))
 
     def auto_manual(self):
         if not self.controller_state.get_state().manual:
@@ -89,25 +47,56 @@ class Controller:
             self.controller_state.manual_off()
             log.info('Manual off')
 
-    def get_profile_names(self) -> list:
-        return self.profile.get_profiles_names()
-
     def set_profile_by_name(self, name: str):
         if not self.controller_state.choosing_profile(name):
             log.error('Could not set the profile')
         else:
-            self.profile.load_profile_by_name(name + '.json')
-            if self.start_time_ms is None:
-                self.start_time_ms = time.time() * 1000
-            self.send_updated_profile(self.profile.name, self.profile.data, self.start_time_ms)
-            log.debug('Name: ' + name + ' Profile: ' + self.profile.name)
+            self.control_loop.load_profile(name)
 
-    def control_loop(self):
-        self.__zero_heat_zones()
+    def set_heat_for_zone(self, heat: int, zone_number: int):
+        if self.controller_state.get_state().manual:
+            self.control_loop.set_heat_for_zone_number(heat, zone_number)
+
+
+class ControlLoop:
+    def __init__(self, zones, broker, controller_state):
+        self.profile = Profile.Profile()
+
+
+        self.profile_names = self.get_profile_names()
+        self.zones = zones
+
+        self.kiln_zones = KilnZones(zones, broker)
+        self.slope = Slope.Slope(len(zones))
+
+        self.controller_state = controller_state
+        self.broker = broker
+
+        self.data_filter = DataFilter
+        self.start_time_ms = None
+
+        self.last_times = []
+        self.last_heat = []
+        for _ in zones:
+            self.last_times.append(0)
+            self.last_heat.append(0)
+
+        self.skipped = [0, 0, 0, 0]
+
+        self.pid = pid.PID(20, 0.01, 200, setpoint=27, sample_time=None, output_limits=(0, 100))
+
+        self.start_time_ms = None
+        self.min_temp = 0
+
+        # self.send_updated_profile(self.profile.name, self.profile.data, self.start_time_ms)
+
+
+    def control_loop(self, loop_delay: int):
         time.sleep(1)  # Let other threads start
+        self.__zero_heat_zones()
         while True:
             self.update_loop()
-            time.sleep(self.loop_delay)
+            time.sleep(loop_delay)
 
     def update_loop(self):
         tthz = self.kiln_zones.get_times_temps_heating_for_zones()
@@ -121,6 +110,49 @@ class Controller:
             zones_status = self.__status_off(zones_status, tthz)
 
         self.broker.update_zones(zones_status)
+
+    def start_firing(self):
+        self.start_time_ms = time.time() * 1000  # Start or restart
+
+        if self.min_temp > 60:  # Hot start
+            self.start_time_ms = self.start_time_ms - \
+                                 self.profile.hot_start(self.min_temp) * 1000
+
+            # TODO config stuff, this ends on the lengyh of the sope data + 300 give it a litlle extra time
+            #  to stabalize the slope - long enough to include the slope data
+            self.profile.set_last_profile_change(time.time() - self.start_time_ms / 1000 + 300)
+
+        self.send_profile(self.profile.name, self.profile.data, self.start_time_ms)
+        log.info('Start firing.')
+
+    def get_profile_names(self) -> list:
+        return self.profile.get_profiles_names()
+
+    def add_observer(self):
+        self.broker.update_names(self.profile_names)
+        self.controller_state.update_ui(self.controller_state.get_UI_status_dict())
+
+    def load_profile(self, name: str):
+        self.profile.load_profile_by_name(name + '.json')
+        if self.start_time_ms is None:
+            self.start_time_ms = time.time() * 1000
+        self.send_updated_profile(self.profile.name, self.profile.data, self.start_time_ms)
+        log.debug('Name: ' + name + ' Profile: ' + self.profile.name)
+
+    def send_profile(self, name: str, data: list, start_ms: float):
+        self.broker.new_profile_all(Profile.convert_old_profile_ms(name, data, start_ms))
+
+    def send_updated_profile(self, name: str, data: list, start_ms: float):
+        self.broker.update_profile_all(Profile.convert_old_profile_ms(name, data, start_ms))
+
+    def __zero_heat_zones(self):
+        heats = []
+        for i in range(len(self.zones)):
+            heats.append(0)
+        self.kiln_zones.set_heat_for_zones(heats)
+
+    def set_heat_for_zone_number(self, heat: int, zone_number:int):
+        self.kiln_zones.zones[zone_number - 1].set_heat_factor(heat / 100)
 
     def __compute_heats_for_zones(self, zones_status: list, tthz: list) -> list:
         target = self.__profile_checks(zones_status)
@@ -238,12 +270,6 @@ class Controller:
 
         return zones_status
 
-    def __zero_heat_zones(self):
-        heats = []
-        for i in range(len(self.zones)):
-            heats.append(0)
-        self.kiln_zones.set_heat_for_zones(heats)
-
     def update_heat_pid(self, target: float, temp: float,  delta_tm: float) -> float:
 
         if type(target) is not str:
@@ -293,7 +319,3 @@ class Controller:
 
         self.last_heat[index] = heat
         return heat
-
-    def set_heat_for_zone(self, heat, zone):
-        if self.controller_state.get_state().manual:
-            self.kiln_zones.zones[zone - 1].set_heat_factor(heat / 100)

@@ -36,8 +36,7 @@ log.info('Sim speed up factor is ' + str(config.sim_speed_up_factor))
 log.info('Zone temps: ' + str(config.zone_temps.new_temps))
 
 broker = Server.broker
-controller = Controller.Controller(broker, zones, loop_delay)
-time.sleep(0.1)
-controller.control_loop()
+controller = Controller.Controller(broker, zones)
+controller.control_loop.control_loop(loop_delay)
 
 

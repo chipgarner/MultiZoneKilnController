@@ -31,6 +31,5 @@ if config.zone4 is not None:
     zones.append(zone4)
 
 broker = Server.broker
-controller = Controller.Controller(broker, zones, config.loop_delay)
-time.sleep(0.1)
-controller.control_loop()
+controller = Controller.Controller(broker, zones)
+controller.control_loop.control_loop(config.loop_delay)
