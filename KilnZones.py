@@ -1,6 +1,5 @@
 import threading
 import logging
-import time
 
 # Supports multiple sensors for multiple zone kilns.
 # Sensors are on one thread. You can't call sensors from separate threads if they share the SPI/
@@ -25,11 +24,11 @@ class KilnZones:
 
     def all_heat_off(self):
         for zone in self.zones:
-            zone.set_heat(0)
+            zone.set_heat_factor(0)
 
     def set_heat_for_zones(self, heat_for_zones: list):
         for i, zone in enumerate(self.zones):
-            zone.set_heat(heat_for_zones[i])
+            zone.set_heat_factor(heat_for_zones[i])
 
     def __sensors_loop(self):
         while True:
@@ -38,14 +37,14 @@ class KilnZones:
                 thermocouple_data.append(zone.update_time_temperature())
 
             # Data is sent to front end on every update, around once per second.
-            self.broker.update_tc_data(thermocouple_data)
+            self.broker.update_tc_data(thermocouple_data)  # TODO mqtt in a config?
             # time.sleep(1) Not needed as delay is in 31856 in KilnElectronics
 
             log.debug('Thread: ' + threading.current_thread().name)
 
 class Zone:
-    def __init__(self, kiln, power=1500, mass=10, area=0.37):
-        self.kiln_elec = kiln # This is the thermocouple and heater switch (e.g. SSR) for this zone.
+    def __init__(self, kiln_electronics, power=1500, mass=10, area=0.37):
+        self.kiln_elec = kiln_electronics
         self.times_temps_heat = []
 
         # power, Max electric power input for this zone (watts)
@@ -61,11 +60,11 @@ class Zone:
         self.times_temps_heat = []
         return t_t_h
 
-    def set_heat(self, heat_factor: float):
+    def set_heat_factor(self, heat_factor: float):
         if heat_factor > 1.0 or heat_factor < 0:
             log.error('Heat factor must be from zero through one. heat_factor: ' + str(heat_factor))
             raise ValueError
-        self.kiln_elec.set_heat(heat_factor)
+        self.kiln_elec.set_heat_factor(heat_factor)
 
     def update_time_temperature(self) -> dict:
         time_ms, temp, error = self.kiln_elec.get_temperature()

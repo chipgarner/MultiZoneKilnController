@@ -1,4 +1,7 @@
 import MessageBroker
+import json
+from dataclasses import dataclass, asdict
+
 
 class TestBroker(MessageBroker.MessageBroker):
     def __init__(self):
@@ -11,6 +14,13 @@ class TestBroker(MessageBroker.MessageBroker):
 
     def update_UI_status(self, UI_message: dict):
         self.UI_message = UI_message
+        print(UI_message)
+        status = {
+            'status': UI_message
+        }
+        print(status)
+        message = json.dumps(UI_message)
+        print(message)
 
     def new_profile_all(self, profile):
         pass
@@ -29,6 +39,7 @@ class FakeBroker(MessageBroker.MessageBroker):
     def update_UI_status(self, state: dict):
         self.update_UI_calls += 1
         self.UI_message = state
+        print(state)
 
     def update_zones(self, zones: list):
         self.update_calls += 1

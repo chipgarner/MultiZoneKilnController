@@ -3,12 +3,11 @@ import time
 import paho.mqtt.client as mqtt
 from Notifiers.MQTT import check_internet
 
+log = logging.getLogger(__name__)
+
 
 class Publisher:
     def __init__(self, access):
-        self.logger = logging.getLogger(__name__)
-        # self.logger.level = logging.DEBUG
-
         self.access = access
 
         self.mqtt_client = None
@@ -24,12 +23,12 @@ class Publisher:
         MAX_QUEUED_MESSAGES = 20
         self.mqtt_client.max_queued_messages_set(MAX_QUEUED_MESSAGES)
 
-        self.mqtt_client.enable_logger(self.logger)
+        self.mqtt_client.enable_logger(log)
         self.mqtt_client.username_pw_set(self.access, None)
         try:
             self.mqtt_client.connect("mqtt.thingsboard.cloud", 1883, 0)
         except Exception as ex:
-            self.logger.error('Publisher could not connect. ' + str(ex))
+            log.error('Publisher could not connect. ' + str(ex))
 
         self.mqtt_client.loop_start()
 
@@ -45,7 +44,7 @@ class Publisher:
         except:
             cpu_serial = "ERROR000000000"
 
-        self.logger.info('Serial number: ' + cpu_serial)
+        log.info('Serial number: ' + cpu_serial)
 
         return cpu_serial
 
@@ -55,13 +54,13 @@ class Publisher:
     def check_connection(self, rc):
         if rc == mqtt.MQTT_ERR_QUEUE_SIZE or rc == mqtt.MQTT_ERR_NO_CONN:
             internet = check_internet.check_internet_connection()
-            self.logger.debug('Publish error code, que max or no conn. Internet: ' + str(internet))
+            log.debug('Publish error code, que max or no conn. Internet: ' + str(internet))
             if internet:
                 if self.reconnect_tries < 5:
                     try:
                         self.mqtt_client.reconnect()
                     except Exception as ex:
-                        self.logger.error('Paho error in reconnect: ' + str(ex))
+                        log.error('Paho error in reconnect: ' + str(ex))
                         time.sleep(2)
                     self.reconnect_tries += 1
                 else:  # This isn't working, start over. Broker disconnect?
@@ -79,22 +78,22 @@ class Publisher:
 
     def publish(self, a_message):
         infot = self.mqtt_client.publish('v1/devices/me/telemetry', a_message, qos=1)
-        self.logger.debug('Paho info before =: ' + str(infot))
+        log.debug('Paho info before =: ' + str(infot))
 
         if self.check_connection(infot.rc):
             try:
                 infot.wait_for_publish(2)
-                self.logger.debug('Paho info wait =: ' + str(infot))
+                log.debug('Paho info wait =: ' + str(infot))
 
                 if infot.rc != 0:
-                    self.logger.error('mqttc publish returned rc = ' + str(infot.rc))
+                    log.error('mqttc publish returned rc = ' + str(infot.rc))
 
                 return True
             except RuntimeError:  # This is very intermittent, it should recover.
-                self.logger.warning('Could not publish MQTT message.')
+                log.warning('Could not publish MQTT message.')
                 return False
             except ValueError as ex:
-                self.logger.warning(str(ex))
+                log.warning(str(ex))
                 if "ERR_QUEUE_SIZE" in str(ex):  # This should be checked above in check_connection()
                     return False
                 else:
@@ -103,7 +102,7 @@ class Publisher:
             return False
 
     def on_publish(self, _, __, message_id):
-        self.logger.debug('Published, id = ' + str(message_id))
+        log.debug('Published, id = ' + str(message_id))
 
     def stop(self):
         self.mqtt_client.disconnect()
