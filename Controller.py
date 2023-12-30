@@ -7,7 +7,7 @@ import DataFilter
 import pid
 import Slope
 import ControllerState
-from dataclasses import dataclass, asdict
+from dataclasses import dataclass, asdict, field
 
 log = logging.getLogger(__name__)
 # log.level = logging.DEBUG
@@ -60,9 +60,10 @@ class Controller:
 
 @dataclass
 class ZoneStatus:
-    time_ms: int
-    temperature: float
-    curve_data: list
+    name: str = None
+    time_ms: int = None
+    temperature: float = None
+    curve_data: list = None
     heat_factor: float = 0
     slope: float = 0
     curvature: float = 0
@@ -251,7 +252,7 @@ class ControlLoop:
     def smooth_temperatures(self, t_t_h_z: list) -> list:
         zones_status = []
         for zone_index, t_t_h in enumerate(t_t_h_z):
-            zone_status = ZoneStatus(time_ms=0, temperature=-3.0, curve_data=[])
+            zone_status = ZoneStatus()
             if len(t_t_h) > 0:  # No data happens on startup
                 median_result = self.data_filter.median(t_t_h)
                 if median_result is not None:
@@ -272,6 +273,8 @@ class ControlLoop:
                 if isinstance(pstdev, float): pstdev = "{:.2f}".format(pstdev)
                 # if isinstance(stderror, float): stderror = "{:.2f}".format(stderror)
 
+
+                zone_status.name = self.zones[zone_index].name
                 zone_status.time_ms = best_time
                 zone_status.temperature = best_temp
                 zone_status.curve_data = curve_data

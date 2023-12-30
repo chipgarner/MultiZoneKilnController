@@ -9,7 +9,7 @@ from KilnSimulator import ZoneTemps
 zone_temps = ZoneTemps()
 
 def test_init_heating():
-    zone1 = KilnZones.Zone(Sim('Test', 1, zone_temps))
+    zone1 = KilnZones.Zone('Test', Sim('Test', 1, zone_temps))
 
     zone1.set_heat_factor(0.1)
 
@@ -22,7 +22,7 @@ def test_init_heating():
 
 
 def test_starts_time_temps_thread():
-    zone1 = KilnZones.Zone(Sim('Test', 1, zone_temps))
+    zone1 = KilnZones.Zone('Test', Sim('Test', 1, zone_temps))
     KilnZones.KilnZones([zone1], FakeBroker())
 
     found = False
@@ -34,7 +34,7 @@ def test_starts_time_temps_thread():
 
 
 def test_updates_times_temperatures():
-    zone1 = KilnZones.Zone(Sim('Test', 1, zone_temps))
+    zone1 = KilnZones.Zone('Test', Sim('Test', 1, zone_temps))
     zone1.set_heat_factor(0.7)
     KilnZones.KilnZones([zone1], FakeBroker())
     time.sleep(1)  # Let the zones thread start and TC read
@@ -52,7 +52,7 @@ def test_updates_times_temperatures():
 
 
 def test_bad_heat_factor_throws():
-    zone1 = KilnZones.Zone(Sim('Test', 1, zone_temps))
+    zone1 = KilnZones.Zone('Test', Sim('Test', 1, zone_temps))
 
     with pytest.raises(ValueError):
         zone1.set_heat_factor(1.09)

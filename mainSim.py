@@ -14,8 +14,8 @@ log = logging.getLogger(__name__)
 server_thread = Thread(target=Server.server, name="server", daemon=True)
 server_thread.start()
 
-zone1 = Zone(Sim('Fred', config.sim_speed_up_factor, config.zone_temps), 3000, 20, 0.37)
-zone2 = Zone(Sim('George', config.sim_speed_up_factor, config.zone_temps), 3000, 20, 0.37)
+zone1 = Zone('Fred', Sim('Fred', config.sim_speed_up_factor, config.zone_temps), 3000, 20, 0.37)
+zone2 = Zone('George', Sim('George', config.sim_speed_up_factor, config.zone_temps), 3000, 20, 0.37)
 # zone3 = Zone(Sim('3', sim_speed_up_factor, zone_temps))
 # zone4 = Zone(Sim('4', sim_speed_up_factor, zone_temps))
 zone1.kiln_elec.kiln_sim.power = zone1.kiln_elec.kiln_sim.power - 400

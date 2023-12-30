@@ -12,10 +12,10 @@ profiles_directory = os.path.abspath(os.path.join(os.path.dirname(__file__), '.'
 zone_temps = ZoneTemps()
 
 sim_speed_up_factor = 1
-zone1 = Zone(Sim('1', sim_speed_up_factor, zone_temps))
-zone2 = Zone(Sim('2', sim_speed_up_factor, zone_temps))
-zone3 = Zone(Sim('3', sim_speed_up_factor, zone_temps))
-zone4 = Zone(Sim('4', sim_speed_up_factor, zone_temps))
+zone1 = Zone('Top', Sim('1', sim_speed_up_factor, zone_temps))
+zone2 = Zone('Next', Sim('Test', sim_speed_up_factor, zone_temps))
+zone3 = Zone('Here', Sim('3', sim_speed_up_factor, zone_temps))
+zone4 = Zone('Bottom', Sim('4', sim_speed_up_factor, zone_temps))
 zones = [zone1, zone2, zone3, zone4]
 
 def test_loads_profile():

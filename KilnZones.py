@@ -43,7 +43,8 @@ class KilnZones:
             log.debug('Thread: ' + threading.current_thread().name)
 
 class Zone:
-    def __init__(self, kiln_electronics, power=1500, mass=10, area=0.37):
+    def __init__(self, name, kiln_electronics, power=1500, mass=10, area=0.37):
+        self.name = name
         self.kiln_elec = kiln_electronics
         self.times_temps_heat = []
 
