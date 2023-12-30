@@ -178,7 +178,7 @@ class Profile:
     def set_last_profile_change(self, change_time: float):
         self.last_profile_change = change_time
 
-    def check_shift_profile(self, time_since_start, min_temp, zones_status, zone_index) -> bool:
+    def check_shift_profile(self, time_since_start, min_temp, zone) -> bool:
         update = False
         print(time_since_start)
         print(self.last_profile_change)
@@ -186,7 +186,7 @@ class Profile:
 
         # Check for this about every 10 or 20 minutes.
         if time_since_start - self.last_profile_change > 600:
-            slope = zones_status[zone_index]['slope']
+            slope = zone.slope
             if not isinstance(slope, str):
                 target_slope = self.get_target_slope(time_since_start)
                 log.debug('Slope: ' + str(slope) + ' Target slope: ' + str(target_slope))

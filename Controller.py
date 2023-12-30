@@ -7,6 +7,7 @@ import DataFilter
 import pid
 import Slope
 import ControllerState
+from dataclasses import dataclass, asdict
 
 log = logging.getLogger(__name__)
 # log.level = logging.DEBUG
@@ -38,7 +39,6 @@ class Controller:
             if self.controller_state.firing_on():
                 self.control_loop.start_firing()
 
-
     def auto_manual(self):
         if not self.controller_state.get_state().manual:
             self.controller_state.manual_on()
@@ -58,10 +58,22 @@ class Controller:
             self.control_loop.set_heat_for_zone_number(heat, zone_number)
 
 
+@dataclass
+class ZoneStatus:
+    time_ms: int
+    temperature: float
+    curve_data: list
+    heat_factor: float = 0
+    slope: float = 0
+    curvature: float = 0
+    stderror: float = 0
+    pstdev: float = 0
+    target: str = 'Off'
+    target_slope: float = 0
+
 class ControlLoop:
     def __init__(self, zones, broker, controller_state):
         self.profile = Profile.Profile()
-
 
         self.profile_names = self.get_profile_names()
         self.zones = zones
@@ -88,9 +100,6 @@ class ControlLoop:
         self.start_time_ms = None
         self.min_temp = 0
 
-        # self.send_updated_profile(self.profile.name, self.profile.data, self.start_time_ms)
-
-
     def control_loop(self, loop_delay: int):
         time.sleep(1)  # Let other threads start
         self.__zero_heat_zones()
@@ -109,7 +118,11 @@ class ControlLoop:
         else:
             zones_status = self.__status_off(zones_status, tthz)
 
-        self.broker.update_zones(zones_status)
+        zones_dict = []
+        for zone in zones_status:
+            zones_dict.append(asdict(zone))
+
+        self.broker.update_zones(zones_dict)
 
     def start_firing(self):
         self.start_time_ms = time.time() * 1000  # Start or restart
@@ -151,27 +164,27 @@ class ControlLoop:
             heats.append(0)
         self.kiln_zones.set_heat_for_zones(heats)
 
-    def set_heat_for_zone_number(self, heat: int, zone_number:int):
+    def set_heat_for_zone_number(self, heat: int, zone_number: int):
         self.kiln_zones.zones[zone_number - 1].set_heat_factor(heat / 100)
 
     def __compute_heats_for_zones(self, zones_status: list, tthz: list) -> list:
         target = self.__profile_checks(zones_status)
         heats = []
-        for index, zone in enumerate(tthz):
-            zones_status[index]["target"] = target
-            zones_status[index]["target_slope"] = self.profile.get_target_slope(
-                (zones_status[index]['time_ms'] - self.start_time_ms) / 1000)
+        for index, zone in enumerate(zones_status):
+            zone.target = target
+            zone.target_slope = self.profile.get_target_slope(
+                (zone.time_ms - self.start_time_ms) / 1000)
 
-            delta_t = (zones_status[index]['time_ms'] - self.last_times[index]) / 1000
-            self.last_times[index] = zones_status[index]['time_ms']
+            delta_t = (zone.time_ms - self.last_times[index]) / 1000
+            self.last_times[index] = zone.time_ms
 
-            heat = self.__update_heat(target,
-                                      zones_status,
-                                      index,
-                                      delta_t)
-            # heat = self.update_heat_pid(target,
-            #                               zones_status[index]['temperature'],
-            #                               delta_t)
+            # heat = self.__update_heat(target,
+            #                           zone,
+            #                           index,
+            #                           delta_t)
+            heat = self.update_heat_pid(target,
+                                          zone.temperature,
+                                          delta_t)
             heats.append(heat)
         return heats
 
@@ -183,9 +196,9 @@ class ControlLoop:
             log.warning('Control loop started before initializing Zones.')
         self.kiln_zones.all_heat_off()
         for index, zone in enumerate(zones_status):
-            zone["target"] = 'Off'
-            zone["target_slope"] = 0
-            self.last_times[index] = zone['time_ms']
+            zone.target = 'Off'
+            zone.target_slope = 0
+            self.last_times[index] = zone.time_ms
 
         return zones_status
 
@@ -196,10 +209,10 @@ class ControlLoop:
         heat_factor = 0
         zone_index = None
         for index, zone in enumerate(zones_status):
-            if zone['temperature'] < min_temp:
-                min_temp = zone['temperature']
-                time_since_start = (zone['time_ms'] - start_time_ms) / 1000
-                heat_factor = zone['heat_factor']
+            if zone.temperature < min_temp:
+                min_temp = zone.temperature
+                time_since_start = (zone.time_ms - start_time_ms) / 1000
+                heat_factor = zone.heat_factor
                 zone_index = index
 
         return min_temp, time_since_start, heat_factor, zone_index
@@ -228,8 +241,7 @@ class ControlLoop:
         else:
             if error > 5:  # Too cold, move segment times so it can catch up
                 if heat_factor > 0.99:
-                    update = self.profile.check_shift_profile(time_since_start, self.min_temp,
-                                                              zones_status, zone_index)
+                    update = self.profile.check_shift_profile(time_since_start, self.min_temp, zones_status[zone_index])
 
             if update:  # The profile has shifted, show the shift in the UI
                 self.send_updated_profile(self.profile.name, self.profile.data, self.start_time_ms)
@@ -239,6 +251,7 @@ class ControlLoop:
     def smooth_temperatures(self, t_t_h_z: list) -> list:
         zones_status = []
         for zone_index, t_t_h in enumerate(t_t_h_z):
+            zone_status = ZoneStatus(time_ms=0, temperature=-3.0, curve_data=[])
             if len(t_t_h) > 0:  # No data happens on startup
                 median_result = self.data_filter.median(t_t_h)
                 if median_result is not None:
@@ -259,18 +272,20 @@ class ControlLoop:
                 if isinstance(pstdev, float): pstdev = "{:.2f}".format(pstdev)
                 # if isinstance(stderror, float): stderror = "{:.2f}".format(stderror)
 
-                zones_status.append({'time_ms': best_time,
-                                     'temperature': best_temp,
-                                     'curve_data': curve_data,
-                                     'heat_factor': t_t_h[-1]['heat_factor'],
-                                     'slope': slope,
-                                     'curvature': curvature,
-                                     'stderror': curvature,
-                                     'pstdev': curvature})
+                zone_status.time_ms = best_time
+                zone_status.temperature = best_temp
+                zone_status.curve_data = curve_data
+                zone_status.heat_factor = t_t_h[-1]['heat_factor']
+                zone_status.slope = slope
+                zone_status.curvature = curvature
+                zone_status.stderror = curvature
+                zone_status.pstdev = curvature
+
+                zones_status.append(zone_status)
 
         return zones_status
 
-    def update_heat_pid(self, target: float, temp: float,  delta_tm: float) -> float:
+    def update_heat_pid(self, target: float, temp: float, delta_tm: float) -> float:
 
         if type(target) is not str:
             self.pid.setpoint = target
@@ -280,8 +295,8 @@ class ControlLoop:
 
         return heat
 
-    def __update_heat(self, target: float, zones_status: list, index: int, delta_tm: float) -> float:
-        heat = zones_status[index]['heat_factor']
+    def __update_heat(self, target: float, zone: dataclass(), index: int, delta_tm: float) -> float:
+        heat = zone.heat_factor
 
         self.skipped[index] += 1
         print(self.skipped[index])
@@ -291,13 +306,14 @@ class ControlLoop:
 
         future = 540  # seconds
         future_temp = self.profile.get_target_temperature(future +
-                                                          (zones_status[index]['time_ms'] - self.start_time_ms) / 1000,
+                                                          (zone.time_ms - self.start_time_ms) / 1000,
                                                           future=True)
         if not isinstance(future_temp, str):
-            temp = zones_status[index]['temperature']
+            temp = zone.temperature
             future_temp_error = future_temp - temp
-            future_slope = future_temp_error / future  # This is the slope we need to hit the target temperature in future seconds
-            slope_error = future_slope - zones_status[index]['slope']
+            future_slope = future_temp_error / future  # This is the slope we need to hit the target temperature in
+            # future seconds
+            slope_error = future_slope - zone.slope
 
             mcp = self.zones[index].mCp
             hA = self.zones[index].hA
@@ -312,7 +328,7 @@ class ControlLoop:
             log.debug('******************************************************************')
             log.debug('temp: ' + str(temp))
             log.debug('Future temp: ' + str(future_temp))
-            log.debug('Future temp at this slope: ' + str(zones_status[index]['slope'] * future + temp))
+            log.debug('Future temp at this slope: ' + str(zone.slope * future + temp))
             log.debug('Last Heat: ' + str(self.last_heat[index]))
             log.debug('Updated heat: ' + str(heat))
             log.debug('delta_power: ' + str(delta_power) + ' delta_leakage: ' + str(hA * future_temp_error))
