@@ -3,6 +3,7 @@ import time
 import Profile
 import pytest
 import os
+from Controller import ZoneStatus
 
 test_profile = {"data": [[0, 100], [3600, 100], [10800, 1000], [14400, 1150], [16400, 1150], [19400, 700]], "type": "profile", "name": "fast"}
 profiles_directory = os.path.abspath(os.path.join(os.path.dirname(__file__), '.', 'TestFiles/Profiles'))
@@ -252,11 +253,12 @@ def test_shift_profile():
 
     time_since_start = 3613
     min_temp = 300
-    zones_status = [{'slope': 400 / 3600, 'stderror': 9}]
-    zone_index = 0
+    zone = ZoneStatus(time_ms=0, temperature=-3.0, curve_data=[])
+    zone.slope = 400 / 3600
+    zone.stderror = 9
     profile.last_profile_change = time_since_start - 650
 
-    update = profile.check_shift_profile(time_since_start, min_temp, zones_status, zone_index)
+    update = profile.check_shift_profile(time_since_start, min_temp, zone)
 
     # 200 degrees to go at 100 degrees per hour,
     assert update
@@ -270,8 +272,9 @@ def test_shift_profile():
     profile.last_profile_change = time_since_start - 650
     min_temp = 299
 
-    zones_status = [{'slope': 200, 'stderror': 9}]
-    profile.check_shift_profile(time_since_start, min_temp, zones_status, zone_index)
+    zone.slope = 200
+    zone.stderror = 9
+    profile.check_shift_profile(time_since_start, min_temp, zone)
 
     target_slope = profile.get_target_slope(3650)
     assert int(target_slope) == 400
