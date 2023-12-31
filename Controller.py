@@ -7,7 +7,8 @@ import DataFilter
 import pid
 import Slope
 import ControllerState
-from dataclasses import dataclass, asdict, field
+from dataclasses import dataclass, asdict
+import config
 
 log = logging.getLogger(__name__)
 # log.level = logging.DEBUG
@@ -113,7 +114,7 @@ class ControlLoop:
         zones_status = self.smooth_temperatures(tthz)
 
         if self.controller_state.get_state().firing:
-            heats = self.__compute_heats_for_zones(zones_status, tthz)
+            heats = self.__compute_heats_for_zones(zones_status)
             if not self.controller_state.get_state().manual:
                 self.kiln_zones.set_heat_for_zones(heats)
         else:
@@ -168,7 +169,7 @@ class ControlLoop:
     def set_heat_for_zone_number(self, heat: int, zone_number: int):
         self.kiln_zones.zones[zone_number - 1].set_heat_factor(heat / 100)
 
-    def __compute_heats_for_zones(self, zones_status: list, tthz: list) -> list:
+    def __compute_heats_for_zones(self, zones_status: list) -> list:
         target = self.__profile_checks(zones_status)
         heats = []
         for index, zone in enumerate(zones_status):
@@ -179,13 +180,13 @@ class ControlLoop:
             delta_t = (zone.time_ms - self.last_times[index]) / 1000
             self.last_times[index] = zone.time_ms
 
-            # heat = self.__update_heat(target,
-            #                           zone,
-            #                           index,
-            #                           delta_t)
-            heat = self.update_heat_pid(target,
-                                          zone.temperature,
-                                          delta_t)
+            heat = self.__update_heat(target,
+                                      zone,
+                                      index,
+                                      delta_t)
+            # heat = self.update_heat_pid(target,
+            #                               zone.temperature,
+            #                               delta_t)
             heats.append(heat)
         return heats
 

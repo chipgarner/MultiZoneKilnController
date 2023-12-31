@@ -16,7 +16,7 @@ server_thread.start()
 
 zone1 = Zone('Fred', Sim('Fred', config.sim_speed_up_factor, config.zone_temps), 3000, 20, 0.37)
 zone2 = Zone('George', Sim('George', config.sim_speed_up_factor, config.zone_temps), 3000, 20, 0.37)
-# zone3 = Zone(Sim('3', sim_speed_up_factor, zone_temps))
+zone3 = Zone('Bottom', Sim('3', config.sim_speed_up_factor, config.zone_temps), 3000, 20, 0.37)
 # zone4 = Zone(Sim('4', sim_speed_up_factor, zone_temps))
 zone1.kiln_elec.kiln_sim.power = zone1.kiln_elec.kiln_sim.power - 400
 # zone3.kiln_elec.kiln_sim.power = zone3.kiln_elec.kiln_sim.power - 300
@@ -28,7 +28,7 @@ zone1.kiln_elec.kiln_sim.heat_loss = zone1.kiln_elec.kiln_sim.heat_loss + 0.4
 # zone2.kiln_elec.kiln_sim.area_load = 0.157
 # zone3.kiln_elec.kiln_sim.area_load = 0.157
 #
-zones = [zone1, zone2]
+zones = [zone1, zone2, zone3]
 
 loop_delay = config.loop_delay / config.sim_speed_up_factor
 log.info('Sim speed up factor is ' + str(config.sim_speed_up_factor))
