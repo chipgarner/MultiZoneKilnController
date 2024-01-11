@@ -1,6 +1,8 @@
 import logging
 import json
 import threading
+import config
+
 import FilesHandler
 from Notifiers.MQTT import publisher
 from Notifiers.MQTT.Secrets import KILN
@@ -44,7 +46,7 @@ class MessageBroker:
 
     def add_observer(self, observer):
         if self.original_profile is not None:
-            self.update_profile(observer, self.original_profile)
+            self.update_profile_and_firing_data(observer, self.original_profile)
         self.observers.append(observer)
 
         if self.updated_profile is not None:
@@ -62,7 +64,7 @@ class MessageBroker:
         self.send_socket(names_json)
 
     # On adding an observer.
-    def update_profile(self, observer, profile):
+    def update_profile_and_firing_data(self, observer, profile):
         prof = {
             'profile': profile,
         }
@@ -72,12 +74,13 @@ class MessageBroker:
         except Exception as ex:
             log.error("Could not send profile to front end: " + str(ex))
 
+        # TODO use os.path.getsize and limit the size to around ??20MB - it bombs the browser if too long.
         path = self.fileshandler.get_full_path()
         if path is not None:
             with open(path, 'r') as firing:
                 for line in firing:
                     observer.send(line)
-                    log.info('Sent profile.')
+                    log.debug('Sent line: ' + line)
 
     # Send to all observers. Update the original profile start time on start button pressed.
     def new_profile_all(self, profile):
@@ -127,12 +130,12 @@ class MessageBroker:
                 self.observers.remove(observer)
                 log.info('Observer deleted, socket error: ' + str(ex))
 
-    def update_tc_data(self, tc_data: list, mqtt=False):
+    def update_tc_data(self, tc_data: list):
         thermocouple_data = { 'thermocouple_data': tc_data}
         message = json.dumps(thermocouple_data)
         self.send_socket(message)
-        if mqtt:
-            self.publish_mqtt(tc_data)  # TODO Config? - Control how often
+        if config.mqtt:
+            self.publish_mqtt(tc_data)  # TODO Control how often
 
     def publish_mqtt(self, tc_data: list):
         for i, tc in enumerate(tc_data):
@@ -146,4 +149,4 @@ class MessageBroker:
             message = {name: temperature}
             time_stamped_message = {'ts': time, 'values': message}
             self.pub.send_message(str(time_stamped_message))
-            print(str(message))
+            log.debug('MQTT message: ' + str(message))

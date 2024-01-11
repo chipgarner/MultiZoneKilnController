@@ -1,11 +1,11 @@
 import logging
-import math
-
-from scipy import stats
 from scipy import optimize
 from typing import Tuple
 
+import config
+
 log = logging.getLogger(__name__)
+# log.level = logging.DEBUG
 
 class Slope:
     def __init__(self, num_zones: int):
@@ -22,7 +22,7 @@ class Slope:
         self.long_smoothed_t_t_h_z[zone_index].append({'time_ms': best_time,
                                                   'temperature': best_temp,
                                                   'heat_factor': heat_factor})
-        if len(self.long_smoothed_t_t_h_z[zone_index]) > 30:
+        if len(self.long_smoothed_t_t_h_z[zone_index]) > config.slope_smoothing_length:
             self.long_smoothed_t_t_h_z[zone_index].pop(0)
 
         if len(self.long_smoothed_t_t_h_z[zone_index]) > 4:
@@ -49,6 +49,7 @@ class Slope:
 
         result = optimize.curve_fit(cubic_poly, times, temps)
         log.debug('Curve fit results: ' + str(result[0]))
+        log.debug('Times: ' + str(times))
 
         x = times[-1]
         a = result[0][0]

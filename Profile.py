@@ -7,7 +7,7 @@ import copy
 from typing import Union, Tuple
 
 log = logging.getLogger(__name__)
-#log.level = logging.DEBUG
+log.level = logging.DEBUG
 
 
 def convert_old_profile(old_profile: dict) -> dict:
@@ -52,7 +52,6 @@ class Profile:
         self.data = None
         self.name = None
         self.current_segment = None
-        self.last_profile_change = 0
 
     def load_profile_by_name(self, file: str):
         profile_path = os.path.join(self.profiles_directory, file)
@@ -105,9 +104,6 @@ class Profile:
         t_time, segment = self.find_next_time_from_temperature(temperature)
         self.current_segment = segment
         self.segment_start = time.time() / 1000 - self.data[segment][0]
-        print('t_time: ' + str(t_time))
-        print('segment: ' + str(segment))
-        print('segment_start: ' + str(self.segment_start))
         return t_time
 
     def get_surrounding_points(self, time):
@@ -159,7 +155,7 @@ class Profile:
             incl = float(next_point[1] - prev_point[1]) / float(next_point[0] - prev_point[0])
             temp = prev_point[1] + (time - prev_point[0]) * incl
 
-        log.debug('Target temperature: ' + str(temp))
+        # log.debug('Target temperature: ' + str(temp))
         return temp
 
     def get_target_slope(self, time_seconds: float) -> float:
@@ -171,46 +167,39 @@ class Profile:
         (prev_point, next_point) = self.get_surrounding_points(time_seconds)
 
         slope = (next_point[1] - prev_point[1]) / (next_point[0] - prev_point[0])
-        slope = slope * 3600  # C/hr
 
         return slope
 
-    def set_last_profile_change(self, change_time: float):
-        self.last_profile_change = change_time
-
     def check_shift_profile(self, time_since_start, min_temp, zone) -> bool:
         update = False
-        print(time_since_start)
-        print(self.last_profile_change)
-        print(str(time_since_start - self.last_profile_change))
 
-        # Check for this about every 10 or 20 minutes.
-        if time_since_start - self.last_profile_change > 600:
-            slope = zone.slope
-            if not isinstance(slope, str):
-                target_slope = self.get_target_slope(time_since_start)
-                log.debug('Slope: ' + str(slope) + ' Target slope: ' + str(target_slope))
-                print('Checking profile.')
+        slope = zone.slope
+        if not isinstance(slope, str):
+            target_slope = self.get_target_slope(time_since_start)
 
-                if slope < target_slope:  # Not catching up, reduce the target slope.
-                    if self.current_segment is not None:
-                        prev_point = self.data[self.current_segment]
-                        next_point = self.data[self.current_segment + 1]
-                        if min_temp - prev_point[1] > 5:  # Avoid divide by small number or negative temp slope
-                            min_temp += 5  # Stop temperature drop from PID
-                            _, delta_t_next = self.delta_t_from_slope(slope, prev_point, next_point,
-                                                                      time_since_start, min_temp)
-                            for index, time_temp in enumerate(self.data):
-                                if index > self.current_segment:
-                                    time_temp[0] += delta_t_next
+            if slope > 0 and slope < target_slope:  # Not catching up, reduce the target slope.
+                if self.current_segment is not None:
+                    prev_point = self.data[self.current_segment]
+                    next_point = self.data[self.current_segment + 1]
+                    if min_temp - prev_point[1] > 5:  # Avoid divide by small number
+                        min_temp += 5  # Stop temperature drop from PID (?)
+                        if slope / target_slope < 0.9: #  The slope is not very stable, don't over do it
+                            slope = target_slope * 0.9
+                        _, delta_t_next = self.delta_t_from_slope(slope, prev_point, next_point,
+                                                                  time_since_start, min_temp)
+                        if delta_t_next <= 0:
+                            log.debug('Slope: ' + str(slope) + ' Target slope: ' + str(target_slope))
+                            log.debug('delta_t_next: ' + str(delta_t_next))
+                        for index, time_temp in enumerate(self.data):
+                            if index > self.current_segment:
+                                time_temp[0] += delta_t_next
 
-                            update = True
-                            self.last_profile_change = time_since_start
-                            # Add a new segment (for this firing only) to the profile so it doesn't change history.
-                            self.data.insert(self.current_segment + 1, [time_since_start, min_temp])
-                            self.check_switch_segment(time_since_start + 1)
+                        update = True
+                        # Add a new segment (for this firing only) to the profile so it doesn't change history.
+                        self.data.insert(self.current_segment + 1, [time_since_start, min_temp])
+                        self.check_switch_segment(time_since_start + 1)
 
-                            log.debug('Target slope: ' + str(self.get_target_slope(time_since_start)))
+                        # log.debug('Target slope: ' + str(self.get_target_slope(time_since_start)))
         return update
 
     def delta_t_from_slope(self, desired_slope, prev_point, next_point, time_since_start, min_temp) -> Tuple[
@@ -241,7 +230,6 @@ class Profile:
         if self.current_segment is None:  # Firing has not started yet
             self.current_segment = 0
             segment_change = True
-            self.last_profile_change = time_since_start
             for time_temp in self.data:
                 time_temp[0] += time_since_start
             update = True  # Shift profile start on start of first segment
@@ -254,7 +242,6 @@ class Profile:
                 segment_change = True
                 if self.current_segment >= len(self.data) - 1:  # Last segment, finish
                     firing_finished = True
-                self.last_profile_change = time_since_start
 
                 log.info('Segment: ' + str(self.current_segment))
                 log.info('Profile data: ' + str(self.data))

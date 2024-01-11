@@ -53,7 +53,6 @@ class ControllerState:
             worked = True
 
             self.update_ui(self.get_UI_status_dict())
-        print(worked)
         return worked
 
     def firing_finished(self):

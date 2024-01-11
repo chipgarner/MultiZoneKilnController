@@ -9,7 +9,7 @@ log_format = '%(asctime)s %(levelname)s %(name)s: %(message)s'
 logging.basicConfig(level=log_level, format=log_format)
 log = logging.getLogger(__name__)
 
-simulating = False
+simulating = True
 
 if simulating:
     zone_temps = ZoneTemps()
@@ -28,4 +28,9 @@ else:
         log.error('No valid blinka board found, simulating is False. ')
         raise (err)
 
-loop_delay = 20
+loop_delay = 10 # Seconds
+moving_average_length = 5 # Number of measurements to average, time depends on how often temperature is read at the
+# sensors.
+slope_smoothing_length = 60 # Multiply times loop_delay for time.
+control_method = 'PuD'
+mqtt = False

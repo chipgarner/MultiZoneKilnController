@@ -146,11 +146,11 @@ def test_get_target_slope():
 
     profile.current_segment = 1
     t_slope = profile.get_target_slope(3600)
-    assert t_slope == 900.0
+    assert t_slope == 0.25
 
     profile.current_segment = 4
     t_slope = profile.get_target_slope(18000)
-    assert t_slope == pytest.approx(-1860.0)
+    assert t_slope == pytest.approx(-0.51666667)
 
 def test_get_profiles_list():
     profile = Profile.Profile()
@@ -255,8 +255,6 @@ def test_shift_profile():
     min_temp = 300
     zone = ZoneStatus(time_ms=0, temperature=-3.0, curve_data=[])
     zone.slope = 400 / 3600
-    zone.stderror = 9
-    profile.last_profile_change = time_since_start - 650
 
     update = profile.check_shift_profile(time_since_start, min_temp, zone)
 
@@ -268,13 +266,40 @@ def test_shift_profile():
     assert round(profile.data[7][0]) == 20568
 
     target_slope = profile.get_target_slope(3650)
-    assert int(target_slope) == 400
+    assert int(target_slope * 3600) == 400 #  Degrees per hour
     profile.last_profile_change = time_since_start - 650
     min_temp = 299
 
     zone.slope = 200
-    zone.stderror = 9
     profile.check_shift_profile(time_since_start, min_temp, zone)
 
     target_slope = profile.get_target_slope(3650)
-    assert int(target_slope) == 400
+    assert int(target_slope * 3600) == 400
+
+
+def test_shift_profile_negative_slope_does_nothing():
+    profile = Profile.Profile()
+    profile.profiles_directory = profiles_directory
+    profile.load_profile_by_name("test-cases.json")
+    profile.current_segment = 1
+
+    t1 = profile.data[1][0]
+    t2 = profile.data[2][0]
+    t4 = profile.data[4][0]
+    t6 = profile.data[6][0]
+
+    assert t2 == 4200
+
+    time_since_start = 3613
+    min_temp = 300
+    zone = ZoneStatus(time_ms=0, temperature=-3.0, curve_data=[])
+    zone.slope = -50
+
+    update = profile.check_shift_profile(time_since_start, min_temp, zone)
+
+    assert not update
+    assert round(profile.data[1][0]) == 3600
+    assert round(profile.data[2][0]) == 4200
+    assert round(profile.data[3][0]) == 10800
+    assert  round(profile.data[4][0]) == 14400
+    assert round(profile.data[6][0]) == 19400

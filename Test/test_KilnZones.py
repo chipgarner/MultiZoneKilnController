@@ -39,16 +39,20 @@ def test_updates_times_temperatures():
     KilnZones.KilnZones([zone1], FakeBroker())
     time.sleep(1)  # Let the zones thread start and TC read
 
-    t_t_h = zone1.get_times_temps_heat()
+    t_t_h = zone1.get_time_temp_heat()
 
-    assert t_t_h[0]['heat_factor'] == 0.7
-    assert type(t_t_h[0]) == dict
-    assert t_t_h[0]['temperature'] > 0
+    assert t_t_h['heat_factor'] == 0.7
+    assert type(t_t_h) == dict
+    assert t_t_h['temperature'] > 0
 
     now = time.time() * 1000
-    delta_t = now - t_t_h[0]['time_ms'] # delta_t should be small
+    delta_t = now - t_t_h['time_ms'] # delta_t should be small
     # assert delta_t > -1 # It goes further negative if the Simulator speedup is greater than 1.
     assert delta_t - 1000 < 10 # millisconds, subtracte wait time for tc read.
+
+    last_heat_timme = zone1.get_time_since_last_heat_change()
+    assert type(last_heat_timme) == int
+    assert last_heat_timme == 2 # This is basically the TC read delay and round off
 
 
 def test_bad_heat_factor_throws():

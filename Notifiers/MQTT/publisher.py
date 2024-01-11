@@ -4,6 +4,7 @@ import paho.mqtt.client as mqtt
 from Notifiers.MQTT import check_internet
 
 log = logging.getLogger(__name__)
+log.level = logging.DEBUG
 
 
 class Publisher:
@@ -13,6 +14,7 @@ class Publisher:
         self.mqtt_client = None
         self.start_mqtt_client()
         self.reconnect_tries = 0
+        self.last_message_time = time.time()
 
     def start_mqtt_client(self):
         self.mqtt_client = mqtt.Client(client_id=self.getserial(), clean_session=False)
@@ -77,28 +79,34 @@ class Publisher:
             return True
 
     def publish(self, a_message):
-        infot = self.mqtt_client.publish('v1/devices/me/telemetry', a_message, qos=1)
-        log.debug('Paho info before =: ' + str(infot))
+        if time.time() - self.last_message_time > 10:
+            self.last_message_time = time.time()
 
-        if self.check_connection(infot.rc):
-            try:
-                infot.wait_for_publish(2)
-                log.debug('Paho info wait =: ' + str(infot))
+            infot = self.mqtt_client.publish('v1/devices/me/telemetry', a_message, qos=1)
+            log.debug('Paho info before =: ' + str(infot))
 
-                if infot.rc != 0:
-                    log.error('mqttc publish returned rc = ' + str(infot.rc))
+            if self.check_connection(infot.rc):
+                try:
+                    infot.wait_for_publish(2)
+                    log.debug('Paho info wait =: ' + str(infot))
 
-                return True
-            except RuntimeError:  # This is very intermittent, it should recover.
-                log.warning('Could not publish MQTT message.')
-                return False
-            except ValueError as ex:
-                log.warning(str(ex))
-                if "ERR_QUEUE_SIZE" in str(ex):  # This should be checked above in check_connection()
+                    if infot.rc != 0:
+                        log.error('mqttc publish returned rc = ' + str(infot.rc))
+
+                    return True
+                except RuntimeError:  # This is very intermittent, it should recover.
+                    log.warning('Could not publish MQTT message.')
                     return False
-                else:
-                    raise ex
+                except ValueError as ex:
+                    log.warning(str(ex))
+                    if "ERR_QUEUE_SIZE" in str(ex):  # This should be checked above in check_connection()
+                        return False
+                    else:
+                        raise ex
+            else:
+                return False
         else:
+            log.debug('Skipping message, time delay')
             return False
 
     def on_publish(self, _, __, message_id):

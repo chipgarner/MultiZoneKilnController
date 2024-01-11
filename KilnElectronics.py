@@ -140,7 +140,7 @@ class Max31856:
 
         # This bypasses wait for oneshot as it sometimes hangs forever.
         # It avoids waiting forever in the while loop in _wait_for_oneshot() but just returns the old temperature
-        # when (apparently the same) error occur. This fixes itself after a while at leasst in some cases.
+        # when (apparently the same) error occurs. This fixes itself after a while at leasst in some cases.
         # Can easily go 20 hours with no errors. It may always recover if you wait long enough. Restarts do
         # not seem to help
         self.sensor.initiate_one_shot_measurement()
