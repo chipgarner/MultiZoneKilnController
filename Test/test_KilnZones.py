@@ -50,7 +50,7 @@ def test_updates_times_temperatures():
     # assert delta_t > -1 # It goes further negative if the Simulator speedup is greater than 1.
     assert delta_t - 1000 < 10 # millisconds, subtracte wait time for tc read.
 
-    last_heat_timme = zone1.get_time_since_last_heat_change()
+    last_heat_timme = zone1.get_last_heat_change_time()
     assert type(last_heat_timme) == int
     assert last_heat_timme == 2 # This is basically the TC read delay and round off
 

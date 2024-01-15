@@ -1,6 +1,8 @@
+import statistics
 import time
 import logging
 
+import Predictor
 import Profile
 from KilnZones import KilnZones
 import DataFilter
@@ -91,11 +93,14 @@ class ControlLoop:
 
         self.last_times = []
         self.last_heat = []
+        self.temp_error_moving = []
+        self.skipped = []
         for _ in zones:
             self.last_times.append(0)
-            self.last_heat.append(0)
+            self.last_heat.append(0)#TODO ??? seems to be zero, not used?
+            self.temp_error_moving.append([0])
 
-        self.skipped = [0, 0, 0, 0]
+            self.skipped.append(0)
 
         self.pid = pid.PID(20, 0.005, 20, setpoint=27, sample_time=None, output_limits=(0, 100))
 
@@ -114,9 +119,10 @@ class ControlLoop:
 
         if self.controller_state.get_state().firing:
             target = self.__profile_checks(zones_status)
-            heats = self.__compute_heats_for_zones(zones_status, target)
-            if not self.controller_state.get_state().manual:
-                self.kiln_zones.set_heat_for_zones(heats)
+            if type(target) is not str: #  Firing has now finished if it is a string
+                heats = self.__compute_heats_for_zones(zones_status, target)
+                if not self.controller_state.get_state().manual:
+                    self.kiln_zones.set_heat_for_zones(heats)
         else:
             zones_status = self.__status_off(zones_status, tthz)
 
@@ -132,10 +138,6 @@ class ControlLoop:
         if self.min_temp > 60:  # Hot start
             self.start_time_ms = self.start_time_ms - \
                                  self.profile.hot_start(self.min_temp) * 1000
-
-            # TODO config stuff, this ends on the lengyh of the sope data + 300 give it a litlle extra time
-            #  to stabalize the slope - long enough to include the slope data
-            self.profile.set_last_profile_change(time.time() - self.start_time_ms / 1000 + 300)
 
         self.send_profile(self.profile.name, self.profile.data, self.start_time_ms)
         log.info('Start firing.')
@@ -177,6 +179,11 @@ class ControlLoop:
             zone.target = target
             zone.target_slope = self.profile.get_target_slope(
                 (zone.time_ms - self.start_time_ms) / 1000) * 3600 #  Degrees per hour
+
+            temp_error = target - zone.temperature
+            self.temp_error_moving[index].append(temp_error)
+            if len(self.temp_error_moving[index]) > 25:
+                self.temp_error_moving[index].pop(0)
 
             self.skipped[index] += 1
             if self.skipped[index] > 5:
@@ -251,7 +258,7 @@ class ControlLoop:
         else:
             if error > 5:  # Too cold, move segment times so it can catch up
                 # Allow time for the slope to stabilize
-                if heat_factor > 0.99 and self.zones[zone_index].get_time_since_last_heat_change() > 600:
+                if heat_factor > 0.99 and self.zones[zone_index].get_last_heat_change_time() > 600:
                     update = self.profile.check_shift_profile(time_since_start, self.min_temp, zones_status[zone_index])
 
             if update:  # The profile has shifted, show the shift in the UI
@@ -268,28 +275,50 @@ class ControlLoop:
 
             slope, curvature, curve_data = self.slope.slope(zone_index, best_time, best_temp, t_t_h['heat_factor'])
 
+            prediction = []
+            for i in range(0, 25):
+                predict_start = best_time / 1000
+                predict_time = i * 5 + predict_start
+                start_temp = best_temp
+                power = t_t_h['heat_factor']
+                power_change = 0.0
+                power_change_start = 0
+                if self.zones[zone_index].get_last_heat_change_time() is not None:
+                    # TODO simulator kludge
+                    last_heat_time_change = ((self.zones[zone_index].get_last_heat_change_time()
+                                             - self.start_time_ms / 1000)
+                                             * config.sim_speed_up_factor + self.start_time_ms / 1000)
+                    power_change_start = last_heat_time_change
+                    power_change = self.zones[zone_index].last_heat_change
+
+                T = Predictor.predict_temperature(predict_time,
+                                                predict_start,
+                                                start_temp,
+                                                power,
+                                                power_change,
+                                                power_change_start)
+                time_ms = predict_time * 1000
+                prediction.append({'time_ms': time_ms, 'temperature': T})
+
+
             zone_status.name = self.zones[zone_index].name
             zone_status.time_ms = best_time
             zone_status.temperature = best_temp
-            zone_status.curve_data = curve_data
+            zone_status.curve_data = prediction
             zone_status.heat_factor = t_t_h['heat_factor']
             zone_status.slope = slope
             zone_status.curvature = self.profile.current_segment
             zone_status.stderror = curvature
-            zone_status.pstdev = self.profile.current_segment
+
+            zone_status.pstdev = round(statistics.fmean(self.temp_error_moving[zone_index]))
 
             zones_status.append(zone_status)
 
         return zones_status
 
     def update_heat_pid(self, target: float, temp: float, delta_tm: float) -> float:
-
-        if type(target) is not str:
-            self.pid.setpoint = target
-            heat = self.pid(temp, dt=delta_tm) / 100
-        else:
-            heat = 0
-
+        self.pid.setpoint = target
+        heat = self.pid(temp, dt=delta_tm) / 100
         return heat
 
     def __update_heat(self, target: float, zone: dataclass(), index: int, delta_tm: float) -> float:

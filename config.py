@@ -13,7 +13,7 @@ simulating = True
 
 if simulating:
     zone_temps = ZoneTemps()
-    sim_speed_up_factor = 100
+    sim_speed_up_factor = 10
 else:
     try:
         zone1 = {'name': 'Top',
@@ -28,9 +28,9 @@ else:
         log.error('No valid blinka board found, simulating is False. ')
         raise (err)
 
-loop_delay = 10 # Seconds
+loop_delay = 5 # Seconds
 moving_average_length = 5 # Number of measurements to average, time depends on how often temperature is read at the
 # sensors.
 slope_smoothing_length = 60 # Multiply times loop_delay for time.
-control_method = 'PuD'
+control_method = 'PID'
 mqtt = False
