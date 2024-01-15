@@ -85,7 +85,7 @@ def server():
 
     @bottle_app.error(404)
     def error404(error):
-        return 'You have fallen completely off the edge of the internet. Sorry' + str(error)
+        return 'You have fallen completely off the edge of the internet. Sorry.  ' + str(error)
 
     ### Static Routes, so front end can find the files
     base_path = os.path.abspath(os.path.dirname(__file__))

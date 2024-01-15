@@ -34,12 +34,12 @@ class KilnSimulator:
 
         self.t_environment = 27 # Degrees C
         self.t_elements = 27
-        self.power = 3000 # Kiln power watts for this zone
+        self.power = 2800 # Kiln power watts for this zone
         self.steve_b = 5.669e-8 # Stephan-Boltzmann constant w/m**2/K**4
         self.area_el = 0.157 # m**2, Effective area of elements in square meters. Estimate used for conducti0n and radiation.
         self.area_load = 0.325 # m**2, Zone heat loss area not incuding elements area, e.g. Zone one top and side wall.
         self.area_adjacent_zones = 0.168 # m**2, Area
-        self.heat_loss = 5.0 # Conductive/convective heat loss resistance through kiln walls, watts/m**2/degrees C
+        self.heat_loss = 3.5 # Conductive/convective heat loss resistance through kiln walls, watts/m**2/degrees C
         self.heat_capacity = 850 # J/kg/degrees C, ceramic materials are similar.
         self.elements_mass = 1 # kg, include part of the nearby bricks. (This is a guess.)
         self.load_mass = 20 # kg, the ware and kiln shelves
@@ -139,5 +139,4 @@ if __name__ == '__main__':
     while True:
         sim.update_sim(0.6)
         temp = sim.get_latest_temperature()
-        print(temp)
         time.sleep(0.7)

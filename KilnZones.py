@@ -1,6 +1,8 @@
+import statistics
 import threading
 import logging
-import time
+
+import config
 
 # Supports multiple sensors for multiple zone kilns.
 # Sensors are on one thread. You can't call sensors from separate threads if they share the SPI/
@@ -20,16 +22,16 @@ class KilnZones:
     def get_times_temps_heating_for_zones(self) -> list:
         tts_for_zones = []
         for zone in self.zones:
-            tts_for_zones.append(zone.get_times_temps_heat())
+            tts_for_zones.append(zone.get_time_temp_heat())
         return tts_for_zones
 
     def all_heat_off(self):
         for zone in self.zones:
-            zone.set_heat(0)
+            zone.set_heat_factor(0)
 
     def set_heat_for_zones(self, heat_for_zones: list):
         for i, zone in enumerate(self.zones):
-            zone.set_heat(heat_for_zones[i])
+            zone.set_heat_factor(heat_for_zones[i])
 
     def __sensors_loop(self):
         while True:
@@ -40,27 +42,58 @@ class KilnZones:
             # Data is sent to front end on every update, around once per second.
             self.broker.update_tc_data(thermocouple_data)
             # time.sleep(1) Not needed as delay is in 31856 in KilnElectronics
-            # log.debug('Thread: ' + threading.current_thread().name)
+
+            log.debug('Thread: ' + threading.current_thread().name)
+
 
 class Zone:
-    def __init__(self, kiln):
-        self.kiln_elec = kiln # This is the thermocouple and heater switch (e.g. SSR) for this zone.
-        self.times_temps_heat = []
+    def __init__(self, name, kiln_electronics, power=1500, mass=10, area=0.37):
+        self.name = name
+        self.kiln_elec = kiln_electronics
+        self.time_temp_heat = None
+        self.moving_average_temperature = []
+        self.moving_average_time = []
 
-    def get_times_temps_heat(self) -> list:
-        t_t_h = self.times_temps_heat
-        self.times_temps_heat = []
-        return t_t_h
+        self.last_heat_change_time_ms = None
 
-    def set_heat(self, heat_factor: float):
+        # power, Max electric power input for this zone (watts)
+        # mass, Estimate of the mass of the ware and shelves (kg)
+        # area, Area of heat escape, the walls, and top or bottom if relevant for this zone. (square meters)
+
+        self.power = power
+        self.mCp = mass * 850  # Mass times heat capacity of the ware and shelves. 850 J/Kg/C is a good estimatre for ceramics.
+        self.hA = area * 3.5  # Heat loss through the walls of the kiln. 3.5 w/m^2/C
+
+    def get_time_temp_heat(self) -> dict:
+        return self.time_temp_heat
+
+    def get_time_since_last_heat_change(self) -> int:
+        return round((self.kiln_elec.get_temperature()[0] - self.last_heat_change_time_ms) / 1000)
+
+    def set_heat_factor(self, heat_factor: float):
         if heat_factor > 1.0 or heat_factor < 0:
             log.error('Heat factor must be from zero through one. heat_factor: ' + str(heat_factor))
             raise ValueError
-        self.kiln_elec.set_heat(heat_factor)
+
+        old_heat_factor = self.kiln_elec.get_heat_factor()
+        self.kiln_elec.set_heat_factor(heat_factor)
+        if old_heat_factor != self.kiln_elec.get_heat_factor(): # Record the time when the heat is changed.
+            self.last_heat_change_time_ms = self.kiln_elec.get_temperature()[0]
 
     def update_time_temperature(self) -> dict:
         time_ms, temp, error = self.kiln_elec.get_temperature()
-        thermocouple_data = {'time_ms': time_ms, 'temperature': temp, 'heat_factor': self.kiln_elec.get_heat_factor(), 'error': error}
-        self.times_temps_heat.append(thermocouple_data)
+        thermocouple_data = {'time_ms': time_ms, 'temperature': temp, 'heat_factor': self.kiln_elec.get_heat_factor(),
+                             'error': error}
+
+        self.moving_average_temperature.append(temp)
+        self.moving_average_time.append(time_ms)
+        if len(self.moving_average_temperature) > config.moving_average_length:
+            self.moving_average_temperature.pop(0)
+            self.moving_average_time.pop(0)
+
+        moving_average = statistics.fmean(self.moving_average_temperature)
+        moving_average_time = statistics.fmean(self.moving_average_time)
+        self.time_temp_heat = {'time_ms': moving_average_time, 'temperature': moving_average,
+                               'heat_factor': self.kiln_elec.get_heat_factor(), 'error': error}
 
         return thermocouple_data
