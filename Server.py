@@ -1,6 +1,7 @@
 import json
 
 import gevent.monkey
+
 gevent.monkey.patch_socket()
 
 import bottle
@@ -13,26 +14,28 @@ import logging
 import MessageBroker
 import os
 
-
 log = logging.getLogger(__name__)
 
+
 # the decorator for cors, allow POST from another computer - not working TODO
-def enable_cors(fn):
-    def _enable_cors(*args, **kwargs):
-        # set CORS headers
-        response.headers['Access-Control-Allow-Origin'] = '*'
-        response.headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, OPTIONS'
-        response.headers['Access-Control-Allow-Headers'] = 'Origin, Accept, Content-Type, X-Requested-With, X-CSRF-Token'
+# This is to run the browser server on a different machine than the python server - not needed?
+# def enable_cors(fn):
+#     def _enable_cors(*args, **kwargs):
+#         # set CORS headers
+#         response.headers['Access-Control-Allow-Origin'] = '*'
+#         response.headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, OPTIONS'
+#         response.headers[
+#             'Access-Control-Allow-Headers'] = 'Origin, Accept, Content-Type, X-Requested-With, X-CSRF-Token'
+#
+#         return fn(*args, **kwargs)
+#
+#     return _enable_cors
 
-        return fn(*args, **kwargs)
 
-    return _enable_cors
-
-
-
-bottle_app =bottle.Bottle()
+bottle_app = bottle.Bottle()
 
 broker = MessageBroker.MessageBroker()
+
 
 def server():
     def get_websocket_from_request():
@@ -106,14 +109,17 @@ def server():
     @bottle_app.get("/static/js/<filepath:re:.*\.js>")
     def js(filepath):
         return bottle.static_file(filepath, root=os.path.join(build_path, "static/js"))
+
     ### Static route
 
-    ip = "0.0.0.0"
+    ip = 'localhost'
     port = 8081
     log.info("listening on %s:%d" % (ip, port))
 
     the_server = WSGIServer((ip, port), bottle_app,
-                    handler_class=WebSocketHandler)
+                            # keyfile='key.pem',
+                            # certfile='cert.pem',
+                            handler_class=WebSocketHandler)
     the_server.serve_forever()
 
 
