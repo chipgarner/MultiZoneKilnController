@@ -13,7 +13,7 @@ simulating = True
 
 if simulating:
     zone_temps = ZoneTemps()
-    sim_speed_up_factor = 100
+    sim_speed_up_factor = 10
 else:
     try:
         zone1 = {'name': 'Top',

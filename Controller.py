@@ -180,10 +180,11 @@ class ControlLoop:
             zone.target_slope = self.profile.get_target_slope(
                 (zone.time_ms - self.start_time_ms) / 1000) * 3600 #  Degrees per hour
 
-            temp_error = target - zone.temperature
-            self.temp_error_moving[index].append(temp_error)
-            if len(self.temp_error_moving[index]) > 25:
-                self.temp_error_moving[index].pop(0)
+            temp_error = zone.temperature - target
+            self.temp_error_moving[index] = round(temp_error)
+            # self.temp_error_moving[index].append(temp_error)
+            # if len(self.temp_error_moving[index]) > 25:
+            #     self.temp_error_moving[index].pop(0)
 
             self.skipped[index] += 1
             if self.skipped[index] > 5:
@@ -310,7 +311,7 @@ class ControlLoop:
             zone_status.curvature = self.profile.current_segment
             zone_status.stderror = curvature
 
-            zone_status.pstdev = round(statistics.fmean(self.temp_error_moving[zone_index]))
+            zone_status.pstdev = self.temp_error_moving[zone_index]
 
             zones_status.append(zone_status)
 
