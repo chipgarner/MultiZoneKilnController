@@ -98,7 +98,7 @@ class ControlLoop:
         for _ in zones:
             self.last_times.append(0)
             self.last_heat.append(0)#TODO ??? seems to be zero, not used?
-            self.temp_error_moving.append([0])
+            self.temp_error_moving.append(0)
 
             self.skipped.append(0)
 
@@ -181,6 +181,7 @@ class ControlLoop:
                 (zone.time_ms - self.start_time_ms) / 1000) * 3600 #  Degrees per hour
 
             temp_error = zone.temperature - target
+
             self.temp_error_moving[index] = round(temp_error)
             # self.temp_error_moving[index].append(temp_error)
             # if len(self.temp_error_moving[index]) > 25:
