@@ -102,7 +102,13 @@ class ControlLoop:
 
             self.skipped.append(0)
 
-        self.pid = pid.PID(20, 0.005, 20, setpoint=27, sample_time=None, output_limits=(0, 100))
+        self.pid = pid.PID(10, 0.1, 5,
+                           setpoint=27,
+                           sample_time=None,
+                           output_limits=(0, 100),
+                           proportional_on_measurement=True,
+                           differetial_on_measurement=False,
+                           )
 
         self.min_temp = 0
 

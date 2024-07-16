@@ -124,7 +124,7 @@ class PID(object):
             self._proportional -= self.Kp * d_input
 
         # Compute integral and derivative terms
-        if 11 > error > -11:
+        if 4 > error > -4:
             self._integral += self.Ki * error * dt
             self._integral = _clamp(self._integral, self.output_limits)  # Avoid integral windup
         else:
