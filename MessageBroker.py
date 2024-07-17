@@ -24,7 +24,9 @@ class MessageBroker:
         self.updated_profile = None
 
         self.fileshandler = FilesHandler.FilesHandler()
-        self. pub = publisher.Publisher(KILN)
+
+        if config.mqtt:
+            self. pub = publisher.Publisher(KILN)
 
         self.lock = threading.Lock()
 

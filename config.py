@@ -9,11 +9,11 @@ log_format = '%(asctime)s %(levelname)s %(name)s: %(message)s'
 logging.basicConfig(level=log_level, format=log_format)
 log = logging.getLogger(__name__)
 
-simulating = False
+simulating = True
 
 if simulating:
     zone_temps = ZoneTemps()
-    sim_speed_up_factor = 10
+    sim_speed_up_factor = 1
 else:
     try:
         zone1 = {'name': 'Top',
@@ -33,4 +33,7 @@ moving_average_length = 5 # Number of measurements to average, time depends on h
 # sensors.
 slope_smoothing_length = 60 # Multiply times loop_delay for time.
 control_method = 'PID'
+Kp = 10
+Ki = 0.01
+Kd = 1
 mqtt = False

@@ -1,5 +1,7 @@
 import time
+import logging
 
+log = logging.getLogger(__name__)
 
 def _clamp(value, limits):
     lower, upper = limits
@@ -138,6 +140,12 @@ class PID(object):
         # Compute final output
         output = self._proportional + self._integral + self._derivative
         output = _clamp(output, self.output_limits)
+
+        print(str(error))
+        print(str(d_input))
+        print(str(d_error))
+        print(str(dt))
+        log.info('PID outputs: ' + str(self._proportional) + ', ' + str(self._integral) + ', ' + str(self._derivative))
 
         # Keep track of state
         self._last_output = output

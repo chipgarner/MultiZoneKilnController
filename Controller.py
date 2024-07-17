@@ -102,12 +102,13 @@ class ControlLoop:
 
             self.skipped.append(0)
 
-        self.pid = pid.PID(10, 0.1, 5,
+        if config.control_method == 'PID':
+            self.pid = pid.PID(config.Kp, config.Ki, config.Kd,
                            setpoint=27,
                            sample_time=None,
                            output_limits=(0, 100),
-                           proportional_on_measurement=True,
-                           differetial_on_measurement=False,
+                           proportional_on_measurement=False,
+                           differetial_on_measurement=True
                            )
 
         self.min_temp = 0
@@ -251,7 +252,7 @@ class ControlLoop:
             error = self.min_temp - target
         else:
             error = target - self.min_temp
-        log.info('Target: ' + str(target) + ' Temperature difference: ' + str(error))
+        log.debug('Target: ' + str(target) + ' Temperature difference: ' + str(error))
 
         update = False
         firing_finished = False
