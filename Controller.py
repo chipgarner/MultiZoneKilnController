@@ -294,9 +294,13 @@ class ControlLoop:
                 power_change_start = 0
                 if self.zones[zone_index].get_last_heat_change_time() is not None:
                     # TODO simulator kludge
-                    last_heat_time_change = ((self.zones[zone_index].get_last_heat_change_time()
+                    if config.simulating:
+                        last_heat_time_change = ((self.zones[zone_index].get_last_heat_change_time()
                                              - self.start_time_ms / 1000)
                                              * config.sim_speed_up_factor + self.start_time_ms / 1000)
+                    else:
+                        last_heat_time_change = self.zones[zone_index].get_last_heat_change_time()
+
                     power_change_start = last_heat_time_change
                     power_change = self.zones[zone_index].last_heat_change
 
