@@ -112,7 +112,7 @@ def server():
 
     ### Static route
 
-    ip = 'localhost'
+    ip = '0.0.0.0'
     port = 8081
     log.info("listening on %s:%d" % (ip, port))
 
