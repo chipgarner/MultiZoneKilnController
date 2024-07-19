@@ -95,6 +95,7 @@ class ControlLoop:
         self.last_heat = []
         self.temp_error_moving = []
         self.skipped = []
+        self.pids = []
         for _ in zones:
             self.last_times.append(0)
             self.last_heat.append(0)#TODO ??? seems to be zero, not used?
@@ -102,8 +103,8 @@ class ControlLoop:
 
             self.skipped.append(0)
 
-        if config.control_method == 'PID':
-            self.pid = pid.PID(config.Kp, config.Ki, config.Kd,
+            if config.control_method == 'PID':
+                self.pids.append(pid.PID(config.Kp, config.Ki, config.Kd,
                            setpoint=27,
                            sample_time=None,
                            output_limits=(0, 100),
@@ -203,6 +204,7 @@ class ControlLoop:
 
                 if config.control_method =='PID':
                     heat = self.update_heat_pid(target,
+                                                index,
                                                 zone.temperature,
                                                 delta_time)
                 else:
@@ -256,7 +258,7 @@ class ControlLoop:
 
         update = False
         firing_finished = False
-        if error < 0.5:  # Temperature close enough or high, check segment time
+        if error < 1  # Temperature close enough or high, check segment time
             segment_change, update, firing_finished = self.profile.check_switch_segment(time_since_start)
 
         if firing_finished:
@@ -265,7 +267,7 @@ class ControlLoop:
                 target = "Done"
                 log.info('Firing finished.')
         else:
-            if error > 5:  # Too cold, move segment times so it can catch up
+            if error > 7:  # Too cold, move segment times so it can catch up
                 # Allow time for the slope to stabilize
                 if heat_factor > 0.99 and self.zones[zone_index].get_last_heat_change_time() > 600:
                     update = self.profile.check_shift_profile(time_since_start, self.min_temp, zones_status[zone_index])
@@ -329,9 +331,9 @@ class ControlLoop:
 
         return zones_status
 
-    def update_heat_pid(self, target: float, temp: float, delta_tm: float) -> float:
-        self.pid.setpoint = target
-        heat = self.pid(temp, dt=delta_tm) / 100
+    def update_heat_pid(self, target: float, index: int, temp: float, delta_tm: float) -> float:
+        self.pids[index].setpoint = target
+        heat = self.pids[index](temp, dt=delta_tm) / 100
         return heat
 
     def __update_heat(self, target: float, zone: dataclass(), index: int, delta_tm: float) -> float:
