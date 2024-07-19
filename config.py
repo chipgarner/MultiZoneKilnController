@@ -9,7 +9,7 @@ log_format = '%(asctime)s %(levelname)s %(name)s: %(message)s'
 logging.basicConfig(level=log_level, format=log_format)
 log = logging.getLogger(__name__)
 
-simulating = False
+simulating = True
 
 if simulating:
     zone_temps = ZoneTemps()

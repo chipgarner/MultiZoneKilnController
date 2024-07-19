@@ -7,7 +7,7 @@ import copy
 from typing import Union, Tuple
 
 log = logging.getLogger(__name__)
-log.level = logging.DEBUG
+# log.level = logging.DEBUG
 
 
 def convert_old_profile(old_profile: dict) -> dict:
