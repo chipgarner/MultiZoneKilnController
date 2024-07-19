@@ -108,7 +108,7 @@ class ControlLoop:
                            sample_time=None,
                            output_limits=(0, 100),
                            proportional_on_measurement=False,
-                           differetial_on_measurement=True
+                           differetial_on_measurement=False
                            )
 
         self.min_temp = 0

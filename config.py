@@ -33,7 +33,7 @@ moving_average_length = 5 # Number of measurements to average, time depends on h
 # sensors.
 slope_smoothing_length = 60 # Multiply times loop_delay for time.
 control_method = 'PID'
-Kp = 10
-Ki = 0.01
-Kd = 1
+Kp = 25
+Ki = 1
+Kd = 500
 mqtt = False
