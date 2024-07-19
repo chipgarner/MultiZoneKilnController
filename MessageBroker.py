@@ -77,12 +77,17 @@ class MessageBroker:
             log.error("Could not send profile to front end: " + str(ex))
 
         # TODO use os.path.getsize and limit the size to around ??20MB - it bombs the browser if too long.
+        # Kludge below only shows every tenth reading.
         path = self.fileshandler.get_full_path()
         if path is not None:
             with open(path, 'r') as firing:
+                count = 0
                 for line in firing:
-                    observer.send(line)
-                    log.debug('Sent line: ' + line)
+                    count += 1
+                    if count == 10:
+                        count = 0
+                        observer.send(line)
+                        log.debug('Sent line: ' + line)
 
     # Send to all observers. Update the original profile start time on start button pressed.
     def new_profile_all(self, profile):

@@ -13,7 +13,7 @@ simulating = False
 
 if simulating:
     zone_temps = ZoneTemps()
-    sim_speed_up_factor = 1
+    sim_speed_up_factor = 100
 else:
     try:
         zone1 = {'name': 'Top',
@@ -33,7 +33,7 @@ moving_average_length = 5 # Number of measurements to average, time depends on h
 # sensors.
 slope_smoothing_length = 60 # Multiply times loop_delay for time.
 control_method = 'PID'
-Kp = 10
+Kp = 35
 Ki = 0.01
 Kd = 1
 mqtt = False
