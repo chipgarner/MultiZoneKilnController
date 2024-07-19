@@ -110,7 +110,7 @@ class ControlLoop:
                            output_limits=(0, 100),
                            proportional_on_measurement=False,
                            differetial_on_measurement=False
-                           )
+                           ))
 
         self.min_temp = 0
 
@@ -258,7 +258,7 @@ class ControlLoop:
 
         update = False
         firing_finished = False
-        if error < 1  # Temperature close enough or high, check segment time
+        if error < 1:  # Temperature close enough or high, check segment time
             segment_change, update, firing_finished = self.profile.check_switch_segment(time_since_start)
 
         if firing_finished:
