@@ -13,15 +13,16 @@ simulating = True
 
 if simulating:
     zone_temps = ZoneTemps()
-    sim_speed_up_factor = 100
+    sim_speed_up_factor = 1
 else:
     try:
-        zone1 = {'name': 'Top',
-                 'temperature_sensor': Max31855(board.D5),
-                 'power_controller': SSR(board.D17)}
-        zone2 = {'name': 'Bottom',
+        # zone1 = {'name': 'Top',
+        #          'temperature_sensor': Max31855(board.D5),
+        #          'power_controller': SSR(board.D17)}
+        zone1 = {'name': 'Bottom',
                  'temperature_sensor': Max31856(board.D6),
                  'power_controller': SSR(board.D27)}
+        zone2 = None
         zone3 = None
         zone4 = None
     except AttributeError as err:
@@ -36,4 +37,4 @@ control_method = 'PID'
 Kp = 25
 Ki = 0.3
 Kd = 500
-mqtt = False
+mqtt = True

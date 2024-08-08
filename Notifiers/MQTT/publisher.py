@@ -4,7 +4,7 @@ import paho.mqtt.client as mqtt
 from Notifiers.MQTT import check_internet
 
 log = logging.getLogger(__name__)
-log.level = logging.DEBUG
+# log.level = logging.DEBUG
 
 
 class Publisher:
@@ -106,7 +106,7 @@ class Publisher:
             else:
                 return False
         else:
-            log.debug('Skipping message, time delay')
+            log.debug('Skipping message, time delay = ' + str(time.time() - self.last_message_time))
             return False
 
     def on_publish(self, _, __, message_id):

@@ -26,7 +26,7 @@ class MessageBroker:
         self.fileshandler = FilesHandler.FilesHandler()
 
         if config.mqtt:
-            self. pub = publisher.Publisher(KILN)
+            self.pub = publisher.Publisher(KILN)
 
         self.lock = threading.Lock()
 
@@ -142,13 +142,13 @@ class MessageBroker:
         message = json.dumps(thermocouple_data)
         self.send_socket(message)
         if config.mqtt:
-            self.publish_mqtt(tc_data)  # TODO Control how often
+            self.publish_mqtt(tc_data)
 
     def publish_mqtt(self, tc_data: list):
-        for i, tc in enumerate(tc_data):
+        for i, tc in enumerate(tc_data): #OOPS loop is to fast? only shows the first one on thingsborard
             if i == 0: #TODO this needs to come from the zones info
-                name = 'Top 55'
-            else:
+            #     name = 'Top 55'
+            # else:
                 name = 'Bottom 56'
             time = tc['time_ms']
             temperature = tc['temperature']
@@ -156,4 +156,4 @@ class MessageBroker:
             message = {name: temperature}
             time_stamped_message = {'ts': time, 'values': message}
             self.pub.send_message(str(time_stamped_message))
-            log.debug('MQTT message: ' + str(message))
+            log.debug('MQTT message: ' + str(time_stamped_message))
