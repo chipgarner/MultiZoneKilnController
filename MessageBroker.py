@@ -30,7 +30,7 @@ class MessageBroker:
 
         self.lock = threading.Lock()
 
-        self.do_mqqt = True
+        self.skip_top = True
 
     # Callback functions for access to Controller.p
     def set_controller_functions(self, contoller_callbacks: dict):
@@ -144,18 +144,16 @@ class MessageBroker:
         message = json.dumps(thermocouple_data)
         self.send_socket(message)
         if config.mqtt:
-            if self.do_mqqt: # Skip every other one, too fast for Thingsboard, this only works for 2 Zones
-                self.do_mqqt = False
-                self.publish_mqtt(tc_data)
-            else:
-                self.do_mqqt = True
+            self.publish_mqtt(tc_data)
 
     def publish_mqtt(self, tc_data: list):
-        for i, tc in enumerate(tc_data): #OOPS loop is to fast? only shows the first one on thingsborard
-            if i == 0: #TODO this needs to come from the zones info
+        for i, tc in enumerate(tc_data): #OOPS loop is to fast? only shows the first one on thingsborard, works now for 2 ZOnes
+            if i == 0 and not self.skip_top: #TODO this needs to come from the zones info
                 name = 'Top 55'
-            else:
+            elif self.skip_top:
                 name = 'Bottom 56'
+            self.skip_top = not self.skip_top
+
             time = tc['time_ms']
             temperature = tc['temperature']
 
