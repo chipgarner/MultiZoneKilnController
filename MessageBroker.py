@@ -152,7 +152,6 @@ class MessageBroker:
                 name = 'Top 55'
             elif self.skip_top:
                 name = 'Bottom 56'
-            self.skip_top = not self.skip_top
 
             time = tc['time_ms']
             temperature = tc['temperature']
@@ -161,3 +160,5 @@ class MessageBroker:
             time_stamped_message = {'ts': time, 'values': message}
             self.pub.send_message(str(time_stamped_message))
             log.debug('MQTT message: ' + str(time_stamped_message))
+
+        self.skip_top = not self.skip_top
