@@ -147,8 +147,8 @@ class MessageBroker:
     def publish_mqtt(self, tc_data: list):
         for i, tc in enumerate(tc_data): #OOPS loop is to fast? only shows the first one on thingsborard
             if i == 0: #TODO this needs to come from the zones info
-            #     name = 'Top 55'
-            # else:
+                name = 'Top 55'
+            else:
                 name = 'Bottom 56'
             time = tc['time_ms']
             temperature = tc['temperature']
