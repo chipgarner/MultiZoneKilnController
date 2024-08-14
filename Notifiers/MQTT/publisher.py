@@ -51,7 +51,17 @@ class Publisher:
         return cpu_serial
 
     def send_message(self, a_message):
-        return self.publish(a_message)
+        if time.time() - self.last_message_time > 10:
+            self.last_message_time = time.time()
+            return self.publish(a_message)
+
+        #TODO tested for 2 zones. Will blitz MQTT server on fast simlulating.
+        elif time.time() - self.last_message_time < 1: #More than one zone sending messages
+            return self.publish(a_message)
+        else:
+            log.debug('Skipping message, time delay = ' + str(time.time() - self.last_message_time))
+            return False
+
 
     def check_connection(self, rc):
         if rc == mqtt.MQTT_ERR_QUEUE_SIZE or rc == mqtt.MQTT_ERR_NO_CONN:
@@ -79,34 +89,29 @@ class Publisher:
             return True
 
     def publish(self, a_message):
-        if time.time() - self.last_message_time > 10:
-            self.last_message_time = time.time()
+        infot = self.mqtt_client.publish('v1/devices/me/telemetry', a_message, qos=1)
+        log.debug('Paho info before =: ' + str(infot))
 
-            infot = self.mqtt_client.publish('v1/devices/me/telemetry', a_message, qos=1)
-            log.debug('Paho info before =: ' + str(infot))
+        if self.check_connection(infot.rc):
+            try:
+                infot.wait_for_publish(2)
+                log.debug('Paho info wait =: ' + str(infot))
 
-            if self.check_connection(infot.rc):
-                try:
-                    infot.wait_for_publish(2)
-                    log.debug('Paho info wait =: ' + str(infot))
+                if infot.rc != 0:
+                    log.error('mqttc publish returned rc = ' + str(infot.rc))
 
-                    if infot.rc != 0:
-                        log.error('mqttc publish returned rc = ' + str(infot.rc))
+                return True
 
-                    return True
-                except RuntimeError:  # This is very intermittent, it should recover.
-                    log.warning('Could not publish MQTT message.')
-                    return False
-                except ValueError as ex:
-                    log.warning(str(ex))
-                    if "ERR_QUEUE_SIZE" in str(ex):  # This should be checked above in check_connection()
-                        return False
-                    else:
-                        raise ex
-            else:
+            except RuntimeError:  # This is very intermittent, it should recover.
+                log.warning('Could not publish MQTT message.')
                 return False
+            except ValueError as ex:
+                log.warning(str(ex))
+                if "ERR_QUEUE_SIZE" in str(ex):  # This should be checked above in check_connection()
+                    return False
+                else:
+                    raise ex
         else:
-            log.debug('Skipping message, time delay = ' + str(time.time() - self.last_message_time))
             return False
 
     def on_publish(self, _, __, message_id):

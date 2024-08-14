@@ -38,5 +38,3 @@ log.info('Zone temps: ' + str(config.zone_temps.new_temps))
 broker = Server.broker
 controller = Controller.Controller(broker, zones)
 controller.control_loop.control_loop(loop_delay)
-
-
