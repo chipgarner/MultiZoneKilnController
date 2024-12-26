@@ -9,7 +9,7 @@ log_format = '%(asctime)s %(levelname)s %(name)s: %(message)s'
 logging.basicConfig(level=log_level, format=log_format)
 log = logging.getLogger(__name__)
 
-simulating = True
+simulating = False
 
 if simulating:
     zone_temps = ZoneTemps()
@@ -19,9 +19,9 @@ else:
         zone1 = {'name': 'Top',
                  'temperature_sensor': Max31855(board.D5),
                  'power_controller': SSR(board.D17)}
-        zone2 = {'name': 'Bottom',
-                 'temperature_sensor': Max31856(board.D6),
-                 'power_controller': SSR(board.D27)}
+        zone2 = None  #{'name': 'Bottom',
+                # 'temperature_sensor': Max31856(board.D6),
+                # 'power_controller': SSR(board.D27)}
         zone3 = None
         zone4 = None
     except AttributeError as err:

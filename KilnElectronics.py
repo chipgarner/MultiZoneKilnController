@@ -116,6 +116,9 @@ class Max31855:
         self.last_temp = temp
 
         time_ms = round(time.time() * 1000)
+
+        time.sleep(1) # This can run crazy fast xalled from a loop
+
         return time_ms, temp, error
 
 class Max31856:
