@@ -106,7 +106,7 @@ class ControlLoop:
             if config.control_method == 'PID':
                 self.pids.append(pid.PID(config.Kp, config.Ki, config.Kd,
                            setpoint=27,
-                           sample_time=None,
+                           sample_time=25,
                            output_limits=(0, 100),
                            proportional_on_measurement=False,
                            differetial_on_measurement=False
@@ -266,14 +266,14 @@ class ControlLoop:
                 self.controller_state.firing_finished()
                 target = "Done"
                 log.info('Firing finished.')
-        else:
-            if error > 7:  # Too cold, move segment times so it can catch up
-                # Allow time for the slope to stabilize
-                if heat_factor > 0.99 and self.zones[zone_index].get_last_heat_change_time() > 600:
-                    update = self.profile.check_shift_profile(time_since_start, self.min_temp, zones_status[zone_index])
-
-            if update:  # The profile has shifted, show the shift in the UI
-                self.send_updated_profile(self.profile.name, self.profile.data, self.start_time_ms)
+        # else:
+        #     if error > 7:  # Too cold, move segment times so it can catch up
+        #         # Allow time for the slope to stabilize
+        #         if heat_factor > 0.99 and self.zones[zone_index].get_last_heat_change_time() > 600:
+        #             update = self.profile.check_shift_profile(time_since_start, self.min_temp, zones_status[zone_index])
+        #
+        if update:  # The profile has shifted, show the shift in the UI
+            self.send_updated_profile(self.profile.name, self.profile.data, self.start_time_ms)
 
         return target
 
@@ -322,10 +322,10 @@ class ControlLoop:
             zone_status.curve_data = prediction
             zone_status.heat_factor = t_t_h['heat_factor']
             zone_status.slope = slope
-            zone_status.curvature = self.profile.current_segment
-            zone_status.stderror = curvature
+            zone_status.curvature = curvature
+            zone_status.stderror = self.profile.current_segment
 
-            zone_status.pstdev = self.temp_error_moving[zone_index]
+            zone_status.pstdev = self.profile.current_segment # self.temp_error_moving[zone_index]
 
             zones_status.append(zone_status)
 

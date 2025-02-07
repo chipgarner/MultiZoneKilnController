@@ -13,7 +13,7 @@ simulating = False
 
 if simulating:
     zone_temps = ZoneTemps()
-    sim_speed_up_factor = 1 # Do not run at high speed with MQTT on or you will blitz the server.
+    sim_speed_up_factor = 100 # Do not run at high speed with MQTT on or you will blitz the server.
 else:
     try:
         zone1 = {'name': 'Top',
