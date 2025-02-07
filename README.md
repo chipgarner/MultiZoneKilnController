@@ -18,7 +18,7 @@ simulator to see what the program looks like in action you don't need to know mu
 
 Each zone has it's own instance of KilnSimulator. The thermal model uses two lumped heat capacities, one for the
 elements and one for the ware in the kiln. (This is the same as in the original
-program, https://github.com/jbruce12000/kiln-controller) The elements are couple radiatively to the ware. Heat loss is
+program, https://github.com/jbruce12000/kiln-controller) The elements are coupled radiatively to the ware. Heat loss is
 assumed to be by conduction and convection through the walls, top and bottom of the kiln. The zones are assumed to be
 thermally connected to each other by radiation.
 
