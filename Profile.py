@@ -7,7 +7,7 @@ import copy
 from typing import Union, Tuple
 
 log = logging.getLogger(__name__)
-log.level = logging.DEBUG
+# log.level = logging.DEBUG
 
 
 def convert_old_profile(old_profile: dict) -> dict:
@@ -242,6 +242,15 @@ class Profile:
                 segment_change = True
                 if self.current_segment >= len(self.data) - 1:  # Last segment, finish
                     firing_finished = True
+
+                else:
+                    over_time = time_since_start - self.data[self.current_segment][0]
+                    print(over_time)
+                    if over_time > 20: # Adjust the rest of the profile
+                        for index, time_temp in enumerate(self.data):
+                            if index >= self.current_segment:
+                                time_temp[0] += over_time
+                        update = True
 
                 log.info('Segment: ' + str(self.current_segment))
                 log.info('Profile data: ' + str(self.data))

@@ -1,5 +1,8 @@
 import time
+import logging
 
+log = logging.getLogger(__name__)
+# log.level = logging.DEBUG
 
 def _clamp(value, limits):
     lower, upper = limits
@@ -99,12 +102,14 @@ class PID(object):
         now = self.time_fn()
         if dt is None:
             dt = now - self._last_time if (now - self._last_time) else 1e-16
-        elif dt <= 0:
+        elif dt < 0:
             raise ValueError('dt has negative value {}, must be positive'.format(dt))
 
         if self.sample_time is not None and dt < self.sample_time and self._last_output is not None:
             # Only update every sample_time seconds
             return self._last_output
+        if dt == 0: # I don't know how it does this but it throws
+            return 0
 
         # Compute error terms
         error = self.setpoint - input_
@@ -124,7 +129,7 @@ class PID(object):
             self._proportional -= self.Kp * d_input
 
         # Compute integral and derivative terms
-        if 11 > error > -11:
+        if 4 > error > -4:
             self._integral += self.Ki * error * dt
             self._integral = _clamp(self._integral, self.output_limits)  # Avoid integral windup
         else:
@@ -138,6 +143,11 @@ class PID(object):
         # Compute final output
         output = self._proportional + self._integral + self._derivative
         output = _clamp(output, self.output_limits)
+
+        log.debug('Error: ' + str(error))
+        log.debug('delta error: ' + str(d_error))
+        log.debug('dTime ' + str(dt))
+        log.debug('PID outputs: ' + str(self._proportional) + ', ' + str(self._integral) + ', ' + str(self._derivative))
 
         # Keep track of state
         self._last_output = output

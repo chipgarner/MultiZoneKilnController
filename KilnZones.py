@@ -1,6 +1,7 @@
 import statistics
 import threading
 import logging
+import time
 
 import config
 
@@ -54,7 +55,8 @@ class Zone:
         self.moving_average_temperature = []
         self.moving_average_time = []
 
-        self.last_heat_change_time_ms = None
+        self.last_heat_change_time = None
+        self.last_heat_change = None
 
         # power, Max electric power input for this zone (watts)
         # mass, Estimate of the mass of the ware and shelves (kg)
@@ -67,8 +69,8 @@ class Zone:
     def get_time_temp_heat(self) -> dict:
         return self.time_temp_heat
 
-    def get_time_since_last_heat_change(self) -> int:
-        return round((self.kiln_elec.get_temperature()[0] - self.last_heat_change_time_ms) / 1000)
+    def get_last_heat_change_time(self) -> int:
+        return self.last_heat_change_time
 
     def set_heat_factor(self, heat_factor: float):
         if heat_factor > 1.0 or heat_factor < 0:
@@ -77,8 +79,10 @@ class Zone:
 
         old_heat_factor = self.kiln_elec.get_heat_factor()
         self.kiln_elec.set_heat_factor(heat_factor)
-        if old_heat_factor != self.kiln_elec.get_heat_factor(): # Record the time when the heat is changed.
-            self.last_heat_change_time_ms = self.kiln_elec.get_temperature()[0]
+        heat_change = heat_factor - old_heat_factor
+        if abs(heat_change) > 0.01: # Record the time and amount when the heat is changed.
+            self.last_heat_change_time = time.time()
+            self.last_heat_change = heat_change
 
     def update_time_temperature(self) -> dict:
         time_ms, temp, error = self.kiln_elec.get_temperature()

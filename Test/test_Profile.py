@@ -261,9 +261,9 @@ def test_shift_profile():
     # 200 degrees to go at 100 degrees per hour,
     assert update
     assert round(profile.data[2][0]) == 3613
-    assert round(profile.data[3][0]) == 5368
-    assert  round(profile.data[4][0]) == 11968
-    assert round(profile.data[7][0]) == 20568
+    assert round(profile.data[3][0]) == 4046
+    assert  round(profile.data[4][0]) == 10646
+    assert round(profile.data[7][0]) == 19246
 
     target_slope = profile.get_target_slope(3650)
     assert int(target_slope * 3600) == 400 #  Degrees per hour

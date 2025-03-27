@@ -24,7 +24,9 @@ class MessageBroker:
         self.updated_profile = None
 
         self.fileshandler = FilesHandler.FilesHandler()
-        self. pub = publisher.Publisher(KILN)
+
+        if config.mqtt:
+            self.pub = publisher.Publisher(KILN)
 
         self.lock = threading.Lock()
 
@@ -75,12 +77,17 @@ class MessageBroker:
             log.error("Could not send profile to front end: " + str(ex))
 
         # TODO use os.path.getsize and limit the size to around ??20MB - it bombs the browser if too long.
+        # Kludge below only shows every tenth reading.
         path = self.fileshandler.get_full_path()
         if path is not None:
             with open(path, 'r') as firing:
+                count = 0
                 for line in firing:
-                    observer.send(line)
-                    log.debug('Sent line: ' + line)
+                    count += 1
+                    if count == 10:
+                        count = 0
+                        observer.send(line)
+                        log.debug('Sent line: ' + line)
 
     # Send to all observers. Update the original profile start time on start button pressed.
     def new_profile_all(self, profile):
@@ -134,19 +141,21 @@ class MessageBroker:
         thermocouple_data = { 'thermocouple_data': tc_data}
         message = json.dumps(thermocouple_data)
         self.send_socket(message)
+        log.debug("Updated thermocouple_data: " + str(message))
         if config.mqtt:
-            self.publish_mqtt(tc_data)  # TODO Control how often
+            self.publish_mqtt(tc_data)
 
     def publish_mqtt(self, tc_data: list):
-        for i, tc in enumerate(tc_data):
+        for i, tc in enumerate(tc_data): #OOPS loop is to fast? only shows the first one on thingsboard
             if i == 0: #TODO this needs to come from the zones info
                 name = 'Top 55'
             else:
                 name = 'Bottom 56'
+
             time = tc['time_ms']
             temperature = tc['temperature']
 
             message = {name: temperature}
             time_stamped_message = {'ts': time, 'values': message}
             self.pub.send_message(str(time_stamped_message))
-            log.debug('MQTT message: ' + str(message))
+            log.debug('MQTT message: ' + str(time_stamped_message))
